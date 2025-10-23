@@ -5,8 +5,13 @@ import datetime as dt
 from typing import List, Dict, Tuple
 import pandas as pd
 
-from nba_api.stats.endpoints import playergamelog, playercareerstats, playernextngames
-from nba_api.stats.static import players
+from nba_api.stats.endpoints import (
+    playergamelog,
+    playercareerstats,
+    playernextngames,
+    playerdashboardbyteamperformance,
+)
+from nba_api.stats.static import players, teams as teams_static
 
 from logger import get_logger
 log = get_logger(__name__)
@@ -33,6 +38,17 @@ def _season_for_today(reference: dt.date = None) -> str:
     start_year = today.year if today.month >= 10 else today.year - 1
     return f"{start_year}-{str(start_year + 1)[-2:]}"
 
+def _recent_seasons(n: int = 3, reference: dt.date = None) -> List[str]:
+    """
+    Return a list of the most recent `n` NBA season strings, e.g. ['2025-26','2024-25','2023-24'].
+    """
+    today = reference or dt.date.today()
+    start_year = today.year if today.month >= 10 else today.year - 1
+    seasons = []
+    for y in range(start_year, start_year - n, -1):
+        seasons.append(f"{y}-{str(y + 1)[-2:]}")
+    return seasons
+
 
 # ------------------------ resolve player IDs --------------------------------
 
@@ -50,6 +66,34 @@ def resolve_player_ids(names: List[str]) -> Dict[str, int]:
         log.debug(f"Resolved: {name_to_id}")
 
     return name_to_id
+
+# ------------------------ team lookup helpers ------------------------------
+
+_TEAMS_CACHE = {"by_id": None, "by_abbr": None}
+
+def _ensure_teams_cache():
+    global _TEAMS_CACHE
+    if _TEAMS_CACHE["by_id"] is not None:
+        return
+    all_teams = teams_static.get_teams()
+    by_id = {}
+    by_abbr = {}
+    for t in all_teams:
+        tid = int(t.get("id"))
+        abbr = str(t.get("abbreviation"))
+        by_id[tid] = {"id": tid, "abbreviation": abbr, "full_name": t.get("full_name")}
+        by_abbr[abbr.upper()] = tid
+    _TEAMS_CACHE["by_id"] = by_id
+    _TEAMS_CACHE["by_abbr"] = by_abbr
+
+def team_abbrev_from_id(team_id: int) -> str:
+    _ensure_teams_cache()
+    info = _TEAMS_CACHE["by_id"].get(int(team_id))
+    return info["abbreviation"] if info else ""
+
+def team_id_from_abbrev(abbrev: str) -> int:
+    _ensure_teams_cache()
+    return int(_TEAMS_CACHE["by_abbr"].get((abbrev or "").upper(), 0))
 
 
 # --------------------------- player logs ------------------------------------
@@ -237,6 +281,130 @@ def compute_career_fp(player_id: int, weights: dict) -> float:
     return fp_val
 
 
+# ---------------------- player vs team history (multi-season) --------------
+
+BASE_MEAS_COLS = ["PTS", "REB", "AST", "STL", "BLK", "TOV", "FG3M", "FGA", "FGM", "FTA", "FTM", "MIN"]
+
+def _safe_float(x) -> float:
+    try:
+        return float(x or 0.0)
+    except Exception:
+        return 0.0
+
+def fetch_player_vs_team_totals(player_id: int, opp_team_id: int, seasons: List[str]) -> Dict[str, float]:
+    """
+    Aggregate *totals* for the player vs a given opponent across `seasons`.
+    Returns a dict with keys: 'GP' + BASE_MEAS_COLS totals.
+    Uses PerMode='Totals' so we can sum and then average by GP later.
+    """
+    totals = {"GP": 0.0}
+    for c in BASE_MEAS_COLS:
+        totals[c] = 0.0
+
+    for season in seasons:
+        try:
+            ep = playerdashboardbyteamperformance.PlayerDashboardByTeamPerformance(
+                date_from_nullable=None,
+                date_to_nullable=None,
+                game_segment_nullable=None,
+                last_n_games=0,
+                league_id_nullable="00",
+                location_nullable=None,
+                measure_type_detailed="Base",
+                month=0,
+                opponent_team_id=int(opp_team_id),
+                outcome_nullable=None,
+                po_round_nullable=None,
+                pace_adjust="N",
+                per_mode_detailed="Totals",
+                period=0,
+                player_id=int(player_id),
+                plus_minus="N",
+                rank="N",
+                season=season,
+                season_segment_nullable=None,
+                season_type_playoffs="Regular Season",
+                shot_clock_range_nullable=None,
+                vs_conference_nullable=None,
+                vs_division_nullable=None,
+            )
+            df = ep.overall_player_dashboard.get_data_frame()
+        except Exception as e:
+            log.debug(f"fetch_player_vs_team_totals: API error pid={player_id} opp={opp_team_id} season={season}: {e}")
+            df = None
+
+        if df is None or df.empty:
+            continue
+
+        row = df.iloc[0]
+        gp = _safe_float(row.get("GP", 0))
+        totals["GP"] += gp
+        for c in BASE_MEAS_COLS:
+            totals[c] += _safe_float(row.get(c, 0))
+
+    return totals
+
+def compute_fp_from_stats_row(stats: Dict[str, float], weights: Dict[str, float]) -> float:
+    """Compute fantasy points from a dict of base stats using league weights."""
+    fp = 0.0
+    for k, w in (weights or {}).items():
+        if w and k in stats:
+            fp += float(stats[k]) * float(w)
+    return float(fp)
+
+def get_player_vs_upcoming_teams_history(
+    player_id: int,
+    weights: Dict[str, float],
+    last_game_date: pd.Timestamp,
+    week_end: pd.Timestamp,
+    seasons_back: int = 3,
+    lookahead: int = 30,
+) -> pd.DataFrame:
+    """
+    Build a summary table of the player's historical *per-game* performance vs each
+    opponent he is scheduled to face for the rest of the week.
+
+    Returns columns:
+      ['OPP_TEAM_ID','OPP_TEAM_ABBREV','GP','PTS','REB','AST','STL','BLK','TOV','FG3M','FGA','FGM','FTA','FTM','MIN','FP_PER_GAME']
+    where per-game numbers are averaged across the last `seasons_back` seasons weighted by GP.
+    """
+    # Determine upcoming opponents in the date window
+    start = pd.to_datetime(last_game_date).normalize() + pd.Timedelta(days=1)
+    end = pd.to_datetime(week_end).normalize()
+    opp_df = upcoming_opponents_between(player_id, start, end, lookahead=lookahead)
+    if opp_df.empty:
+        return pd.DataFrame(columns=["OPP_TEAM_ID","OPP_TEAM_ABBREV","GP","PTS","REB","AST","STL","BLK","TOV","FG3M","FGA","FGM","FTA","FTM","MIN","FP_PER_GAME"])
+
+    seasons = _recent_seasons(seasons_back)
+
+    rows = []
+    for opp_id in sorted(set(int(t) for t in opp_df["OPP_TEAM_ID"].dropna().tolist())):
+        totals = fetch_player_vs_team_totals(player_id, opp_id, seasons)
+        gp = float(totals.get("GP", 0.0))
+        if gp <= 0:
+            # No history across the window; include with zeros so caller can handle fallback
+            per_game = {c: 0.0 for c in BASE_MEAS_COLS}
+            fp_pg = 0.0
+        else:
+            per_game = {c: float(totals.get(c, 0.0)) / gp for c in BASE_MEAS_COLS}
+            fp_pg = compute_fp_from_stats_row(per_game, weights)
+
+        rows.append({
+            "OPP_TEAM_ID": opp_id,
+            "OPP_TEAM_ABBREV": team_abbrev_from_id(opp_id),
+            "GP": gp,
+            **per_game,
+            "FP_PER_GAME": fp_pg,
+        })
+
+    out = pd.DataFrame(rows)
+    # Keep only opponents we actually face in the window
+    out = out.sort_values(["FP_PER_GAME", "OPP_TEAM_ABBREV"], ascending=[False, True]).reset_index(drop=True)
+    log.debug(f"Built vs-opponent history for {len(out)} upcoming opponents.")
+    return out
+
+
+
 # ---------------------- PlayerNextNGames helpers -----------------------------
 
 def get_player_next_games(
@@ -305,6 +473,83 @@ def get_player_next_games(
             log.debug(f"DEBUG_DUMP_DIR write failed for pid={player_id}: {e}")
 
     return df if df is not None else pd.DataFrame()
+
+
+# ---------------------- upcoming opponents within window -------------------
+
+def upcoming_opponents_between(
+    player_id: int,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    lookahead: int = 30,
+) -> pd.DataFrame:
+    """
+    Return a DataFrame with the player's upcoming opponent team IDs/abbrevs for games
+    in [start_date, end_date]. Columns: ['GAME_DATE','OPP_TEAM_ID','OPP_TEAM_ABBREV'].
+    """
+    try:
+        df = get_player_next_games(
+            player_id=player_id,
+            season=_season_for_today(),
+            season_type="Regular Season",
+            number_of_games=lookahead,
+            league_id="00",
+        )
+    except Exception as e:
+        log.debug(f"upcoming_opponents_between: fetch failed for pid={player_id}: {e}")
+        return pd.DataFrame(columns=["GAME_DATE", "OPP_TEAM_ID", "OPP_TEAM_ABBREV"])
+
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["GAME_DATE", "OPP_TEAM_ID", "OPP_TEAM_ABBREV"])
+
+    # Filter by date window (inclusive)
+    s = pd.to_datetime(start_date).normalize()
+    e = pd.to_datetime(end_date).normalize()
+    if "GAME_DATE" in df.columns:
+        df = df[(df["GAME_DATE"] >= s) & (df["GAME_DATE"] <= e)].copy()
+    else:
+        # If the endpoint did not return GAME_DATE, nothing we can do
+        return pd.DataFrame(columns=["GAME_DATE", "OPP_TEAM_ID", "OPP_TEAM_ABBREV"])
+
+    if df.empty:
+        return pd.DataFrame(columns=["GAME_DATE", "OPP_TEAM_ID", "OPP_TEAM_ABBREV"])
+
+    # Heuristics for opponent columns (the API has varied over time)
+    id_col_candidates = ["OPP_TEAM_ID", "VS_TEAM_ID", "OPPONENT_TEAM_ID"]
+    abbr_col_candidates = ["OPP_TEAM_ABBREVIATION", "VS_TEAM_ABBREVIATION", "OPP_TEAM_ABBR"]
+
+    opp_id_col = next((c for c in id_col_candidates if c in df.columns), None)
+    opp_abbr_col = next((c for c in abbr_col_candidates if c in df.columns), None)
+
+    out = pd.DataFrame({"GAME_DATE": df["GAME_DATE"]})
+    if opp_id_col:
+        out["OPP_TEAM_ID"] = df[opp_id_col].astype("Int64")
+    else:
+        # Try to parse from MATCHUP like 'LAL @ DEN' or 'BOS vs PHI'
+        if "MATCHUP" in df.columns:
+            def _parse_abbr(m):
+                if not isinstance(m, str) or len(m) < 3:
+                    return ""
+                parts = m.split(" ")
+                # format is typically 'TEAM_ABBR (vs|@) OPP_ABBR'
+                return parts[-1].strip() if len(parts) >= 3 else ""
+            opp_abbr = df["MATCHUP"].map(_parse_abbr)
+            out["OPP_TEAM_ID"] = opp_abbr.map(lambda a: team_id_from_abbrev(a)).astype("Int64")
+        else:
+            out["OPP_TEAM_ID"] = pd.Series(dtype="Int64")
+
+    if opp_abbr_col:
+        out["OPP_TEAM_ABBREV"] = df[opp_abbr_col].astype(str)
+    else:
+        out["OPP_TEAM_ABBREV"] = out["OPP_TEAM_ID"].map(lambda tid: team_abbrev_from_id(int(tid)) if pd.notna(tid) else "")
+
+    out = out.dropna(subset=["GAME_DATE"])
+    out = out[out["OPP_TEAM_ID"].notna() & (out["OPP_TEAM_ID"] != 0)]
+    out = out.drop_duplicates(subset=["GAME_DATE", "OPP_TEAM_ID"]).reset_index(drop=True)
+
+    log.debug(f"Upcoming opponents window -> {len(out)} rows")
+    return out
+
 
 
 # ---------------------- remaining games this week ---------------------------
