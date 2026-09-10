@@ -7,6 +7,7 @@
 | `app.py` | Flask routes, same-origin protection, background refresh jobs, dashboard cache |
 | `web/` | Responsive interface, team navigation, player details, roster editing, import UI |
 | `storage.py` | Canonical YAML loading/validation; atomic JSON/YAML writes |
+| `simulation.py` | Persistent morning/night replay, isolated practice roster snapshot, revision checks, banked scores |
 | `engine.py` | Shared dashboard/report orchestration and per-input decision reuse |
 | `providers.py` | Explicit fixture/live input policies |
 | `fetch_data.py` | NBA adapters, name matching, strict normalization, dates, bonuses |
@@ -25,6 +26,8 @@
 ## Request flow
 
 The browser loads `/api/bootstrap` for the CSRF token, local player directory, fixture dates, and saved Sleeper connection settings. `/api/dashboard` reads replay inputs or a saved live report. It does not silently refresh NBA data.
+
+GET/POST `/api/test-week` reads or advances the offline practice run, banks scores, and edits practice starters/rosters. Every POST requires CSRF and the current run revision.
 
 POST `/api/roster` edits local roster membership or starter selection and atomically saves YAML. POST `/api/sync` starts a Sleeper import. POST `/api/refresh` explicitly starts live analysis. Long operations use one background worker and expose `/api/jobs/<id>`; another refresh is rejected while one is running.
 
@@ -60,6 +63,8 @@ Decision results include player identity, status, optional decision/score, obser
 | `NO_GAME` | No eligible completed performance this week |
 | `NO_HISTORY` | No observed history for the player |
 | `STALE` | Saved live recommendations require refresh |
+| `BANKED` | User kept a fixed practice score |
+| `PRE_DRAFT` / `DRAFTING` | League exists but is not ready for live recommendations |
 | `LEAGUE_COMPLETE` | Imported league has ended its season |
 
 ## Persistence

@@ -54,3 +54,36 @@ def test_invalid_name_does_not_modify_roster(client):
     )
     assert response.status_code == 400
     assert len(storage.load_cfg()["teams"][0]["players"]) == 2
+
+
+def test_old_seasons_hidden_and_predraft_never_fetches_nba(client, monkeypatch):
+    from engine import build_dashboard
+
+    cfg = storage.load_cfg()
+    old = dict(
+        cfg["teams"][0],
+        id="old",
+        source="sleeper",
+        season="2025",
+        archived=True,
+        league_status="complete",
+    )
+    current = dict(
+        cfg["teams"][0],
+        id="new",
+        source="sleeper",
+        season="2026",
+        league_status="pre_draft",
+    )
+    cfg["teams"] = [old, current]
+    storage.save_cfg(cfg)
+    monkeypatch.setattr(
+        "engine.LiveProvider",
+        lambda *_: pytest.fail("No NBA request before the season"),
+    )
+    assert [t["id"] for t in build_dashboard("live", cfg=cfg)["teams"]] == ["new"]
+    normal = client.get("/api/dashboard?mode=live").json
+    assert [t["id"] for t in normal["teams"]] == ["new"]
+    assert normal["teams"][0]["results"][0]["status"] == "PRE_DRAFT"
+    archives = client.get("/api/dashboard?mode=live&archived=1").json
+    assert {t["id"] for t in archives["teams"]} == {"new", "old"}

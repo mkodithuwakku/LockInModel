@@ -28,6 +28,7 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 | Live availability | NBA Stats timed out during this session; historical operation is verified, live provider availability is not guaranteed |
 | Offseason | Completed leagues produce no active recommendations; new-season rosters must exist before meaningful live analysis |
 | Historical schedules | Finalized schedule and last observed team assignment, not timestamped historical schedule/transaction snapshots |
+| Practice fidelity | Whole-night clock and sample rosters/rules; no exact game deadlines, full Sleeper transaction rules, or opponent matchup simulation |
 | Historical ownership | Current import or sample roster; availability claims are not historical |
 | Injury/role context | Minutes are observed; historical injuries, upcoming absences, and lineup news are not modeled |
 | Pickup projection | Hand-tuned conservative estimate, not a fitted/calibrated forecast |

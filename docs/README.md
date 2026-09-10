@@ -13,3 +13,5 @@ Updated September 10, 2026 following the dashboard, reliability, Sleeper, and re
 The historical fixture was captured from an immutable third-party archive of NBA API responses after one direct NBA bulk request timed out. Sleeper NBA league import was verified against the user's account. Local tests prohibit network access. No test email was sent; the previously exposed credential is blocked locally.
 
 When changing model or scoring behavior, update the reference and regression tests together. Preserve provenance when recapturing data. Distinguish a functional replay from evidence of predictive accuracy.
+
+- [Test Week](TEST_WEEK.md): simulate morning/night decisions with banked scores and isolated rosters.

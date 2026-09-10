@@ -12,15 +12,15 @@ Open the dashboard and choose a team. The roster shows the latest score, recent 
 
 Mint indicates LOCK and lavender indicates WAIT. Amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. A lock score is a heuristic preference; it is not calibrated confidence.
 
-Local sample rosters can be edited in **Edit roster**. A checkbox moves a player between starters and bench; adding or removing a player changes the canonical local YAML. The email report reads that same file. Sleeper rosters are managed in Sleeper and refreshed using the connection dialog.
+Sleeper rosters are managed in Sleeper; **Refresh live data** also checks for new leagues and updates memberships. Original local teams are separated into Test Week practice templates. In Test Week, **Edit roster** changes only that saved practice run; email always uses normal teams.
 
 ## Replay versus live
 
-Historical replay opens a saved week from December 22–28, 2025. The selected date means the end of that league day. A Thursday view knows Thursday's completed performances but cannot use Friday's outcomes. The full season remains stored locally so changing dates never requires another NBA fetch.
+**Test Week** starts Monday morning, December 22, 2025. Reveal each night, inspect box scores and model calls, bank a score per starter, and move to the next morning. Progress persists through Sunday, December 28. The morning hides that night’s outcomes; banked scores stay fixed as later performances appear. [Full simulator guide](TEST_WEEK.md).
 
 Live analysis is an explicit refresh. It uses completed observations through the previous day for a noon report, counts remaining schedule opportunities, and labels unavailable data. Merely opening the dashboard does not start NBA retrieval. Saved live reports become stale after six hours or a date change, at which point lock recommendations are withheld until refreshed.
 
-All imported leagues are currently completed offseason leagues. Live processing recognizes that condition and can stop without NBA calls; local historical teams remain useful for testing.
+Completed, pre-draft, and drafting leagues display their state without NBA analysis. A newer imported season archives older teams; enable **Show archived leagues** to view them. The daily automation and live refresh discover the current season (2026 for 2026–27), falling back to the last saved season until new leagues exist. The automation runs at noon, not continuously.
 
 ## How the lock model reasons
 

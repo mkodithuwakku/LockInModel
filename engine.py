@@ -16,47 +16,19 @@ def today():
     return dt.datetime.now(ZoneInfo("America/Edmonton")).date()
 
 
-def build_dashboard(mode="replay", reference=None, provider=None, cfg=None):
+def build_dashboard(
+    mode="replay", reference=None, provider=None, cfg=None, phase="night"
+):
     cfg = cfg or load_cfg()
     if mode == "live":
+        cfg = dict(cfg, teams=[t for t in cfg["teams"] if not t.get("archived")])
         synced = [t for t in cfg["teams"] if t.get("source") == "sleeper"]
         if synced:
             cfg = dict(cfg, teams=synced)
-        if cfg["teams"] and all(
-            t.get("league_status") == "complete" for t in cfg["teams"]
+        if not any(
+            t.get("league_status", "in_season") == "in_season" for t in cfg["teams"]
         ):
-            return {
-                "mode": "live",
-                "date": str(today()),
-                "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-                "teams": [
-                    {
-                        "id": t["id"],
-                        "team_name": t["name"],
-                        "league_name": t.get("league_name", ""),
-                        "source": t.get("source", "local"),
-                        "season": t.get("season"),
-                        "league_status": "complete",
-                        "synced_at": t.get("synced_at"),
-                        "results": [
-                            {
-                                "player": n,
-                                "status": "LEAGUE_COMPLETE",
-                                "decision": None,
-                                "starter": n in t["starters"],
-                                "note": "This league has completed its season.",
-                            }
-                            for n in t["players"]
-                        ],
-                        "pickups": [],
-                    }
-                    for t in cfg["teams"]
-                ],
-                "alerts": [],
-                "dataset": {"season": cfg["teams"][0].get("season")},
-                "sleeper": cfg.get("sleeper", {}),
-                "notice": "All connected leagues have completed their season. No NBA requests were made.",
-            }
+            return roster_dashboard(cfg)
     provider = provider or (
         FixtureProvider() if mode == "replay" else LiveProvider(today())
     )
@@ -76,10 +48,12 @@ def build_dashboard(mode="replay", reference=None, provider=None, cfg=None):
     games = parse_dates(provider.games)
     cutoff = (
         pd.Timestamp(reference)
-        if mode == "replay"
+        if mode == "replay" and phase == "night"
         else pd.Timestamp(reference) - pd.Timedelta(days=1)
     )
     observed = games[games.GAME_DATE <= cutoff]
+    if mode == "replay":
+        provider.include_today = phase == "morning"
     # Player directory identity may use all rows; every statistical input uses observations only.
     identity = {
         canonical_name(str(r.PLAYER_NAME)): str(r.PLAYER_ID)
@@ -104,7 +78,7 @@ def build_dashboard(mode="replay", reference=None, provider=None, cfg=None):
     alerts = []
     decision_cache = {}
     for team in cfg["teams"]:
-        if mode == "live" and team.get("league_status") == "complete":
+        if mode == "live" and team.get("league_status", "in_season") != "in_season":
             continue
         weights = team.get("weights") or cfg["weights"]
         rows = []
@@ -215,6 +189,7 @@ def build_dashboard(mode="replay", reference=None, provider=None, cfg=None):
     return {
         "mode": mode,
         "date": str(reference),
+        "observation_cutoff": str(cutoff.date()),
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "teams": results,
         "alerts": alerts,
@@ -225,4 +200,70 @@ def build_dashboard(mode="replay", reference=None, provider=None, cfg=None):
             if mode == "replay"
             else "Live analysis. Sleeper roster freshness and scoring coverage are shown per league."
         ),
+    }
+
+
+def roster_dashboard(cfg, include_archived=False):
+    """Show saved rosters even when the season or the live provider is unavailable."""
+    teams = []
+    from fetch_data import resolve_player_ids
+
+    for t in cfg["teams"]:
+        if t.get("archived") and not include_archived:
+            continue
+        status, note = {
+            "complete": ("LEAGUE_COMPLETE", "This league has completed its season."),
+            "pre_draft": (
+                "PRE_DRAFT",
+                "Waiting for this league's draft. Sync after drafting.",
+            ),
+            "drafting": ("DRAFTING", "Draft in progress. Sync to update your roster."),
+        }.get(
+            t.get("league_status"),
+            ("DATA_UNAVAILABLE", "Refresh live data for current analysis."),
+        )
+        rows = []
+        for name in t["players"]:
+            try:
+                pid = resolve_player_ids([name])[name]
+            except (ValueError, KeyError):
+                pid = None
+            rows.append(
+                {
+                    "player": name,
+                    "player_id": str(pid) if pid else None,
+                    "status": status,
+                    "decision": None,
+                    "note": note,
+                    "positions": t.get("player_meta", {})
+                    .get(canonical_name(name), {})
+                    .get("positions", []),
+                    "starter": name in t["starters"],
+                }
+            )
+        teams.append(
+            {
+                "id": t["id"],
+                "team_name": t["name"],
+                "league_name": t.get("league_name", "Local roster"),
+                "source": t.get("source", "local"),
+                "season": t.get("season"),
+                "league_status": t.get("league_status"),
+                "archived": t.get("archived", False),
+                "synced_at": t.get("synced_at"),
+                "ownership_complete": t.get("ownership_complete", False),
+                "unsupported_scoring": t.get("unsupported_scoring", {}),
+                "results": rows,
+                "pickups": [],
+            }
+        )
+    return {
+        "mode": "live",
+        "date": str(today()),
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "teams": teams,
+        "alerts": [],
+        "dataset": {},
+        "sleeper": cfg.get("sleeper", {}),
+        "notice": "Saved Sleeper rosters. Completed and undrafted leagues have no live recommendations. Use Test Week to practice offline.",
     }

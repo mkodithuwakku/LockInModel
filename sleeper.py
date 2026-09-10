@@ -2,7 +2,15 @@
 
 import datetime as dt
 from transport import HTTP, DataUnavailable
-from storage import ROOT, write_json, read_json, load_cfg, save_cfg, LOCK
+from storage import (
+    ROOT,
+    write_json,
+    read_json,
+    load_cfg,
+    save_cfg,
+    LOCK,
+    organize_teams,
+)
 from fetch_data import canonical_name
 
 BASE = "https://api.sleeper.app/v1"
@@ -117,6 +125,7 @@ def sync(username, season):
         imported.append(
             {
                 "id": "sleeper-" + lid,
+                "archived": False,
                 "name": team_name,
                 "league_name": details["name"].strip(),
                 "league_id": lid,
@@ -152,10 +161,36 @@ def sync(username, season):
     with LOCK:
         cfg = load_cfg()
         incoming = {t["id"] for t in imported}
+        for old in cfg["teams"]:
+            if (
+                old.get("source") == "sleeper"
+                and old.get("sleeper_username", "").casefold() == username.casefold()
+                and old.get("season") == str(season)
+                and old["id"] not in incoming
+            ):
+                old.update(
+                    archived=True, archive_reason="No longer in account league list"
+                )
         cfg["teams"] = [t for t in cfg["teams"] if t["id"] not in incoming] + imported
+        organize_teams(cfg)
         cfg["sleeper"] = {"username": username, "season": str(season)}
         save_cfg(cfg)
     return {
         "count": len(imported),
         "message": f"Imported {len(imported)} teams from Sleeper. Scoring coverage is shown per league.",
     }
+
+
+def sync_current():
+    """Discover this season, then refresh the last known season if none exists yet."""
+    from engine import today
+
+    settings = load_cfg().get("sleeper", {})
+    if not settings.get("username"):
+        return {"count": 0, "message": "Connect a Sleeper account first."}
+    date = today()
+    season = str(date.year if date.month >= 9 else date.year - 1)
+    result = sync(settings["username"], season)
+    if not result["count"] and season != settings.get("season"):
+        return sync(settings["username"], settings["season"])
+    return result

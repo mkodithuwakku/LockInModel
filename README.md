@@ -10,9 +10,9 @@ LockIn brings multiple fantasy teams, player game histories, lock/wait analysis,
 - Get explainable **LOCK / WAIT** recommendations based on recent form and remaining opportunities.
 - See explicit schedule, scoring, stale-data, and provider-error states instead of misleading confidence.
 - Import NBA teams and league scoring from Sleeper using a username, without providing a Sleeper password.
-- Edit local test rosters through the UI; reports use the same saved configuration.
+- Keep Sleeper teams and practice rosters separate, with old seasons available as archives.
 - Find players outperforming their earlier baseline, with minutes, consistency, sustainability, and roster-fit context.
-- Replay a saved week from **2025–26** without calling NBA endpoints.
+- Play through **Test Week** morning by morning: reveal nightly scores, bank your choices, and resume saved progress offline.
 - Generate a daily email report with data alerts and deduplicated pickup signals.
 
 ## The interface
@@ -67,6 +67,10 @@ The pickup engine asks a different question: has expected production improved? I
 
 **These are explainable heuristics, not calibrated predictions or a proven optimal policy.** No win-rate or accuracy improvement has been established.
 
+## Test Week
+
+Open **Test Week** to start Monday morning. Reveal each night, inspect the recalculated model, bank one score per starter, and advance through Sunday. Practice roster edits and decisions stay separate from Sleeper and email. The simulator uses sample rules and does not claim historical fantasy ownership. [How to play](docs/TEST_WEEK.md).
+
 ## Historical dataset
 
 The captured fixture contains **26,648 player-game records for 582 players** from the 2025–26 regular season, plus team-game schedules and 2024–25 prior-season observations. The seeded test week is **December 22–28, 2025**.
@@ -115,6 +119,7 @@ Tests block network connections and cover scoring boundaries, malformed data, un
 | [Model](docs/MODEL.md) | Scoring, equations, assumptions, and pickup logic |
 | [Configuration](docs/CONFIGURATION.md) | Teams, settings, environment, and scoring coverage |
 | [Operations](docs/OPERATIONS.md) | Setup, commands, troubleshooting, and email behavior |
+| [Test Week](docs/TEST_WEEK.md) | Nightly simulation, score banking, persistence, and practice assumptions |
 | [Historical replay](docs/HISTORICAL_REPLAY.md) | Capture provenance, time cutoffs, and evaluation limits |
 | [Known issues](docs/KNOWN_ISSUES.md) | Remaining limitations and follow-up priorities |
 

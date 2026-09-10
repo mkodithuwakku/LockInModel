@@ -120,3 +120,25 @@ def save_cfg(cfg):
     with LOCK:
         validate_config(cfg)
         atomic_write(CONFIG, yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+
+
+def organize_teams(cfg):
+    """Keep practice rosters separate and retain old Sleeper seasons as archives."""
+    synced = [t for t in cfg["teams"] if t.get("source") == "sleeper"]
+    if not synced:
+        return cfg
+    practice = {t["id"]: t for t in cfg.get("test_teams", [])}
+    for t in cfg["teams"]:
+        if t.get("source") != "sleeper":
+            practice.setdefault(t["id"], copy.deepcopy(t))
+    cfg["test_teams"] = list(practice.values())
+    newest = {}
+    for t in synced:
+        account = t.get("sleeper_username", "").casefold()
+        newest[account] = max(newest.get(account, ""), str(t.get("season", "")))
+    for t in synced:
+        if str(t.get("season", "")) < newest[t.get("sleeper_username", "").casefold()]:
+            t["archived"] = True
+            t["archive_reason"] = "Earlier season"
+    cfg["teams"] = synced
+    return cfg

@@ -147,16 +147,10 @@ def run(live=False, reference=None, send=False, daily=False):
         return "Already attempted today; no API calls or email repeated."
     alerts = []
     if live and cfg.get("sleeper"):
-        from sleeper import sync
+        from sleeper import sync_current
 
-        settings = cfg["sleeper"]
         try:
-            candidate_season = str(
-                today().year if today().month >= 9 else today().year - 1
-            )
-            result = sync(settings["username"], candidate_season)
-            if not result["count"] and candidate_season != settings["season"]:
-                sync(settings["username"], settings["season"])
+            sync_current()
             cfg = load_cfg()
         except Exception as exc:
             alerts.append(
@@ -166,15 +160,22 @@ def run(live=False, reference=None, send=False, daily=False):
                     + str(exc),
                 }
             )
-        synced = [t for t in cfg["teams"] if t.get("source") == "sleeper"]
+        synced = [
+            t
+            for t in cfg["teams"]
+            if t.get("source") == "sleeper" and not t.get("archived")
+        ]
         if synced:
             cfg["teams"] = synced
         if (
             synced
-            and all(t.get("league_status") == "complete" for t in synced)
+            and all(
+                t.get("league_status") in {"complete", "pre_draft", "drafting"}
+                for t in synced
+            )
             and not alerts
         ):
-            return "All connected leagues are completed. No NBA requests or offseason email sent."
+            return "No connected leagues are in season. No NBA requests or offseason email sent."
     try:
         report = build_dashboard(mode, reference, cfg=cfg)
         report["alerts"] = alerts + report["alerts"]
@@ -204,6 +205,8 @@ def run(live=False, reference=None, send=False, daily=False):
         email_report["teams"], report["alerts"], report["date"], mode
     )
     write_json(ROOT / "state" / f"{mode}-report.json", report)
+    if live:
+        write_json(ROOT / "state/live-dashboard.json", report)
     (ROOT / "state" / f"{mode}-report.txt").write_text(body)
     print(body)
     if send:

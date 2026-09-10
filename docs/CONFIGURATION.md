@@ -8,6 +8,8 @@ Each team contains a stable `id`, `name`, complete `players` list, and `starters
 
 Imported Sleeper teams additionally contain `source`, `league_id`, `league_name`, `season`, `league_status`, `synced_at`, `weights`, `unsupported_scoring`, `owned_players`, and player-position metadata. A sync refreshes membership from Sleeper. Imported rosters cannot be manually edited in this UI, avoiding two competing sources of truth.
 
+When Sleeper teams are present, original local rosters move to `test_teams` practice templates; `teams` contains the synced league entries. Older seasons carry `archived: true`. Runtime practice edits stay in `state/test-week.json`, separate from this configuration.
+
 The global `sleeper` object saves a username and season start year. The daily command checks the upcoming/current basketball season and falls back to the saved season if the newer one has no leagues yet.
 
 ## Scoring

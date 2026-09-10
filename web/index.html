@@ -35,7 +35,9 @@
           ><button class="nav" data-view="rise">
             <span>↗</span> On the rise <i class="orange">NEW</i></button
           ><button class="nav" data-view="alerts">
-            <span>◉</span> Data alerts <i id="alert-count">0</i>
+            <span>◉</span> Data alerts <i id="alert-count">0</i></button
+          ><button class="nav" data-view="test">
+            <span>▷</span> Test Week
           </button>
         </nav>
         <div class="section-label">YOUR LOCKER ROOM</div>
@@ -75,12 +77,11 @@
               <p id="page-subtitle">Every roster. Every opportunity.</p>
             </div>
             <div class="view-controls">
-              <label for="mode" class="sr-only">Data mode</label
-              ><select id="mode">
-                <option value="replay">Historical replay</option>
-                <option value="live">Live dashboard</option></select
-              ><label for="replay-date" class="sr-only">Replay date</label
-              ><input id="replay-date" type="date" />
+              <span id="mode-label" class="mode-label">Live workspace</span>
+              <label id="archive-control"
+                ><input type="checkbox" id="show-archived" /> Show archived
+                leagues</label
+              >
             </div>
           </div>
           <div id="notice" class="context-banner">
@@ -88,6 +89,13 @@
             ><span>Loading saved season data…</span>
           </div>
           <div id="error" role="alert" class="error-banner" hidden></div>
+          <section
+            id="test-controls"
+            class="test-controls"
+            aria-label="Test Week controls"
+            hidden
+          ></section>
+          <div id="league-scope" class="league-scope" hidden></div>
           <section
             id="summary"
             class="summary"
@@ -197,7 +205,7 @@
       <h2>Edit roster</h2>
       <p id="roster-help">
         Select starters here. The dashboard and email report use the same saved
-        roster.
+        roster. Test Week changes apply only to the current practice run.
       </p>
       <form id="add-form">
         <input

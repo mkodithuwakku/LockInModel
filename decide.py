@@ -75,6 +75,20 @@ def per_player_week_decision(
         )
         week = filter_week_games(logs, start, end)
         if week.empty:
+            baseline = rolling_baseline(
+                base,
+                cfg["decision"]["lookback_games"],
+                cfg,
+                player_name,
+                None if career_prior is UNSET else career_prior,
+            )
+            result.update(
+                fp_mean_recent=float(baseline["fp_mean"]),
+                fp_std_recent=float(baseline["fp_std"]),
+                sample_size=len(base),
+            )
+            if isinstance(remaining_games, (int, np.integer)) and remaining_games >= 0:
+                result["remaining_games_est"] = int(remaining_games)
             return unavailable("NO_GAME", "No completed game this week.")
         last = week.iloc[-1]
         result.update(

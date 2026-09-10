@@ -1423,3 +1423,185 @@ dialog label {
     font-size: 29px;
   }
 }
+
+.mode-label {
+  color: var(--mint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+#archive-control {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.test-controls {
+  background: linear-gradient(115deg, #202b32, #25243a);
+  border: 1px solid #48515d;
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 22px;
+}
+.test-clock {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+.test-clock h2 {
+  font-size: 30px;
+  margin: 5px 0;
+}
+.test-clock h2 small {
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mint);
+  margin-left: 10px;
+}
+.test-clock p {
+  color: #b9c5cd;
+  font-size: 12px;
+  max-width: 540px;
+  line-height: 1.6;
+}
+.test-total {
+  text-align: right;
+  flex-shrink: 0;
+}
+.test-total strong {
+  display: block;
+  color: var(--mint);
+  font:
+    600 42px "Barlow Condensed",
+    sans-serif;
+}
+.test-total span {
+  color: #bbc7ce;
+  font-size: 11px;
+}
+.test-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.test-actions span {
+  font-size: 11px;
+  color: #b9c5cd;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+.night-results {
+  margin-top: 20px;
+  border-top: 1px solid #48515d;
+  padding-top: 14px;
+  font-size: 12px;
+}
+.night-results summary {
+  cursor: pointer;
+  color: var(--mint);
+}
+.night-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.night-grid > div {
+  background: #151d28;
+  border-radius: 8px;
+  padding: 12px;
+}
+.night-grid b {
+  float: right;
+  color: var(--mint);
+}
+.night-grid small {
+  display: block;
+  clear: both;
+  color: #a7b5c6;
+  padding-top: 8px;
+}
+.bank-button {
+  color: #10271f;
+  background: var(--mint);
+  border: 0;
+  border-radius: 5px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.banked-score {
+  color: var(--mint);
+  font-size: 11px;
+  padding-top: 7px;
+}
+.league-scope {
+  border-left: 3px solid var(--purple);
+  padding: 10px 14px;
+  background: #232334;
+  margin-bottom: 18px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #c7bfdc;
+}
+@media (max-width: 740px) {
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+  .sidebar nav {
+    display: flex;
+    justify-content: space-between;
+  }
+  .sidebar .brand {
+    display: none;
+  }
+  .nav {
+    font-size: 11px;
+  }
+  .test-controls {
+    padding: 14px;
+  }
+  .test-clock {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .test-clock h2 {
+    font-size: 26px;
+  }
+  .test-total {
+    text-align: left;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .test-total strong {
+    font-size: 30px;
+  }
+  .test-actions {
+    gap: 8px;
+  }
+  .test-actions span {
+    width: 100%;
+  }
+  .night-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.team-list {
+  min-width: 0;
+}
+.team-nav {
+  min-width: 0;
+  max-width: 100%;
+}
+.team-nav .label {
+  min-width: 0;
+}

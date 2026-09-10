@@ -50,7 +50,12 @@ class FixtureProvider:
         ref = pd.Timestamp(reference).normalize()
         return int(
             schedule[
-                (schedule.GAME_DATE > ref) & (schedule.GAME_DATE <= end)
+                (
+                    (schedule.GAME_DATE >= ref)
+                    if getattr(self, "include_today", False)
+                    else (schedule.GAME_DATE > ref)
+                )
+                & (schedule.GAME_DATE <= end)
             ].GAME_ID.nunique()
         )
 

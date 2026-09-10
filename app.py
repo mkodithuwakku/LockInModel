@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from storage import ROOT, load_cfg, save_cfg, LOCK, read_json, write_json
 
 load_dotenv(ROOT / ".env")
-from engine import build_dashboard, today
+from engine import build_dashboard, today, roster_dashboard
 from transport import DataUnavailable
 
 app = Flask(__name__, static_folder=str(ROOT / "web"), static_url_path="/assets")
@@ -73,6 +73,7 @@ def bootstrap():
     from nba_api.stats.static import players
 
     return jsonify(
+        current_season=str(today().year if today().month >= 9 else today().year - 1),
         csrf=session["csrf"],
         players=[
             {"name": p["full_name"], "id": str(p["id"])} for p in players.get_players()
@@ -97,16 +98,27 @@ def portrait(pid):
 
 @app.route("/api/dashboard")
 def dashboard():
-    mode = request.args.get("mode", "replay")
+    mode = request.args.get("mode", "live")
     reference = request.args.get("date") or None
     if mode not in ["replay", "live"]:
         raise ValueError("Unknown data mode.")
     if mode == "live":
+        cfg = load_cfg()
+        archived = request.args.get("archived") == "1"
+        base = roster_dashboard(cfg, include_archived=archived)
+        base["archived_count"] = sum(bool(t.get("archived")) for t in cfg["teams"])
         cached = read_json(ROOT / "state/live-dashboard.json")
         if not cached:
-            raise DataUnavailable(
-                "No live report saved yet. Use Refresh live data to fetch once."
-            )
+            return jsonify(base)
+        # Only overlay analyses belonging to the same current roster snapshot.
+        current = {t["id"]: t for t in base["teams"]}
+        cached["teams"] = [
+            t
+            for t in cached["teams"]
+            if t["id"] in current
+            and not current[t["id"]].get("archived")
+            and t.get("synced_at") == current[t["id"]].get("synced_at")
+        ]
         age = (
             dt.datetime.now(dt.timezone.utc)
             - dt.datetime.fromisoformat(cached["generated_at"])
@@ -120,6 +132,7 @@ def dashboard():
                 },
             )
             for team in cached["teams"]:
+                team["pickups"] = []
                 for row in team["results"]:
                     row.update(
                         status="STALE",
@@ -128,7 +141,10 @@ def dashboard():
                         p_wait=None,
                         note="Refresh required; this result is stale.",
                     )
-        return jsonify(cached)
+        analyses = {t["id"]: t for t in cached["teams"]}
+        base["teams"] = [analyses.get(t["id"], t) for t in base["teams"]]
+        base["alerts"] = cached["alerts"]
+        return jsonify(base)
     from storage import CONFIG
 
     key = (reference, CONFIG.stat().st_mtime_ns if CONFIG.exists() else 0)
@@ -189,6 +205,10 @@ def sync():
 def refresh():
     def work():
         try:
+            from sleeper import sync_current
+
+            if load_cfg().get("sleeper"):
+                sync_current()
             result = build_dashboard("live")
             write_json(ROOT / "state/live-dashboard.json", result)
             return {
@@ -248,6 +268,15 @@ def roster():
         save_cfg(cfg)
         dashboard_cache.clear()
     return jsonify(message="Roster saved. Reports use this same selection.")
+
+
+@app.route("/api/test-week", methods=["GET", "POST"])
+def test_week():
+    from simulation import get_report, act
+
+    return jsonify(
+        act(request.get_json()) if request.method == "POST" else get_report()
+    )
 
 
 if __name__ == "__main__":

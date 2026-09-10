@@ -25,7 +25,7 @@ python main.py --date 2025-12-25
 
 Capture retrieves four archived tables from a fixed GitHub revision, reuses existing downloads, validates their schemas and identifiers, and generates a checksum manifest. It does not call NBA Stats. See [Historical replay](HISTORICAL_REPLAY.md) for scope and caveats.
 
-The default CLI and dashboard use local replay. Changing dates does not fetch NBA data. Player portraits are served from the local image cache, with a neutral placeholder for missing portraits. Font files currently load from Google Fonts; system fallbacks work offline. Numerical replay and player images do not require external connections.
+The dashboard opens the saved live workspace; **Test Week** runs offline practice. The CLI defaults to end-of-day replay. Advancing the practice clock does not fetch NBA data. Player portraits are served from the local image cache, with a neutral placeholder for missing portraits. Font files currently load from Google Fonts; system fallbacks work offline. Numerical replay and player images do not require external connections.
 
 ## Sleeper
 
@@ -40,7 +40,7 @@ python main.py --live
 python main.py --live --send --daily
 ```
 
-The first command explicitly retrieves current inputs but does not send email. The second is intended for the noon automated run. It refreshes Sleeper rosters, skips completed leagues in the offseason, and reports failures instead of inventing recommendations. NBA observations through the previous day are used for noon analysis.
+The first command explicitly retrieves current inputs but does not send email. The second is intended for the noon automated run. It refreshes Sleeper rosters, skips completed, pre-draft, and drafting leagues, and reports failures instead of inventing recommendations. NBA observations through the previous day are used for noon analysis.
 
 Delivery requires local EMAIL_USER and EMAIL_APP_PASSWORD and an intended recipient in `config.local.yaml`. A report is saved before attempting delivery. The application records an attempt before SMTP to avoid duplicate automatic sends after an ambiguous failure. If delivery is uncertain, investigate before manually changing the ledger; automatically retrying may send duplicates.
 
@@ -79,3 +79,17 @@ python -m black --check *.py tests
 Tests prohibit sockets and cover normalization, bonus thresholds, sparse histories, future-data exclusion, failure cooldowns, import atomicity, roster editing, pickup signals, and email guards. Real-fixture tests skip on a clean checkout until capture has run. Browser checks exercise the actual local interface separately.
 
 The app binds only to loopback and is intended for one local user. It is not configured for internet hosting or multiple simultaneous editors.
+
+## Email activation on this computer
+
+The native Codex automation **LockIn noon report** is configured for noon, America/Edmonton. It runs `.venv/bin/python main.py --live --send --daily` in this repository. It is a local automation, so keep the computer awake, connected, and Codex available. The Flask dashboard does not need to be open. A hosted scheduler would be needed for reliable delivery while this computer is off.
+
+Before delivery, revoke the previously exposed Google app password and generate a new one using [Google's app-password instructions](https://support.google.com/accounts/answer/185833?hl=en). Google requires 2-Step Verification for app passwords; managed account policy can restrict availability. Update `EMAIL_APP_PASSWORD` in ignored `.env` locally, and verify `EMAIL_USER` and the recipient in `config.local.yaml`. Do not paste the password into chat or commit it. The delivery guard automatically accepts a different password; do not remove the guard file to reuse the exposed password.
+
+The daily command launches a fresh process and rereads `.env`. No new automation is needed after replacement. No email is sent while every league is completed or awaiting its season. When active, the report sends recommendations or explicit data-error/scoring-gap notices; missing foul penalties still prevent actionable lock calls. No actual SMTP delivery has been verified yet. Once the credential is replaced, a separately requested one-off test email can verify delivery without fetching NBA data.
+
+## New leagues and archives
+
+Both **Refresh live data** and the noon command check the current Sleeper season, then refresh the last saved year when the new year has no leagues. The connection dialog also allows explicit season selection; 2026 means 2026–27. Drafted players appear after a successful sync (cached Sleeper responses can be up to 15 minutes old). This is polling, not an instant draft feed.
+
+Teams are keyed by league ID, so re-sync updates an existing team and distinct leagues may legitimately share a name. Importing a newer season archives earlier seasons for the same account. A league absent from a successful, nonempty same-season league list is archived. Archives are hidden by default and excluded from reports; **Show archived leagues** reveals saved rosters. An empty or failed import preserves existing teams as a conservative safeguard. A stale unused league still returned as active by Sleeper cannot be identified automatically as unwanted.
