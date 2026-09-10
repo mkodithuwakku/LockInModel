@@ -87,7 +87,7 @@ The data comes from an immutable revision of [llimllib/nba_data](https://github.
 
 Use **Sleeper connection** to import a username and season start year. The integration reads league rules and every roster, including reserve/taxi players, then identifies the user's own team. Imports are atomic: a failed league fetch preserves the previous configuration.
 
-Some basketball leagues include technical/flagrant foul penalties absent from this dataset. Those teams show **SCORING GAP**, label displayed FP as partial estimates, and withhold lock recommendations. Pickup estimates carry the same limitation. Unrostered means absent from the latest league snapshot, not guaranteed immediately claimable.
+Flagrant-foul scoring (`ff`) is deliberately ignored under the selected policy, even when Sleeper assigns a penalty. Other unavailable rules, such as technical-foul penalties, remain scoring gaps. Those teams show **SCORING GAP**, label displayed FP as partial estimates, and withhold lock recommendations. Pickup estimates carry the same limitation. Unrostered means absent from the latest league snapshot, not guaranteed immediately claimable.
 
 ## Reliability and privacy
 

@@ -23,7 +23,7 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 
 | Area | Limitation |
 | --- | --- |
-| League scoring | Technical/flagrant foul penalties are unavailable; affected teams show partial FP and no lock decision |
+| League scoring | Flagrant fouls are deliberately ignored; other unavailable rules, including technical fouls, still cause partial FP and no lock decision |
 | Sleeper lock state | Read-only rosters are imported, but existing lock selections are not; the app does not submit actions |
 | Live availability | NBA Stats timed out during this session; historical operation is verified, live provider availability is not guaranteed |
 | Offseason | Completed leagues produce no active recommendations; new-season rosters must exist before meaningful live analysis |
@@ -41,7 +41,7 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 ## Priorities after this release
 
 1. Replace the exposed credential and finish coordinated public-history cleanup.
-2. Add a reliable source for missing foul penalties or an explicit user-approved scoring policy for affected leagues.
+2. Resolve remaining scoring gaps such as technical fouls; the approved policy already excludes flagrant fouls.
 3. Verify live inputs when the next leagues and games become active.
 4. Evaluate the lock and pickup policies across multiple held-out weeks.
 5. Add richer injury/role context and precise historical roster/schedule snapshots where useful.

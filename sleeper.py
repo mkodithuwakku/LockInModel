@@ -12,6 +12,7 @@ from storage import (
     organize_teams,
 )
 from fetch_data import canonical_name
+from scoring import apply_scoring_policy
 
 BASE = "https://api.sleeper.app/v1"
 SCORING = {
@@ -157,6 +158,8 @@ def sync(username, season):
                 },
             }
         )
+    for team in imported:
+        apply_scoring_policy(team)
     # Commit a complete import atomically; partial network failures don't erase rosters.
     with LOCK:
         cfg = load_cfg()

@@ -16,7 +16,7 @@ def payload(path):
             "name": "Test",
             "total_rosters": 2,
             "status": "complete",
-            "scoring_settings": {"pts": 0.5, "tf": -2, "dd": 1},
+            "scoring_settings": {"pts": 0.5, "tf": -2, "ff": -2, "dd": 1},
         },
         "/league/l/rosters": [
             {"owner_id": "u", "players": ["1"], "starters": ["1"]},
@@ -36,6 +36,7 @@ def test_import_records_full_ownership_and_scoring_gaps(tmp_path, monkeypatch):
     assert sleeper.sync("example", "2025")["count"] == 1
     t = saved[0]["teams"][0]
     assert "Derrick White" in t["owned_players"]
+    assert t["ignored_scoring"] == {"ff": -2}
     assert t["unsupported_scoring"] == {"tf": -2} and t["weights"]["PTS"] == 0.5
 
 

@@ -86,7 +86,7 @@ The native Codex automation **LockIn noon report** is configured for noon, Ameri
 
 Before delivery, revoke the previously exposed Google app password and generate a new one using [Google's app-password instructions](https://support.google.com/accounts/answer/185833?hl=en). Google requires 2-Step Verification for app passwords; managed account policy can restrict availability. Update `EMAIL_APP_PASSWORD` in ignored `.env` locally, and verify `EMAIL_USER` and the recipient in `config.local.yaml`. Do not paste the password into chat or commit it. The delivery guard automatically accepts a different password; do not remove the guard file to reuse the exposed password.
 
-The daily command launches a fresh process and rereads `.env`. No new automation is needed after replacement. No email is sent while every league is completed or awaiting its season. When active, the report sends recommendations or explicit data-error/scoring-gap notices; missing foul penalties still prevent actionable lock calls. No actual SMTP delivery has been verified yet. Once the credential is replaced, a separately requested one-off test email can verify delivery without fetching NBA data.
+The daily command launches a fresh process and rereads `.env`. No new automation is needed after replacement. No email is sent while every league is completed or awaiting its season. When active, the report sends recommendations or explicit data-error/scoring-gap notices; remaining unsupported rules still prevent actionable lock calls; flagrant fouls are deliberately ignored. No actual SMTP delivery has been verified yet. Once the credential is replaced, a separately requested one-off test email can verify delivery without fetching NBA data.
 
 ## New leagues and archives
 

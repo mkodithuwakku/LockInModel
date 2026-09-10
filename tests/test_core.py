@@ -161,3 +161,22 @@ def test_missing_optional_field_is_rejected_when_it_has_a_weight():
     normalized = normalize_stats_for_scoring(rows())
     with pytest.raises(ValueError, match="FGM"):
         add_fantasy_points(normalized, {"FGM": 1})
+
+
+def test_saved_flagrant_rule_migrates_without_ignoring_other_gaps():
+    from storage import validate_config
+
+    cfg = load_cfg()
+    cfg["teams"] = [
+        {
+            "id": "test",
+            "name": "Test",
+            "players": [],
+            "starters": [],
+            "unsupported_scoring": {"ff": -2, "tf": -1},
+        }
+    ]
+    team = validate_config(cfg)["teams"][0]
+    assert team["ignored_scoring"] == {"ff": -2}
+    assert team["unsupported_scoring"] == {"tf": -1}
+    assert validate_config(cfg)["teams"][0] == team

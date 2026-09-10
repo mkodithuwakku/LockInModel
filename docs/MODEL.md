@@ -41,7 +41,7 @@ Intended bonuses = DD 1 + TD 2 + PTS40 2 + PTS50 2 = 7
 Current pipeline output = 57 FP
 ```
 
-Technical and flagrant foul scoring appears only in a configuration comment. The normalization pipeline does not supply those stats. Imported leagues with nonzero unsupported rules show partial FP and withhold lock recommendations.
+The dataset does not supply technical or flagrant fouls. By explicit user policy, flagrant-foul scoring (`ff`) is omitted from every model decision, baseline, and pickup calculation. The original penalty is retained as `ignored_scoring` metadata, not an error. Other unsupported rules, including technical fouls (`tf`), still cause partial FP and withheld recommendations.
 
 ## 2. Selecting the candidate and baseline
 

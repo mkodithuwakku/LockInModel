@@ -5,6 +5,23 @@ import numpy as np
 import pandas as pd
 
 
+# User-approved exception: Sleeper flagrant-foul points do not enter our model.
+IGNORED_LEAGUE_SCORING = {"ff"}
+
+
+def apply_scoring_policy(team):
+    """Record intentionally excluded rules separately from missing scoring data."""
+    unsupported = dict(team.get("unsupported_scoring", {}))
+    ignored = dict(team.get("ignored_scoring", {}))
+    for key in IGNORED_LEAGUE_SCORING:
+        if key in unsupported:
+            ignored[key] = unsupported.pop(key)
+    if ignored:
+        team["ignored_scoring"] = ignored
+        team["unsupported_scoring"] = unsupported
+    return team
+
+
 def fantasy_points(row: pd.Series, weights: dict) -> float:
     total = 0.0
     for stat, weight in weights.items():

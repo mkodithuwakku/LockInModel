@@ -40,7 +40,7 @@ For imported leagues, every team's roster is used to identify unrostered players
 
 The original bonus-loss bug is fixed: double-double, triple-double, 40-point, and 50-point flags survive normalization. The configured bonuses stack. Confirm league semantics if using a new scoring format.
 
-Some imported leagues use technical/flagrant foul penalties unavailable in the saved tables. The UI shows partial FP estimates and withholds lock decisions for those leagues. Data failures are alerts, not zero-game assumptions.
+Flagrant-foul penalties are deliberately ignored by this model. Other missing rules, including technical-foul penalties, remain scoring gaps. The UI shows partial FP estimates and withholds lock decisions for those leagues. Data failures are alerts, not zero-game assumptions.
 
 ## Interview description
 

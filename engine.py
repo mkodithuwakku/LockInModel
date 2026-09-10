@@ -9,6 +9,7 @@ from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates
 from decide import per_player_week_decision
 from pickups import find_pickups
+from scoring import apply_scoring_policy
 from transport import DataUnavailable
 
 
@@ -78,6 +79,7 @@ def build_dashboard(
     alerts = []
     decision_cache = {}
     for team in cfg["teams"]:
+        team = apply_scoring_policy(dict(team))
         if mode == "live" and team.get("league_status", "in_season") != "in_season":
             continue
         weights = team.get("weights") or cfg["weights"]
@@ -145,7 +147,7 @@ def build_dashboard(
                     decision=None,
                     p_lock=None,
                     p_wait=None,
-                    note="League foul penalties unavailable; FP shown are partial estimates.",
+                    note="Other league scoring inputs unavailable; FP shown are partial estimates.",
                 )
             if row["status"] in [
                 "SCHEDULE_UNAVAILABLE",
@@ -182,6 +184,7 @@ def build_dashboard(
                 "synced_at": team.get("synced_at"),
                 "ownership_complete": team.get("ownership_complete", False),
                 "unsupported_scoring": team.get("unsupported_scoring", {}),
+                "ignored_scoring": team.get("ignored_scoring", {}),
                 "results": rows,
                 "pickups": candidates,
             }

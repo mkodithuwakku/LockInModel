@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import threading
 import yaml
+from scoring import apply_scoring_policy
 
 ROOT = Path(__file__).resolve().parent
 LOCK = threading.RLock()
@@ -89,6 +90,7 @@ def validate_config(cfg):
         raise ValueError("Teams must be a list.")
     ids = set()
     for i, team in enumerate(teams):
+        apply_scoring_policy(team)
         team.setdefault("id", "local-" + str(i + 1))
         if team["id"] in ids:
             raise ValueError("Duplicate team ID.")

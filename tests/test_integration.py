@@ -110,3 +110,20 @@ def test_pickup_alerts_have_cooldown_and_material_change_override():
     item["signal_score"] = 82
     changed, _ = main.new_pickup_alerts(report, updates, 300)
     assert len(changed["teams"][0]["pickups"]) == 1
+
+
+@pytest.mark.skipif(
+    not (ROOT / "data/fixtures/2025-26/manifest.json").exists(),
+    reason="Capture the historical dataset first",
+)
+def test_flagrants_do_not_change_model_or_pickup_scoring():
+    provider = FixtureProvider()
+    cfg = sample_cfg()
+    reference = provider.manifest["default_date"]
+    expected = build_dashboard(provider=provider, cfg=cfg, reference=reference)
+    cfg["teams"][0]["unsupported_scoring"] = {"ff": -2}
+    actual = build_dashboard(provider=provider, cfg=cfg, reference=reference)
+    assert actual["teams"][0]["results"] == expected["teams"][0]["results"]
+    assert actual["teams"][0]["pickups"] == expected["teams"][0]["pickups"]
+    assert actual["alerts"] == expected["alerts"]
+    assert actual["teams"][0]["ignored_scoring"] == {"ff": -2}

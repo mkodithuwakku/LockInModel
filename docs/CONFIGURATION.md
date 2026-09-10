@@ -23,7 +23,7 @@ Supported columns are PTS, REB, AST, STL, BLK, TOV, FG3M, FGM, FGA, FTM, FTA, DD
 
 Bonuses stack: a triple-double receives DD and TD; 50 points receives both point-threshold bonuses. These indicators are now retained through the full pipeline.
 
-Sleeper rule names are translated explicitly, such as `to → TOV`, `tpm → FG3M`, and `bonus_pt_40p → PTS40`. Nonzero unsupported settings are recorded rather than ignored. The UI withholds lock recommendations and labels partial FP for those leagues. Technical/flagrant fouls are currently unsupported.
+Sleeper rule names are translated explicitly, such as `to → TOV`, `tpm → FG3M`, and `bonus_pt_40p → PTS40`. The explicit scoring exception is `ff`: flagrant fouls are treated as having no effect on model points, per user instruction. Their original Sleeper weight is retained in `ignored_scoring` for traceability and does not block lock recommendations or pickup alerts. This policy applies to saved configurations and every future import. Other nonzero unsupported settings remain in `unsupported_scoring`; these still withhold recommendations and label partial FP. Technical fouls (`tf`) have not been exempted.
 
 ## Decision controls
 

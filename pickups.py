@@ -4,7 +4,7 @@ import math
 import numpy as np
 import pandas as pd
 from fetch_data import canonical_name, normalize_stats_for_scoring
-from scoring import add_fantasy_points
+from scoring import add_fantasy_points, apply_scoring_policy
 from model import rolling_baseline
 
 
@@ -100,6 +100,7 @@ def positions_compatible(a, b):
 
 
 def find_pickups(games, team, cfg, reference, positions=None):
+    team = apply_scoring_policy(dict(team))
     weights = team.get("weights") or cfg["weights"]
     observed = games[
         (games.GAME_DATE <= pd.Timestamp(reference))
