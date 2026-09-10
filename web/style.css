@@ -1333,3 +1333,93 @@ dialog label {
     display: block;
   }
 }
+/* Keep player decisions in the first phone viewport. */
+@media (max-width: 740px) {
+  .sidebar {
+    display: grid;
+    grid-template-columns: 121px 1fr;
+    gap: 12px 8px;
+    padding: 14px 16px;
+  }
+  .brand {
+    padding: 0;
+    font-size: 23px;
+    gap: 8px;
+  }
+  .brand small {
+    display: none;
+  }
+  .brandmark {
+    width: 30px;
+    height: 34px;
+  }
+  .sidebar nav {
+    min-width: 0;
+  }
+  .nav {
+    font-size: 9px;
+    padding: 7px 4px;
+    gap: 4px;
+  }
+  .nav > span {
+    font-size: 16px;
+    width: 16px;
+  }
+  .team-list {
+    grid-column: 1/-1;
+    padding-top: 0;
+  }
+  .team-nav {
+    flex-basis: 156px;
+  }
+  .topbar {
+    height: 49px;
+  }
+  .breadcrumb {
+    display: none;
+  }
+  .top-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .top-actions .subtle {
+    white-space: nowrap;
+  }
+  #mobile-connect {
+    margin-right: auto;
+  }
+  .workspace {
+    padding-top: 17px;
+  }
+  .heading {
+    margin-bottom: 17px;
+  }
+  h1 {
+    font-size: 34px;
+  }
+  .context-banner {
+    padding: 8px 11px;
+    font-size: 9px;
+    margin-bottom: 15px;
+  }
+  .summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+  .stat-card {
+    padding: 10px 9px;
+  }
+  .stat-label {
+    font-size: 9px;
+    min-height: 25px;
+    align-items: flex-start;
+  }
+  .stat-label span,
+  .stat-caption {
+    display: none;
+  }
+  .stat-number {
+    font-size: 29px;
+  }
+}

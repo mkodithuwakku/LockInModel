@@ -32,6 +32,8 @@ def local_only():
     if request.headers.get("Sec-Fetch-Site") == "cross-site":
         return jsonify(error="Cross-site requests are not allowed."), 403
     if request.method == "POST":
+        if request.is_json and not isinstance(request.get_json(), dict):
+            return jsonify(error="Expected a JSON object."), 400
         if (
             not request.is_json
             or not session.get("csrf")
