@@ -15,7 +15,7 @@
 
 The repository is public, and the configured email app password matched the one committed in its original history. The local guard blocks that password. Revoke and replace it in Google; Git cleanup cannot revoke a credential.
 
-Removing secrets from the current tree is separate from purging historical commits. A cleaned history can be prepared and pushed as a separate branch without overwriting the existing main branch. Replacing public main history requires a deliberate coordinated update. Old clones and provider caches may still retain historical contents, so credential rotation is essential regardless of branch cleanup.
+Removing secrets from the current tree is separate from purging historical commits. The cleaned `modernize-dashboard` branch has been pushed and its reachable history scanned for the exposed credential and private paths. The existing public `main` still contains the original history. Replacing it requires a deliberate coordinated update; do not merge the original history back into the cleaned branch. Old clones and provider caches may still retain historical contents, so credential rotation is essential regardless of branch cleanup.
 
 Local credentials, imports, cache files, and `.venv` remain on the computer; removing them from tracking does not delete those local files.
 
