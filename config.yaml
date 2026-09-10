@@ -1,18 +1,3 @@
-# Which players to track (use NBA full names)
-team_roster:
-  - "Shai Gilgeous-Alexander"
-  - "Tyrese Maxey"
-  - "Jalen Williams"
-  - "Derrick White"
-  - "Myles Turner"
-  - "Jalen Brunson"
-  - "Victor Wembanyama"
-  - "Paolo Banchero"
-  - "Chet Holmgren"
-  - "Jrue Holiday"
-
-# Fantasy scoring weights (edit these to your league)
-# Use positive/negative as needed; include only stats you care about.
 weights:
   PTS: 0.5
   REB: 1.0
@@ -21,7 +6,7 @@ weights:
   BLK: 2.0
   TOV: -1.0
   FG3M: 0.5
-  FGM: 0.0           # set non-zero if your league counts
+  FGM: 0.0
   FGA: 0.0
   FTM: 0.0
   FTA: 0.0
@@ -29,77 +14,67 @@ weights:
   TD: 2
   PTS40: 2
   PTS50: 2
-  # ADD:
-  #Technical Foul = -2, Flagrant Foul -2, Double-Double = 1, Triple-Double = 2, 40 Point Bonus = 2, 50 Point Bonus = 2
-  #Add them to rare stats
-
-# Decision tuning
 decision:
-  lookback_games: 10       # for baseline mean/std
-  recent_days: 14          # "last two weeks"
-  rare_z_threshold: 1.75   # events above this z get rarity boost
-  rare_stats: ["BLK", "STL"]  # which stats to treat as rare
-  lock_bias_if_rare: 0.15  # add to lock probability when rare event detected
-  conservative_mode: false # if true, slightly bias toward locking
-  min_remaining_games_bias: 0.05 # adds wait-bias when multiple games remain
+  lookback_games: 10
+  recent_days: 14
+  rare_z_threshold: 1.75
+  rare_stats:
+  - BLK
+  - STL
+  lock_bias_if_rare: 0.15
+  conservative_mode: false
+  min_remaining_games_bias: 0.05
   decay: 0.92
   prior_weight_games: 12
   sd_floor_min: 4.0
   career_guard_scale: 0.6
   rookie_guard_fp: 17.5
-
 teams:
-  - name: "Guangdong Tigers"
-    starters:
-      - "Luka Dončić"
-      - "Jalen Williams"
-      - "Jalen Johnson"
-      - "Brandon Miller"
-      - "Tyrese Maxey"
-      - "Julius Randle"
-      - "Rudy Gobert"
-      - "Alex Sarr"
-      - "Dereck Lively II"
-  - name: "Freak Squad"
-    starters:
-      - "Giannis Antetokounmpo"
-      - "Derrick White"
-      - "Bennedict Mathurin"
-      - "Aaron Nesmith"
-      - "Tyrese Maxey"
-      - "Jarrett Allen"
-      - "Santi Aldama"
-      - "Buddy Hield"
-  - name: "Action Brunsons"
-    starters:
-      - "Jalen Brunson"
-      - "Desmond Bane"
-      - "Tyrese Maxey"
-      - "Luguentz Dort"
-      - "Chet Holmgren"
-      - "Naz Reid"
-      - "Onyeka Okongwu"
-      - "Payton Pritchard"
-      - "Quentin Grimes"
-  - name: "Wembanyamama"
-    starters:
-        - "Victor Wembanyama"
-        - "Donovan Mitchell"
-        - "Derrick White"
-        - "Shaedon Sharpe"
-        - "Desmond Bane"
-        - "Evan Mobley"
-        - "Brandon Miller"
-        - "Jakob Poeltl"
-        - "Isaiah Hartenstein"
-
-# Notifications
+- name: Guangdong Tigers
+  starters:
+  - Luka Dončić
+  - Jalen Williams
+  - Jalen Johnson
+  - Brandon Miller
+  - Tyrese Maxey
+  - Julius Randle
+  - Rudy Gobert
+  - Alex Sarr
+  - Dereck Lively II
+- name: Freak Squad
+  starters:
+  - Giannis Antetokounmpo
+  - Derrick White
+  - Bennedict Mathurin
+  - Aaron Nesmith
+  - Tyrese Maxey
+  - Jarrett Allen
+  - Santi Aldama
+  - Buddy Hield
+- name: Action Brunsons
+  starters:
+  - Jalen Brunson
+  - Desmond Bane
+  - Tyrese Maxey
+  - Luguentz Dort
+  - Chet Holmgren
+  - Naz Reid
+  - Onyeka Okongwu
+  - Payton Pritchard
+  - Quentin Grimes
+- name: Wembanyamama
+  starters:
+  - Victor Wembanyama
+  - Donovan Mitchell
+  - Derrick White
+  - Shaedon Sharpe
+  - Desmond Bane
+  - Evan Mobley
+  - Brandon Miller
+  - Jakob Poeltl
+  - Isaiah Hartenstein
 notify:
-  method: "email"          # "email" or "sms"
-  to_email: "m.kodithuwakku803@gmail.com"  # used for email
-  from_email: "m.kodithuwakku803@gmail.com"  # the gmail you’ll SMTP through
-  sms_to: "+1XXXXXXXXXX"       # used if method == "sms"
-
-# GUI
-gui:
-  title: "Fantasy Starters"
+  method: email
+  to_email: ''
+  from_email: ''
+timezone: America/Edmonton

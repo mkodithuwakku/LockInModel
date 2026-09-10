@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LockIn · Your basketball desk</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
+    <meta
+      name="description"
+      content="Your fantasy basketball teams, lock decisions, and players on the rise."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="LockIn home"
+          ><span class="brandmark">L<span>↗</span></span
+          ><span
+            >LOCK<span class="mint">IN</span><small>BASKETBALL</small></span
+          ></a
+        >
+        <div class="season-tag">
+          <span class="dot"></span> THE FANTASY DESK <span>25/26</span>
+        </div>
+        <nav aria-label="Main">
+          <button class="nav active" data-view="team">
+            <span>▦</span> My teams <i id="team-count">—</i></button
+          ><button class="nav" data-view="rise">
+            <span>↗</span> On the rise <i class="orange">NEW</i></button
+          ><button class="nav" data-view="alerts">
+            <span>◉</span> Data alerts <i id="alert-count">0</i>
+          </button>
+        </nav>
+        <div class="section-label">YOUR LOCKER ROOM</div>
+        <div id="team-list" class="team-list">
+          <p class="muted">Loading your teams…</p>
+        </div>
+        <div class="sidebar-bottom">
+          <button id="connect" class="connect">
+            <span class="sleeper-dot">S</span
+            ><span
+              >Sleeper connection<small id="account-label"
+                >Import your leagues</small
+              ></span
+            ><span>↗</span>
+          </button>
+          <p>Built for the games that count.</p>
+        </div>
+      </aside>
+      <main>
+        <header class="topbar">
+          <span class="breadcrumb"
+            >YOUR WORKSPACE <b>/</b> <span id="breadcrumb">My teams</span></span
+          >
+          <div class="top-actions">
+            <button id="mobile-connect" class="subtle">Sync teams</button>
+            <span id="freshness" class="muted">Saved data</span
+            ><button id="refresh" class="subtle">
+              ↻ <span>Refresh live data</span></button
+            ><span class="avatar-user">LF</span>
+          </div>
+        </header>
+        <div class="workspace">
+          <div class="heading">
+            <div>
+              <div class="eyebrow" id="league-label">FANTASY BASKETBALL</div>
+              <h1 id="page-title">Your next move.</h1>
+              <p id="page-subtitle">Every roster. Every opportunity.</p>
+            </div>
+            <div class="view-controls">
+              <label for="mode" class="sr-only">Data mode</label
+              ><select id="mode">
+                <option value="replay">Historical replay</option>
+                <option value="live">Live dashboard</option></select
+              ><label for="replay-date" class="sr-only">Replay date</label
+              ><input id="replay-date" type="date" />
+            </div>
+          </div>
+          <div id="notice" class="context-banner">
+            <span class="context-icon">↺</span
+            ><span>Loading saved season data…</span>
+          </div>
+          <div id="error" role="alert" class="error-banner" hidden></div>
+          <section
+            id="summary"
+            class="summary"
+            aria-label="Team summary"
+          ></section>
+          <div class="content-layout">
+            <section class="primary-panel">
+              <div class="panel-toolbar">
+                <div class="tabs">
+                  <button class="tab active" data-filter="all">
+                    Full roster</button
+                  ><button class="tab" data-filter="starters">Starters</button
+                  ><button class="tab" data-filter="bench">Bench</button>
+                </div>
+                <div class="table-actions">
+                  <input
+                    id="search"
+                    type="search"
+                    placeholder="Find a player"
+                    aria-label="Find a player"
+                  /><button id="edit-roster" class="subtle">Edit roster</button>
+                </div>
+              </div>
+              <div id="content" aria-live="polite">
+                <div class="loading">
+                  <div class="spinner"></div>
+                  Reading the season archive…
+                </div>
+              </div>
+            </section>
+            <aside class="right-rail">
+              <div class="week-card">
+                <div class="section-label">
+                  THE WEEK AHEAD <span class="mint">●</span>
+                </div>
+                <h2>Make it count.</h2>
+                <div id="week-days" class="week-days"></div>
+                <p id="week-caption">One score. One decision.</p>
+              </div>
+              <div class="rail-heading">
+                <h3>On your radar</h3>
+                <button id="see-risers">View all ↗</button>
+              </div>
+              <div id="radar"></div>
+              <div class="explain-card">
+                <span>THE READ</span>
+                <h3>Good games deserve context.</h3>
+                <p>
+                  Compare the latest score with recent form and remaining
+                  opportunities. Open any player to see the reasoning.
+                </p>
+                <div class="legend">
+                  <span><i class="mint-bg"></i> Lock</span
+                  ><span><i class="purple-bg"></i> Wait</span
+                  ><span><i class="amber-bg"></i> Review</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+          <footer>
+            <span>LOCKIN <b>·</b> NBA FANTASY INTELLIGENCE</span
+            ><span
+              >Recommendations support your judgment. Actions stay in
+              Sleeper.</span
+            >
+          </footer>
+        </div>
+      </main>
+    </div>
+    <dialog id="player-dialog">
+      <button class="close" aria-label="Close player details">×</button>
+      <div id="player-detail"></div>
+    </dialog>
+    <dialog id="connect-dialog">
+      <button class="close" aria-label="Close connection settings">×</button>
+      <div class="eyebrow">READ-ONLY CONNECTION</div>
+      <h2>Bring your teams in.</h2>
+      <p>
+        Import NBA rosters and league scoring from Sleeper. Existing local teams
+        stay available for testing.
+      </p>
+      <form id="sync-form">
+        <label
+          >Sleeper username<input
+            name="username"
+            id="sleeper-username"
+            required /></label
+        ><label
+          >Season start year<input
+            name="season"
+            id="sleeper-season"
+            type="number"
+            value="2025"
+            min="2020"
+            max="2100"
+            required /></label
+        ><button class="primary" type="submit">Sync my teams ↗</button>
+      </form>
+      <p class="muted">
+        Completed leagues can be imported during the offseason. Locks and waiver
+        claims stay in Sleeper.
+      </p>
+    </dialog>
+    <dialog id="roster-dialog">
+      <button class="close" aria-label="Close roster editor">×</button>
+      <div class="eyebrow">YOUR TEAM, YOUR CALL</div>
+      <h2>Edit roster</h2>
+      <p id="roster-help">
+        Select starters here. The dashboard and email report use the same saved
+        roster.
+      </p>
+      <form id="add-form">
+        <input
+          id="add-name"
+          list="players"
+          placeholder="NBA player name"
+          aria-label="Player to add"
+          required
+        /><datalist id="players"></datalist
+        ><button class="primary" type="submit">Add player</button>
+      </form>
+      <div id="roster-editor"></div>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>

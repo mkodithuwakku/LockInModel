@@ -1,6 +1,7 @@
 import logging, os, sys
 from pathlib import Path
 
+
 def get_logger(name: str = "fantasy", level: str = None, logfile: str = None):
     lvl = (level or os.getenv("LOG_LEVEL") or "INFO").upper()
     logger = logging.getLogger(name)
@@ -9,8 +10,9 @@ def get_logger(name: str = "fantasy", level: str = None, logfile: str = None):
         return logger
 
     logger.setLevel(lvl)
-    fmt = logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-                            datefmt="%H:%M:%S")
+    fmt = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", datefmt="%H:%M:%S"
+    )
 
     ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(fmt)

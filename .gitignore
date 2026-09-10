@@ -1,20 +1,25 @@
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
 dist/
 build/
-
-# Environments & secrets
-.venv/
+node_modules/
+.venv*/
 venv/
 .env
 .env.*
-
-# Editors/OS
+!.env.example
+config.local.yaml
+state/
+data/cache/
+data/fixtures/
+artifacts/
+debug/
+logs/
+*.log
 .DS_Store
 .idea/
 .vscode/
-
-# Logs
-*.log

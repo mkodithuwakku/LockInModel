@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "season": "2025-26",
+  "week_start": "2025-12-22",
+  "week_end": "2025-12-28",
+  "default_date": "2025-12-25",
+  "seed": 202526,
+  "eligible_weeks": [
+    "2025-11-17",
+    "2025-11-24",
+    "2025-12-01",
+    "2025-12-08",
+    "2025-12-15",
+    "2025-12-22",
+    "2025-12-29",
+    "2026-01-05",
+    "2026-01-12",
+    "2026-01-19",
+    "2026-01-26",
+    "2026-02-02"
+  ],
+  "source": "https://github.com/llimllib/nba_data/tree/b0c2923ee7f4bc1cc9c185f8a4f1f06d9348a20b",
+  "captured_at": "2026-09-10T18:48:10.704568+00:00",
+  "source_files": {
+    "playerlog_2026.parquet": "24562368400257539c6abc667038c0e0d407d01835c3668382b041658aac1204",
+    "gamelog_2026.parquet": "647b93edd8d168cad23279faf6a2d265b699d42cc5a583f6ce12af7158d07a33",
+    "playerlog_2025.parquet": "e4bc0bbf989fc75d1712ace3eefefa21c2ca5b9f5375701c87efbe8ad6e41f6d",
+    "gamelog_2025.parquet": "ccb0178304b717b44ea50979582cf53451a202851eddd15e2ede121e28711e11"
+  },
+  "files": {
+    "games.parquet": "237feefb1862598ae992e6fa268b9db8d197bf0bd684eb32f7eaa893647d6a6c",
+    "schedule.parquet": "25e496151f75c8340f53473e562aaea04c65603a17050a08c78f5984e8af9531",
+    "priors.parquet": "5a934b684a65e088c4929ac9366fe09b69694a4f61027e6feed3955f24c259e3"
+  },
+  "player_game_rows": 26648,
+  "players": 582,
+  "team_game_rows": 2460,
+  "games": 1230,
+  "history_start": "2025-10-21",
+  "history_end": "2026-04-12",
+  "prior_policy": "2024-25 regular-season game average, not career average; rookies have no prior",
+  "schedule_policy": "Finalized historical team schedule; not an as-known-at-the-time archive",
+  "decision_time": "End of selected league day",
+  "ownership_policy": "Current Sleeper roster snapshot or configured sample roster; historical ownership is unknown"
+}

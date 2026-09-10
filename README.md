@@ -1,180 +1,125 @@
-LockInModel – Debugging & Run Cheatsheet
+# LockIn
 
-This project pulls NBA logs nightly and recommends LOCK vs WAIT for your fantasy lineup using a weighted baseline (recent games count more) plus early-season guards (career-aware variance floor and rookie fallback).
+**A personal NBA fantasy dashboard for the scores worth keeping and the players worth noticing.**
 
-1) Setup
+LockIn brings multiple fantasy teams, player game histories, lock/wait analysis, and waiver research into one local interface. A Python statistical engine powers a colorful, responsive basketball dashboard with cached player portraits and an offline historical replay.
 
-Create and activate a virtual environment (macOS/Linux):
+## What you can do
 
-python3 -m venv venv
-source venv/bin/activate
+- Browse multiple teams, starters, bench players, portraits, and recent box scores.
+- Get explainable **LOCK / WAIT** recommendations based on recent form and remaining opportunities.
+- See explicit schedule, scoring, stale-data, and provider-error states instead of misleading confidence.
+- Import NBA teams and league scoring from Sleeper using a username, without providing a Sleeper password.
+- Edit local test rosters through the UI; reports use the same saved configuration.
+- Find players outperforming their earlier baseline, with minutes, consistency, sustainability, and roster-fit context.
+- Replay a saved week from **2025–26** without calling NBA endpoints.
+- Generate a daily email report with data alerts and deduplicated pickup signals.
 
+## The interface
 
-Install dependencies:
+The workspace includes a team switcher, full-roster/start/bench filters, searchable player rows, player detail panels, an **On the Rise** view, data alerts, and a Sleeper import dialog. Mint, lavender, coral, and amber distinguish decisions and team accents; condensed display typography and compact stat rows keep the emphasis on basketball.
 
-pip install -r requirements.txt
+The dashboard runs on your computer. It does not place locks, submit waivers, or change your Sleeper lineup.
 
+## Quick start
 
-(If you don’t have a requirements.txt yet, install explicitly):
+Run commands in the directory containing this README and `app.py`.
 
-pip install nba_api pandas numpy scikit-learn pyyaml python-dotenv
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python capture.py
+python app.py
+```
 
-2) Environment variables
+Open [the local dashboard](http://127.0.0.1:8765). `python gui_select.py` starts the same dashboard and opens your browser.
 
-Set these in your shell (or use a .env that your app loads):
+The capture command downloads a small set of immutable, archived NBA tables once and resumes from existing files. It saves data locally, chooses a complete week using a recorded seed, and writes provenance/checksums. Subsequent dashboard replay uses local data only. NBA Stats itself is not called by this capture path.
 
-# Email credentials (Gmail app password required)
-export EMAIL_USER="you@gmail.com"
-export EMAIL_APP_PASSWORD="your-16-char-app-password"
+The application was verified in the existing Python 3.9/macOS environment. CI is configured for Python 3.11 and 3.12. Dependencies are declared explicitly; see [Operations](docs/OPERATIONS.md) for setup details and the existing environment's TLS compatibility pin.
 
-# Logger level (DEBUG shows math details; INFO is quieter)
-export LOG_LEVEL=DEBUG
+## How the decision works
 
+```mermaid
+flowchart LR
+    A[Sleeper or local teams] --> D[League-specific fantasy scoring]
+    B[Observed NBA game history] --> D
+    D --> E[Weighted recent baseline]
+    C[Verified schedule] --> F[Future opportunity estimate]
+    E --> G[Lock or wait analysis]
+    F --> G
+    D --> H[Player improvement analysis]
+    I[League roster ownership] --> H
+    G --> J[Dashboard and email report]
+    H --> J
+```
 
-Optional debug toggles:
+The lock model estimates whether any remaining game will beat the latest eligible performance:
 
-# Show per-stat rarity z-scores in logs (BLK/STL etc.)
-export TRACE_RARITY=1
-# Dump the baseline input window for each player to CSV
-export DEBUG_DUMP_DIR="debug"
+```text
+P(at least one future game beats current) = 1 − Φ((current − mean) / SD)^remaining_games
+```
 
-3) Running the tool
+Recent games receive exponential weights. A longer-term prior stabilizes the mean, and conservative variance guards and rarity checks address limited history. Hand-tuned adjustments produce the final lock score.
 
-From the project root:
+The pickup engine asks a different question: has expected production improved? It compares five recent games with a separate earlier baseline, measures minutes and consistency, discounts potentially unsustainable shooting/steals/blocks, and compares compatible roster alternatives.
 
-python main.py
+**These are explainable heuristics, not calibrated predictions or a proven optimal policy.** No win-rate or accuracy improvement has been established.
 
+## Historical dataset
 
-Typical “debug mode” run:
+The captured fixture contains **26,648 player-game records for 582 players** from the 2025–26 regular season, plus team-game schedules and 2024–25 prior-season observations. The seeded test week is **December 22–28, 2025**.
 
-export LOG_LEVEL=DEBUG
-export TRACE_RARITY=1
-export DEBUG_DUMP_DIR=debug
-python main.py
+```bash
+python main.py --date 2025-12-25
+```
 
+This produces a local report without email or NBA requests. Future observations are excluded from the decision and pickup calculations.
 
-Deactivate the venv when you’re done:
+The data comes from an immutable revision of [llimllib/nba_data](https://github.com/llimllib/nba_data), an archive of NBA API data. The committed [manifest](data/fixture-manifest.json) records exact provenance and hashes; downloaded tables stay out of Git. Replay uses finalized historical schedules and a prior-season average, and does **not** claim historically accurate fantasy roster ownership. [Dataset details](docs/HISTORICAL_REPLAY.md).
 
-deactivate
+## Sleeper and scoring coverage
 
-4) What you’ll see in DEBUG logs
+Use **Sleeper connection** to import a username and season start year. The integration reads league rules and every roster, including reserve/taxi players, then identifies the user's own team. Imports are atomic: a failed league fetch preserves the previous configuration.
 
-For each player:
+Some basketball leagues include technical/flagrant foul penalties absent from this dataset. Those teams show **SCORING GAP**, label displayed FP as partial estimates, and withhold lock recommendations. Pickup estimates carry the same limitation. Unrostered means absent from the latest league snapshot, not guaranteed immediately claimable.
 
-FP describe: count/mean/std/min/25%/50%/75%/max over all fetched logs
+## Reliability and privacy
 
-Week range and which dates had games this week
+- Request caching, host-level pacing, timeouts, and persistent cooldowns after failures or rate limiting.
+- Cache-only replay; no hidden fallback to live requests.
+- Required-stat validation and explicit unknown schedules.
+- Preserved bonus flags, including the configured stacking rules.
+- One canonical, atomically written `config.local.yaml` for UI and reporting.
+- Loopback-only server, same-origin mutation checks, and CSRF tokens.
+- Reports saved before delivery; daily email attempts and pickup alerts deduplicated.
+- Local credentials, personal config, caches, portraits, and runtime state excluded from Git.
 
-Last game row: one-line JSON with stats and FP used for decision
+This repository previously committed an email credential. Removing tracked files does not revoke it; an exposed app password must be replaced. The local delivery guard blocks the identified password. See [security and remaining work](docs/KNOWN_ISSUES.md).
 
-Remaining games estimate this week
+## Testing
 
-Baseline window: size, date span used to compute the baseline
+```bash
+python -m pytest -q
+```
 
-Baseline internals:
+Tests block network connections and cover scoring boundaries, malformed data, unknown schedules, persistent cooldowns, roster persistence, atomic Sleeper import, future-data exclusion, pickup screening, and email deduplication. Real-dataset integration tests run when the local fixture is present. Browser verification covers desktop/mobile layout, team switching, player details, filtering, and roster editing.
 
-mu_post: mean after shrinkage toward career prior (if available)
+## Documentation
 
-sd_post: std after early-season guard (career-scaled; rookies use 17.5)
+| Guide | What it explains |
+| --- | --- |
+| [Walkthrough](docs/WALKTHROUGH.md) | The product, model, and daily workflow |
+| [Architecture](docs/ARCHITECTURE.md) | Modules, data flow, persistence, and failure boundaries |
+| [Model](docs/MODEL.md) | Scoring, equations, assumptions, and pickup logic |
+| [Configuration](docs/CONFIGURATION.md) | Teams, settings, environment, and scoring coverage |
+| [Operations](docs/OPERATIONS.md) | Setup, commands, troubleshooting, and email behavior |
+| [Historical replay](docs/HISTORICAL_REPLAY.md) | Capture provenance, time cutoffs, and evaluation limits |
+| [Known issues](docs/KNOWN_ISSUES.md) | Remaining limitations and follow-up priorities |
 
-career_prior: career FP used as prior (if available)
+## Engineering focus
 
-guard: SD floor applied (career-based or 17.5 rookie guard)
+Python, pandas, NumPy, Flask, vanilla JavaScript/CSS, and pytest. The frontend has no build step. Statistical calculations are separate from providers and notifications, making the same engine usable for local replay, live reports, and the dashboard.
 
-decay: exponential recency factor used to weight recent games
-
-Probability math (Normal model):
-
-z, Φ(z), P(all ≤ current), P(max > current)
-
-Rarity (if TRACE_RARITY=1): per-stat z-scores that contributed to rarity
-
-Final decision: LOCK/WAIT with p_lock, p_wait, rarity
-
-If DEBUG_DUMP_DIR is set, a CSV of the baseline window per player is saved at:
-
-debug/<Player_Name>_baseline_window.csv
-
-5) Config knobs (config.yaml)
-
-Under the decision section:
-
-decision:
-  # Recency weighting (ALWAYS ON in code; this is the strength)
-  decay: 0.92
-
-  # Career/rookie early-season guards
-  prior_weight_games: 12     # pseudo-games that shrink recent mean toward career FP
-  sd_floor_min: 4.0          # absolute minimum SD floor
-  career_guard_scale: 0.6    # SD floor = max(sd_floor_min, career_guard_scale * career_FP)
-  rookie_guard_fp: 17.5      # SD floor when career FP is 0 or missing (rookie)
-
-  # Rarity & biases
-  rare_stats: ["BLK","STL"]
-  rare_z_threshold: 1.75
-  lock_bias_if_rare: 0.15
-  min_remaining_games_bias: 0.05
-  conservative_mode: false
-
-  # Optional per-player overrides (by display name)
-  player_overrides:
-    "Shai Gilgeous-Alexander":
-      decay: 0.94
-      prior_weight_games: 16
-      career_guard_scale: 0.7
-
-
-Notes
-
-The baseline always weights recent games exponentially.
-
-The mean is shrunk toward the player’s career FP when samples are small.
-
-The SD guard is derived from career FP (or 17.5 for rookies).
-
-6) Troubleshooting
-
-SMTPAuthenticationError 535
-
-Use a Gmail App Password (Google Account → Security → 2-Step Verification → App Passwords).
-
-Ensure EMAIL_USER and EMAIL_APP_PASSWORD match the same Google account.
-
-nba_api JSONDecodeError / TLS warnings
-
-Often transient NBA Stats API responses or local TLS quirks.
-
-You already pinned urllib3<2 for macOS LibreSSL; retry usually resolves.
-
-If persistent, try a different network or wait a few minutes.
-
-“No games yet this week”
-
-Expected early in the week/season or when a player hasn’t played in the current Monday–Sunday window.
-
-Nothing prints at DEBUG level
-
-Ensure you exported LOG_LEVEL=DEBUG in the same shell before running.
-
-7) Typical workflows
-
-Nightly run (cron/launchd):
-
-source /path/to/project/venv/bin/activate
-export LOG_LEVEL=INFO
-python /path/to/project/main.py
-
-
-Deep dive on a specific issue:
-
-source venv/bin/activate
-export LOG_LEVEL=DEBUG
-export TRACE_RARITY=1
-export DEBUG_DUMP_DIR=debug
-python main.py
-# Inspect debug/*.csv and terminal logs
-
-8) Support
-
-If a player’s decision looks off, copy the full DEBUG block for that player (from
-“== Evaluating … ==” through the “Decision” line) and share it — those numbers are enough to pinpoint whether the baseline, guard, rarity, or probability needs tuning.
+The next evaluation milestone is a multi-week, held-out comparison against simple locking policies. No project license has been selected yet.
