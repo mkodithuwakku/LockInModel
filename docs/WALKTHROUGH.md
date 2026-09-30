@@ -10,7 +10,9 @@ It does not submit the decision to Sleeper. It also does not infer that you have
 
 Open the dashboard and choose a team. The roster shows the latest score, recent baseline, remaining opportunities, and a decision status. Open a player to inspect actual observed game history and the explanation behind the recommendation.
 
-Mint indicates LOCK and lavender indicates WAIT. Amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. A lock score is a heuristic preference; it is not calibrated confidence.
+The Scouting Desk uses a paper-and-ink layout with court-orange accents, numbered navigation, a scoreboard summary, and a ruled roster sheet. Green indicates LOCK, blue indicates WAIT, and amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. Each state also has a text label. A lock score is a heuristic preference; it is not calibrated confidence.
+
+On phones, teams scroll horizontally and roster rows prioritize the latest score and decision; open player details for the baseline and history. A skip link and visible keyboard focus support navigation. Test Week's nightly box scores are expandable so the roster remains easier to reach.
 
 Sleeper rosters are managed in Sleeper; **Refresh live data** also checks for new leagues and updates memberships. Original local teams are separated into Test Week practice templates. In Test Week, **Edit roster** changes only that saved practice run; email always uses normal teams.
 

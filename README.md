@@ -6,15 +6,17 @@ Python · Flask · pandas · NumPy · vanilla JavaScript · pytest
 
 ## Screenshots and demo
 
-These existing application captures show historical/sample data, not current NBA recommendations.
+The interface takes its visual cues from a printed basketball scouting report: warm paper, dark ink, court-orange accents, numbered navigation, a scoreboard strip, and a ruled roster sheet. These browser captures show historical/sample data, not current NBA recommendations.
 
-![Test Week after revealing Monday's games, with practice teams, nightly scores, and the saved practice clock](docs/screenshots/test-week-night.png)
+![The Scouting Desk in Test Week on Thursday night, showing the scoreboard, roster decisions, a banked score, and weekly court diagram](docs/screenshots/test-week-night.png)
 
-*Test Week reveals one night's results at a time. Scores can be banked for starters and retained as the week advances.*
+*Test Week reveals one night's results at a time. Scores can be banked for starters and retained as the week advances. Expand “Tonight’s box scores” for the nightly breakdown.*
 
 ![Player detail showing the latest fantasy score, baseline, remaining games, explanation, and recent performance chart](docs/screenshots/player-detail.png)
 
 *Player details connect a recommendation to the observed performance and remaining opportunities.*
+
+[View the mobile roster](docs/screenshots/mobile-roster.png). Small screens use a horizontal team selector and a compact roster; the baseline remains available in player details. Keyboard focus indicators, a skip link, and reduced-motion styles support navigation.
 
 To try the workflow, follow [setup](#running-locally), select **Test Week**, reveal games, open a player, and bank an eligible score. Progress saves locally. There is no hosted demo.
 

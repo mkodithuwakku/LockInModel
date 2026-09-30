@@ -5,7 +5,7 @@ Open **Test Week** in the sidebar. A new run starts on Monday morning, December 
 ## Play a week
 
 1. Choose a practice team. Inspect player histories and the model, adjust starters or the roster in the morning, and visit **On the rise** for candidate research.
-2. Press **Reveal tonight’s games**. The archived performances for that date become visible in the night's box scores, player histories, and recalculated recommendations.
+2. Press **Reveal tonight’s games**. Player histories and recommendations update with that date's archived performances. Expand **Tonight’s box scores** for the nightly breakdown; it starts collapsed to keep the roster closer to the controls.
 3. Press **Bank score** on any eligible starter to keep that player's latest completed weekly score. You may disagree with a WAIT recommendation; banking records your own choice. Data failures and incomplete scoring cannot be banked.
 4. Press **Next morning**. Previously observed scores remain available; tonight's outcomes are hidden again. Remaining opportunities include today's games.
 5. Continue through Sunday night. Bank any remaining scores and compare your choices with the performances that unfolded. There is no automatic banking or actual Sleeper action.

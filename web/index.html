@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>LockIn · Your basketball desk</title>
+    <title>LockIn — The Scouting Desk</title>
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
     <meta
       name="description"
@@ -18,29 +18,32 @@
     <link rel="stylesheet" href="/assets/style.css" />
   </head>
   <body>
+    <a href="#main-content" class="skip-link">Skip to scouting report</a>
     <div class="shell">
       <aside class="sidebar">
-        <a class="brand" href="/" aria-label="LockIn home"
-          ><span class="brandmark">L<span>↗</span></span
-          ><span
-            >LOCK<span class="mint">IN</span><small>BASKETBALL</small></span
-          ></a
-        >
+        <a class="brand" href="/" aria-label="LockIn home">
+          <span class="brand-word"
+            >LOCK<span>IN</span><span class="brand-period">↗</span></span
+          >
+          <small>THE SCOUTING DESK</small>
+        </a>
         <div class="season-tag">
-          <span class="dot"></span> THE FANTASY DESK <span>25/26</span>
+          <span class="dot"></span> BASKETBALL, STUDIED.
         </div>
         <nav aria-label="Main">
           <button class="nav active" data-view="team">
-            <span>▦</span> My teams <i id="team-count">—</i></button
+            <span aria-hidden="true">01</span> My teams
+            <i id="team-count">—</i></button
           ><button class="nav" data-view="rise">
-            <span>↗</span> On the rise <i class="orange">NEW</i></button
+            <span aria-hidden="true">02</span> On the rise</button
           ><button class="nav" data-view="alerts">
-            <span>◉</span> Data alerts <i id="alert-count">0</i></button
+            <span aria-hidden="true">03</span> Data alerts
+            <i id="alert-count">0</i></button
           ><button class="nav" data-view="test">
-            <span>▷</span> Test Week
+            <span aria-hidden="true">04</span> Test Week
           </button>
         </nav>
-        <div class="section-label">YOUR LOCKER ROOM</div>
+        <div class="section-label">YOUR TEAMS /</div>
         <div id="team-list" class="team-list">
           <p class="muted">Loading your teams…</p>
         </div>
@@ -53,23 +56,27 @@
               ></span
             ><span>↗</span>
           </button>
-          <p>Built for the games that count.</p>
+          <p>Watch the game. Read the numbers.</p>
         </div>
       </aside>
-      <main>
+      <main id="main-content">
         <header class="topbar">
           <span class="breadcrumb"
-            >YOUR WORKSPACE <b>/</b> <span id="breadcrumb">My teams</span></span
+            >COURTSIDE / <b>DESK</b> <span id="breadcrumb">My teams</span></span
           >
           <div class="top-actions">
             <button id="mobile-connect" class="subtle">Sync teams</button>
             <span id="freshness" class="muted">Saved data</span
             ><button id="refresh" class="subtle">
               ↻ <span>Refresh live data</span></button
-            ><span class="avatar-user">LF</span>
+            ><span class="desk-mark" aria-hidden="true">L/I</span>
           </div>
         </header>
         <div class="workspace">
+          <div class="edition-line">
+            <span>FANTASY BASKETBALL / FIELD NOTES</span
+            ><span id="edition-date">YOUR DAILY READ</span>
+          </div>
           <div class="heading">
             <div>
               <div class="eyebrow" id="league-label">FANTASY BASKETBALL</div>
@@ -77,6 +84,12 @@
               <p id="page-subtitle">Every roster. Every opportunity.</p>
             </div>
             <div class="view-controls">
+              <svg class="court-stamp" viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="55" />
+                <path
+                  d="M5 60h110M60 5v110M21 21c48 8 70 38 78 78M21 99c8-48 38-70 78-78"
+                />
+              </svg>
               <span id="mode-label" class="mode-label">Live workspace</span>
               <label id="archive-control"
                 ><input type="checkbox" id="show-archived" /> Show archived
@@ -102,7 +115,16 @@
             aria-label="Team summary"
           ></section>
           <div class="content-layout">
-            <section class="primary-panel">
+            <section class="primary-panel" aria-labelledby="sheet-title">
+              <div class="sheet-heading">
+                <div>
+                  <span class="section-label">THE SCOUTING REPORT</span>
+                  <h2 id="sheet-title">Roster sheet<span>.</span></h2>
+                </div>
+                <span class="sheet-instruction"
+                  >Select a player for the full read ↗</span
+                >
+              </div>
               <div class="panel-toolbar">
                 <div class="tabs">
                   <button class="tab active" data-filter="all">
@@ -129,20 +151,33 @@
             <aside class="right-rail">
               <div class="week-card">
                 <div class="section-label">
-                  THE WEEK AHEAD <span class="mint">●</span>
+                  THE WEEK AHEAD <span>07 DAYS</span>
                 </div>
-                <h2>Make it count.</h2>
+                <h2>One week.<br />Make your call.</h2>
+                <svg
+                  class="court-diagram"
+                  viewBox="0 0 240 116"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 4h232v108H4zM78 4v58h84V4M4 20c20 108 212 108 232 0"
+                  />
+                  <circle cx="120" cy="62" r="23" />
+                  <path d="M104 15h32M120 15v9" />
+                  <circle cx="120" cy="29" r="5" />
+                </svg>
                 <div id="week-days" class="week-days"></div>
                 <p id="week-caption">One score. One decision.</p>
               </div>
               <div class="rail-heading">
-                <h3>On your radar</h3>
+                <h3>The watchlist</h3>
                 <button id="see-risers">View all ↗</button>
               </div>
               <div id="radar"></div>
               <div class="explain-card">
-                <span>THE READ</span>
-                <h3>Good games deserve context.</h3>
+                <span>A NOTE FROM THE DESK</span>
+                <h3>A box score is<br />only half the story.</h3>
                 <p>
                   Compare the latest score with recent form and remaining
                   opportunities. Open any player to see the reasoning.
@@ -156,7 +191,7 @@
             </aside>
           </div>
           <footer>
-            <span>LOCKIN <b>·</b> NBA FANTASY INTELLIGENCE</span
+            <span>LOCKIN <b>/</b> THE SCOUTING DESK</span
             ><span
               >Recommendations support your judgment. Actions stay in
               Sleeper.</span
@@ -172,7 +207,7 @@
     <dialog id="connect-dialog">
       <button class="close" aria-label="Close connection settings">×</button>
       <div class="eyebrow">READ-ONLY CONNECTION</div>
-      <h2>Bring your teams in.</h2>
+      <h2>Your leagues. One desk.</h2>
       <p>
         Import NBA rosters and league scoring from Sleeper. Existing local teams
         stay available for testing.

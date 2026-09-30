@@ -10,13 +10,12 @@ const esc = (v) =>
   );
 const fmt = (v, d = 1) => (v == null ? "—" : Number(v).toFixed(d));
 const colors = [
-  "#f5b870",
-  "#b59cff",
-  "#75c8fc",
-  "#73e1bd",
-  "#ff9baf",
-  "#f2d67a",
-  "#b0b8fa",
+  "#b64729",
+  "#355b4d",
+  "#42627a",
+  "#80622d",
+  "#754757",
+  "#5f6645",
 ];
 let state = {
   data: null,
@@ -158,11 +157,27 @@ function render() {
     .join("");
   $("#page-title").textContent =
     state.view === "rise"
-      ? "Find your next difference-maker."
+      ? "The waiver wire."
       : state.view === "alerts"
-        ? "Know what’s missing."
+        ? "Check the tape."
         : t.team_name;
-  $("#page-title").style.fontSize = state.view === "rise" ? "42px" : "";
+  $("#sheet-title").innerHTML =
+    state.view === "rise"
+      ? "On the rise<span>.</span>"
+      : state.view === "alerts"
+        ? "Data report<span>.</span>"
+        : "Roster sheet<span>.</span>";
+  $(".sheet-instruction").textContent =
+    state.view === "alerts"
+      ? "Check your inputs before making a call"
+      : "Select a player for the full read ↗";
+  $("#edition-date").textContent = new Date(state.data.date + "T12:00:00")
+    .toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    })
+    .toUpperCase();
   $("#league-label").textContent =
     t.league_name + (t.league_status ? " · " + t.league_status : "");
   $("#page-subtitle").textContent =
@@ -205,23 +220,11 @@ function render() {
       ].includes(p.status),
     ).length;
   const stats = [
-    ["Ready to lock", locks, "Strong scores worth keeping", "var(--mint)", "✓"],
+    ["Lock", locks, "Scores worth keeping", "var(--mint)", "01"],
+    ["Wait", wait, "Wait for another opportunity", "var(--purple)", "↗"],
+    ["Review", review, "Incomplete or unavailable data", "var(--amber)", "!"],
     [
-      "Room to improve",
-      wait,
-      "Wait for another opportunity",
-      "var(--purple)",
-      "↗",
-    ],
-    [
-      "Needs your attention",
-      review,
-      "Incomplete or unavailable data",
-      "var(--amber)",
-      "!",
-    ],
-    [
-      "Rising players",
+      "On the rise",
       t.pickups.length,
       "Signals to investigate",
       "var(--orange)",
@@ -328,7 +331,7 @@ function renderContent() {
     rows
       .map(
         ({ p, i }) =>
-          `<div class="player-row" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><div class="player-ident">${portrait(p)}<div><div class="player-name">${esc(p.player)}</div><div class="player-meta">${esc(p.nba_team || "NBA")} <span>·</span> ${esc((p.positions || []).join("/") || "—")} <span class="slot">${p.starter ? "START" : "BENCH"}</span></div></div></div><div class="numeric">${fmt(p.last_game_fp)}<small>${p.last_game_date ? esc(p.last_game_date.slice(5)) : "No eligible game"}</small></div><div class="baseline baseline-col">${fmt(p.fp_mean_recent)}<small>${p.remaining_games_est == null ? "Schedule unconfirmed" : p.remaining_games_est + " game" + (p.remaining_games_est === 1 ? "" : "s") + " left"}</small></div><div>${badge(p)}${p.banked ? `<div class="banked-score">${fmt(p.banked.fp)} FP kept · ${esc(p.banked.game_date.slice(5))}</div>` : ""}<div class="status-note">${p.p_lock != null ? Math.round(p.p_lock * 100) + "% lock score" : p.status === "SCORING_INCOMPLETE" ? "Partial FP estimate" : "Open for details"}</div>${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div></div>`,
+          `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><div class="player-ident"><span class="roster-number" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>${portrait(p)}<div><div class="player-name">${esc(p.player)}</div><div class="player-meta">${esc(p.nba_team || "NBA")} <span>·</span> ${esc((p.positions || []).join("/") || "—")} <span class="slot">${p.starter ? "START" : "BENCH"}</span></div></div></div><div class="numeric">${fmt(p.last_game_fp)}<small>${p.last_game_date ? esc(p.last_game_date.slice(5)) : "No eligible game"}</small></div><div class="baseline baseline-col">${fmt(p.fp_mean_recent)}<small>${p.remaining_games_est == null ? "Schedule unconfirmed" : p.remaining_games_est + " game" + (p.remaining_games_est === 1 ? "" : "s") + " left"}</small></div><div>${badge(p)}${p.banked ? `<div class="banked-score">${fmt(p.banked.fp)} FP kept · ${esc(p.banked.game_date.slice(5))}</div>` : ""}<div class="status-note">${p.p_lock != null ? Math.round(p.p_lock * 100) + "% lock score" : p.status === "SCORING_INCOMPLETE" ? "Partial FP estimate" : "Open for details"}</div>${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div></div>`,
       )
       .join("") +
     (rows.length ? "" : '<div class="empty">No players in this view.</div>');
@@ -559,7 +562,7 @@ function renderTestControls(t) {
   });
   const night = sim.phase === "night";
   $("#test-controls").innerHTML =
-    `<div class="test-clock"><div><span class="eyebrow">YOUR PRACTICE WEEK</span><h2>${esc(label)} <small>${night ? "After the games" : "Morning"}</small></h2><p>${sim.finished ? "Week complete. Bank any remaining scores or restart for another run." : night ? "Tonight’s performances are revealed. Review the model and bank scores before moving on." : "Tonight’s performances are hidden. Make your decisions, then reveal the games."}</p></div><div class="test-total"><strong>${fmt(t.banked_total || 0)}</strong><span>FP banked · ${t.banked_count || 0}/${t.results.filter((p) => p.starter).length} starters</span></div></div><div class="test-actions"><button class="primary" data-test-action="advance" ${sim.finished || state.busy ? "disabled" : ""}>${night ? "Next morning →" : "Reveal tonight’s games ▷"}</button><button class="subtle" data-test-action="reset" ${state.busy ? "disabled" : ""}>Restart week</button><span>Progress saves locally · no live requests</span></div>${night ? `<details class="night-results" open><summary>Tonight’s box scores · ${t.night_results.length} roster players</summary><div class="night-grid">${t.night_results.map((p) => `<div><strong>${esc(p.player)}</strong><b>${fmt(p.fp)} FP</b><small>${fmt(p.pts, 0)} PTS · ${fmt(p.reb, 0)} REB · ${fmt(p.ast, 0)} AST · ${fmt(p.minutes, 0)} MIN</small></div>`).join("") || "No completed games for this roster tonight."}</div></details>` : ""}`;
+    `<div class="test-clock"><div><span class="eyebrow">THE REPLAY ROOM / PRACTICE WEEK</span><h2>${esc(label)} <small>${night ? "After the games" : "Morning"}</small></h2><p>${sim.finished ? "Week complete. Bank any remaining scores or restart for another run." : night ? "Tonight’s performances are revealed. Review the model and bank scores before moving on." : "Tonight’s performances are hidden. Make your decisions, then reveal the games."}</p></div><div class="test-total"><strong>${fmt(t.banked_total || 0)}</strong><span>FP banked · ${t.banked_count || 0}/${t.results.filter((p) => p.starter).length} starters</span></div></div><div class="test-actions"><button class="primary" data-test-action="advance" ${sim.finished || state.busy ? "disabled" : ""}>${night ? "Next morning →" : "Reveal tonight’s games ▷"}</button><button class="subtle" data-test-action="reset" ${state.busy ? "disabled" : ""}>Restart week</button><span>Progress saves locally · no live requests</span></div>${night ? `<details class="night-results"><summary>Tonight’s box scores · ${t.night_results.length} roster players</summary><div class="night-grid">${t.night_results.map((p) => `<div><strong>${esc(p.player)}</strong><b>${fmt(p.fp)} FP</b><small>${fmt(p.pts, 0)} PTS · ${fmt(p.reb, 0)} REB · ${fmt(p.ast, 0)} AST · ${fmt(p.minutes, 0)} MIN</small></div>`).join("") || "No completed games for this roster tonight."}</div></details>` : ""}`;
 }
 async function testAction(action, player) {
   if (state.busy || !state.data?.simulation) return;
