@@ -19,6 +19,11 @@ connection and roster dialogs, practice advance/bank/persistence, roster togglin
 and keyboard opening/closing of player details. Browser errors were empty. These
 are manual browser checks, not a new automated CI browser suite.
 
+The captures were refreshed after correcting transparent headshots: initials are
+visible while loading or after an image error, and hidden behind a successfully
+loaded portrait. The follow-up browser check covered Giannis's cached headshot,
+the loading state, and a deliberately failed image request.
+
 When these screens change, replace the relevant capture using sample/practice data
 and keep the same filename where practical. Wait for loading and transient toasts
 to finish. Keep personal account names, email addresses, and connection settings

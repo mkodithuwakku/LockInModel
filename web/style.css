@@ -627,6 +627,7 @@ main {
   color: #7f8977;
 }
 .portrait img {
+  opacity: 0;
   position: absolute;
   width: 70px;
   max-width: none;
@@ -635,6 +636,12 @@ main {
   left: -14px;
   bottom: 0;
   filter: saturate(0.55);
+}
+.portrait.is-loaded .initials {
+  visibility: hidden;
+}
+.portrait.is-loaded img {
+  opacity: 1;
 }
 .player-row:hover img {
   filter: none;

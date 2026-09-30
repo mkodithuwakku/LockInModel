@@ -56,8 +56,18 @@ function portrait(p) {
 }
 function attachImageFallback() {
   document.querySelectorAll(".portrait img").forEach((img) => {
-    img.addEventListener("error", () => img.remove(), { once: true });
-    if (img.complete && !img.naturalWidth) img.remove();
+    const container = img.closest(".portrait");
+    const loaded = () => container.classList.add("is-loaded");
+    const failed = () => {
+      container.classList.remove("is-loaded");
+      img.remove();
+    };
+    img.addEventListener("load", loaded, { once: true });
+    img.addEventListener("error", failed, { once: true });
+    if (img.complete) {
+      if (img.naturalWidth) loaded();
+      else failed();
+    }
   });
 }
 function badge(p) {
