@@ -23,7 +23,7 @@ python capture.py
 python main.py --date 2025-12-25
 ```
 
-Capture retrieves four archived tables from a fixed GitHub revision, reuses existing downloads, validates their schemas and identifiers, and generates a checksum manifest. It does not call NBA Stats. See [Historical replay](HISTORICAL_REPLAY.md) for scope and caveats.
+Capture retrieves four archived tables from a GitHub revision selected and pinned locally on its first run, reuses existing downloads, validates their schemas and identifiers, and generates a checksum manifest. A fresh checkout resolves the archive's current revision rather than using the committed manifest's revision. It does not call NBA Stats. See [Historical replay](HISTORICAL_REPLAY.md) for scope and caveats.
 
 The dashboard opens the saved live workspace; **Test Week** runs offline practice. The CLI defaults to end-of-day replay. Advancing the practice clock does not fetch NBA data. Player portraits are served from the local image cache, with a neutral placeholder for missing portraits. Font files currently load from Google Fonts; system fallbacks work offline. Numerical replay and player images do not require external connections.
 

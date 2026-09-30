@@ -1,6 +1,6 @@
 # Documentation guide
 
-Updated September 10, 2026 following the dashboard, reliability, Sleeper, and replay implementation.
+The project-level [README](../README.md) is the portfolio overview and technical walkthrough. [Repository instructions](../AGENTS.md) require it and affected guides to be reviewed with every code change.
 
 1. [Walkthrough](WALKTHROUGH.md): understand the user workflow.
 2. [Architecture](ARCHITECTURE.md): follow data through the application.

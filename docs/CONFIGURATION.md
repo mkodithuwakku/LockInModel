@@ -60,4 +60,4 @@ Pickup thresholds are currently explicit constants in `pickups.py`: five recent 
 
 `main.py` and `app.py` load `.env`. Copy `.env.example` for placeholders; never commit credentials. `DEBUG_DUMP_DIR`, the old `gui.title`, and SMS settings are no longer active application controls.
 
-The initial daily timezone is America/Edmonton. The dashboard date picker is an explicit historical end-of-day cutoff; it does not change the computer's clock.
+The application date uses America/Edmonton. Test Week controls its own morning/night clock; the CLI `--date` option selects an end-of-day historical cutoff. Neither changes the computer's clock.

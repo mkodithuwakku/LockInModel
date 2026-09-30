@@ -16,7 +16,7 @@ The current base scoring is:
 FP = 0.5·PTS + REB + AST + 2·STL + 2·BLK − TOV + 0.5·FG3M
 ```
 
-`FGM`, `FGA`, `FTM`, and `FTA` are present but have zero weight. Missing weighted columns are filled with zero by `add_fantasy_points()`. Existing NaNs can propagate and invalid strings can fail conversion.
+`FGM`, `FGA`, `FTM`, and `FTA` have zero weight in the sample configuration. The normalizer tracks absent optional stats as imputed. `add_fantasy_points()` rejects missing or imputed columns with nonzero weights and rejects non-finite weighted values; missing data is not silently scored as zero.
 
 ### Derived bonuses
 
@@ -47,7 +47,7 @@ The dataset does not supply technical or flagrant fouls. By explicit user policy
 
 The pipeline sorts game logs chronologically, filters the selected Monday–Sunday week, and selects its last row as the candidate. There must be at least one game this week to produce a decision.
 
-The baseline first takes games within `recent_days` of the decision date, then the final `lookback_games` rows. With the checked config this means **up to 10 games within 14 days**. It does not automatically expand to 10 games when only five exist in that 14-day window. Only when the recent-days subset is entirely empty does it fall back to the final `lookback_games` rows of all available logs, themselves limited by the initial 60-day filter.
+The baseline first takes games within `recent_days` of the decision date, then the final `lookback_games` rows. With the checked config this means **up to 10 games within 14 days**. It does not automatically expand to 10 games when only five exist in that window. Only when the recent-days subset is entirely empty does it fall back to the final `lookback_games` rows of available observations. The decision helper bounds those observations to 3,650 days through the reference date; the provider may supply a shorter history.
 
 The FP baseline **includes the candidate game**. The rarity baseline excludes the final selected row. Including a just-completed game is a valid design choice for forecasting later games, but it should remain explicit during evaluation. The shared engine and decision helper filter future observations before inference.
 

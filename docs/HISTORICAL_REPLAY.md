@@ -17,7 +17,7 @@ Exact source revision, file hashes, row counts, coverage dates, and selection pa
 
 ## Capturing and resuming
 
-`python capture.py` obtains the source revision once, saves raw Parquet files, and reuses existing files on later invocations. A download is parsed before becoming a completed raw file. Normalized outputs are written through temporary files. The manifest is published after validation succeeds.
+`python capture.py` obtains the source revision from the archive's current `main` once, saves it in `data/cache/archive/commit.txt`, saves raw Parquet files, and reuses existing files on later invocations. It does not initialize from the committed fixture manifest, so a fresh checkout can select a different revision and regenerate different provenance or a different eligible-week pool. A download is parsed before becoming a completed raw file. Normalized outputs are written through temporary files. The manifest is published after validation succeeds.
 
 The source archive's player tables use newer box-score column names and lack dates, so capture joins them to team-game records using game and team IDs. It excludes DNP/zero-minute rows, retains regular-season game prefixes, checks duplicate player-game rows, verifies complete pairs of team records, and preserves source IDs.
 
