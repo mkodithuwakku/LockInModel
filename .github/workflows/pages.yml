@@ -10,34 +10,15 @@ on:
       - ".github/workflows/pages.yml"
   workflow_dispatch:
   schedule:
-    # One run at 12:17 Edmonton time; the other UTC slot is skipped (DST).
-    - cron: "17 18,19 * * *"
+    # Alberta stays UTC-6 year-round from November 2026.
+    - cron: "17 18 * * *"
 permissions:
   contents: read
 concurrency:
   group: pages-dashboard
   cancel-in-progress: false
 jobs:
-  timing:
-    runs-on: ubuntu-latest
-    outputs:
-      publish: ${{ steps.clock.outputs.publish }}
-    steps:
-      - id: clock
-        env:
-          EVENT: ${{ github.event_name }}
-        run: |
-          python - <<'PY'
-          import datetime, os
-          from zoneinfo import ZoneInfo
-          now = datetime.datetime.now(ZoneInfo('America/Edmonton'))
-          run = os.environ['EVENT'] != 'schedule' or now.hour == 12
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write('publish=' + str(run).lower() + '\n')
-          PY
   build:
-    needs: timing
-    if: needs.timing.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

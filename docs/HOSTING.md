@@ -18,7 +18,7 @@ The README screenshots show the local application. A clean hosted screenshot is 
 
 ## Schedule and publication
 
-`.github/workflows/pages.yml` runs at **12:17 PM America/Edmonton**. It schedules both 18:17 and 19:17 UTC, and a timezone-aware gate permits only the Edmonton-noon run. Manual runs and relevant pushes to `main` also publish. GitHub can delay scheduled workflows; a scheduled run delayed outside the noon hour is skipped. Public-repository schedules may be disabled after 60 days without repository activity. This is not a guaranteed deadline service.
+`.github/workflows/pages.yml` runs at **12:17 PM America/Edmonton**. It schedules 18:17 UTC, matching noon plus 17 minutes under Alberta’s permanent UTC−6 time. Manual runs and relevant pushes to `main` also publish. GitHub can delay scheduled workflows; Public-repository schedules may be disabled after 60 days without repository activity. This is not a guaranteed deadline service.
 
 The workflow runs offline Python and frontend-policy tests first. It then:
 
@@ -73,6 +73,8 @@ Open `http://127.0.0.1:8766/preview/`. The destination must be empty; use a new 
 node --test tests/pages.test.cjs
 ```
 
-The Python tests check export boundaries, failed imports, successful engine routing, and nonfinite data. Node tests check expiry and Edmonton date handling. Browser verification separately checks the static site at a repository subpath and the deployed public link. No test establishes future provider uptime or model accuracy.
+The Python tests check export boundaries, failed imports, successful engine routing, and nonfinite data. Node tests check expiry, historical Edmonton DST, and permanent Alberta Time. The browser uses the confirmed UTC−6 rule from November 2026 even when the device has older timezone data. Browser verification separately checks the static site at a repository subpath and the deployed public link. No test establishes future provider uptime or model accuracy.
+
+Timezone reference: [Alberta’s new time system](https://www.alberta.ca/albertas-new-time-system-abt).
 
 References: [Pages custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Actions schedule limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule), [Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).

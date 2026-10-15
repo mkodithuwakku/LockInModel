@@ -2,12 +2,20 @@
 (function (root) {
   "use strict";
   function currentDate(now) {
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Edmonton",
+    // Alberta remains UTC-6 from Nov 2026; older phones may carry stale tzdata.
+    // https://www.alberta.ca/albertas-new-time-system-abt
+    const zone =
+      now >= new Date("2026-11-01T00:00:00Z")
+        ? "Etc/GMT+6"
+        : "America/Edmonton";
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: zone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).format(now);
+    }).formatToParts(now);
+    const field = (type) => parts.find((p) => p.type === type).value;
+    return `${field("year")}-${field("month")}-${field("day")}`;
   }
   function prepareReport(source, now = new Date()) {
     if (

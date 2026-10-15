@@ -38,9 +38,11 @@ test("Edmonton midnight expires a recent previous-day report", () => {
     true,
   );
 });
-test("Edmonton date respects summer and winter offsets", () => {
+test("Edmonton date respects historical DST and permanent Alberta Time", () => {
   assert.equal(currentDate(new Date("2026-10-16T05:30:00Z")), "2026-10-15");
-  assert.equal(currentDate(new Date("2026-12-16T06:30:00Z")), "2026-12-15");
+  assert.equal(currentDate(new Date("2025-12-16T06:30:00Z")), "2025-12-15");
+  assert.equal(currentDate(new Date("2026-12-16T06:30:00Z")), "2026-12-16");
+  assert.equal(currentDate(new Date("2026-12-16T05:30:00Z")), "2026-12-15");
 });
 test("invalid and future timestamps cannot authorize a lock", () => {
   for (const time of ["garbage", "2027-01-01T00:00:00Z"]) {

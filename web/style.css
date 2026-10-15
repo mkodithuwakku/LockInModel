@@ -1830,3 +1830,15 @@ html[data-hosting="pages"] #edit-roster,
 html[data-hosting="pages"] [data-view="test"] {
   display: none !important;
 }
+
+html[data-hosting="pages"] .top-actions #freshness {
+  display: block;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  html[data-hosting="pages"] .top-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-block: 8px;
+  }
+}
