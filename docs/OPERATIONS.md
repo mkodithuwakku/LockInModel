@@ -78,7 +78,7 @@ python -m black --check *.py tests
 
 Tests prohibit sockets and cover normalization, bonus thresholds, sparse histories, future-data exclusion, failure cooldowns, import atomicity, roster editing, pickup signals, and email guards. Real-fixture tests skip on a clean checkout until capture has run. Browser checks exercise the actual local interface separately.
 
-The app binds only to loopback and is intended for one local user. It is not configured for internet hosting or multiple simultaneous editors.
+The Flask app binds only to loopback and is intended for one local user. The separately hosted [GitHub Pages dashboard](HOSTING.md) serves static reports without exposing Flask or allowing edits.
 
 ## Email activation on this computer
 
@@ -93,3 +93,7 @@ The daily command launches a fresh process and rereads `.env`. No new automation
 Both **Refresh live data** and the noon command check the current Sleeper season, then refresh the last saved year when the new year has no leagues. The connection dialog also allows explicit season selection; 2026 means 2026–27. Drafted players appear after a successful sync (cached Sleeper responses can be up to 15 minutes old). This is polling, not an instant draft feed.
 
 Teams are keyed by league ID, so re-sync updates an existing team and distinct leagues may legitimately share a name. Importing a newer season archives earlier seasons for the same account. A league absent from a successful, nonempty same-season league list is archived. Archives are hidden by default and excluded from reports; **Show archived leagues** reveals saved rosters. An empty or failed import preserves existing teams as a conservative safeguard. A stale unused league still returned as active by Sleeper cannot be identified automatically as unwanted.
+
+## Hosted daily report
+
+The public dashboard is built by `.github/workflows/pages.yml`. The cloud workflow does not send email or run historical capture; it uses `pages.py --refresh` and the same paced providers. The existing local noon email automation is separate. See [Hosting](HOSTING.md) for setup, refresh timing, browser expiry, and recovery.

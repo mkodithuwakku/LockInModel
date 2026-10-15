@@ -1,8 +1,10 @@
 # LockIn
 
-**A local NBA fantasy basketball dashboard that helps managers decide whether to keep a completed score or wait for another game.** LockIn combines league-specific scoring, recent player performance, remaining opportunities, and waiver research in one interface, with an offline practice week for exploring decisions.
+**An NBA fantasy basketball dashboard that helps managers decide whether to keep a completed score or wait for another game.** LockIn combines league-specific scoring, recent player performance, remaining opportunities, and waiver research in one interface, with an offline practice week for exploring decisions.
 
-Python · Flask · pandas · NumPy · vanilla JavaScript · pytest
+Python · Flask · pandas · NumPy · vanilla JavaScript · pytest · GitHub Pages / Actions
+
+**[Open the daily dashboard](https://mkodithuwakku.github.io/LockInModel/)** — a public, read-only report refreshed around 12:17 PM America/Edmonton. Browse teams, player details, and league-specific pickup signals from any device. [Hosting and refresh details](docs/HOSTING.md).
 
 ## Screenshots and demo
 
@@ -18,7 +20,7 @@ The interface takes its visual cues from a printed basketball scouting report: w
 
 [View the mobile roster](docs/screenshots/mobile-roster.png). Small screens use a horizontal team selector and a compact roster; the baseline remains available in player details. Keyboard focus indicators, a skip link, and reduced-motion styles support navigation.
 
-To try the workflow, follow [setup](#running-locally), select **Test Week**, reveal games, open a player, and bank an eligible score. Progress saves locally. There is no hosted demo.
+To try the workflow, follow [setup](#running-locally), select **Test Week**, reveal games, open a player, and bank an eligible score. Progress saves locally. The hosted dashboard publishes live snapshots; Test Week and roster editing remain local.
 
 ## Problem and scope
 
@@ -35,6 +37,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 - **On the Rise:** compare five recent games with an earlier baseline, discount fragile improvement signals, and estimate fit against compatible roster players.
 - **Offline Test Week:** reveal nights, bank one score per starter, edit practice rosters, and resume progress without changing live teams.
 - **Read-only Sleeper import:** fetch leagues, scoring, and league-wide ownership from a username; preserve the previous team configuration if an import fails.
+- **Scheduled web dashboard:** GitHub Actions syncs Sleeper and runs the same live engine; GitHub Pages serves an allowlisted JSON report and the shared interface. Failed refreshes and expired reports suppress recommendations.
 - **Local reporting:** save reports before optional email delivery, suppress repeated daily delivery attempts, and deduplicate pickup alerts.
 
 ## Tech stack
@@ -48,7 +51,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 | Integrations | nba_api endpoint definitions, Requests, Sleeper REST API, archived NBA tables, Gmail SMTP over TLS |
 | Configuration | python-dotenv, checked-in sample YAML, ignored local overrides |
 | Verification | pytest, Black, GitHub Actions configured for Python 3.11 and 3.12 |
-| Runtime | Local Flask server on 127.0.0.1:8765; no production hosting configuration |
+| Runtime | Local Flask on 127.0.0.1:8765 for interactive practice; GitHub Pages for public read-only reports, built on scheduled GitHub Actions runners |
 
 Exact direct dependency versions are in [requirements.txt](requirements.txt) and [requirements-dev.txt](requirements-dev.txt).
 
@@ -56,7 +59,11 @@ Exact direct dependency versions are in [requirements.txt](requirements.txt) and
 
 ```mermaid
 flowchart TD
-    UI[Browser dashboard] --> API[Flask API]
+    Scheduled[Scheduled GitHub Action] --> Live
+    Scheduled --> Sleeper
+    Engine --> Export[Allowlisted static export]
+    Export --> Pages[GitHub Pages dashboard]
+    UI[Local browser dashboard] --> API[Flask API]
     API --> Saved[Saved rosters and reports]
     API --> Practice[Test Week clock and practice state]
     API --> Jobs[Explicit sync or live refresh]
@@ -93,6 +100,7 @@ flowchart TD
 | [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
 | [simulation.py](simulation.py), [storage.py](storage.py) | Practice transitions, config validation, atomic file replacement |
 | [sleeper.py](sleeper.py), [transport.py](transport.py), [capture.py](capture.py) | League import, cached/paced requests, historical capture |
+| [pages.py](pages.py), [web/pages.js](web/pages.js), [Pages workflow](.github/workflows/pages.yml) | Static export, browser expiry checks, scheduled sync and deployment |
 | [main.py](main.py), [notify.py](notify.py) | Reports, delivery ledger, pickup cooldowns, SMTP |
 | [tests/](tests/), [docs/](docs/) | Regression checks and implementation guides |
 
@@ -119,7 +127,7 @@ These generated/personal paths are ignored by Git. The shareable [fixture manife
 | `POST /api/sync`, `POST /api/refresh` | Start background import/analysis; return a job ID |
 | `GET /api/jobs/<id>` | Poll completion or failure |
 
-The server binds to loopback, restricts trusted hosts, rejects requests marked cross-site, and requires JSON plus a session CSRF token for mutations. These protections support a local app; there is no user login, public authorization layer, or production server. Credentials stay in an ignored `.env` file.
+The server binds to loopback, restricts trusted hosts, rejects requests marked cross-site, and requires JSON plus a session CSRF token for mutations. These protections support the local app. The hosted Pages site has no Flask API or login: its reports are public, its controls are read-only, and its artifact excludes personal configuration and credentials. Credentials stay in an ignored `.env` file.
 
 ## Engineering decisions and tradeoffs
 
@@ -191,6 +199,8 @@ python main.py --live
 # Offline regression tests and the formatter check used by CI
 python -m pytest -q
 python -m black --check *.py tests
+# Requires Node 20+ (only for these additional frontend policy tests)
+node --test tests/pages.test.cjs
 ```
 
 Use a date from the newly captured manifest if its selected week differs. Tests block socket connections and cover scoring boundaries, missing inputs, future-data exclusion, import failure, cooldowns, API mutations, practice revisions, and email deduplication. Real-fixture tests skip until capture has run. CI does not include an automated browser suite.
@@ -203,7 +213,8 @@ For Sleeper, use **Sleeper connection** with a username and season start year; n
 - **Evaluation:** no measured win-rate or calibration result exists. Compare policies across held-out weeks against simple baselines before making effectiveness claims.
 - **Live/scoring fidelity:** provider availability varies; technical-foul and other unsupported rules withhold decisions. Sleeper lock selections are not imported, and ownership reflects the latest snapshot rather than guaranteed claimability.
 - **Historical fidelity:** replay uses finalized schedules, last observed team assignments, and sample/current rosters. It lacks timestamped injuries, transactions, exact lock deadlines, and opponent simulation.
-- **Concurrency and scale:** configuration updates have no cross-process transaction lock; job status and dashboard cache live in memory. Multiple workers/users would need transactional persistence, durable jobs, authentication, and deployment work.
+- **Concurrency and scale:** configuration updates have no cross-process transaction lock; job status and dashboard cache live in memory. Multiple Flask workers/users would need transactional persistence, durable jobs, and authentication. The hosted site avoids server mutations by publishing static reports.
+- **Hosted refresh:** a scheduled snapshot, not an on-demand NBA refresh. GitHub schedules may be delayed or disabled after 60 days without repository activity. API reachability from hosted runners is not guaranteed; Actions caches can be evicted. Reports expire after six hours or at Edmonton midnight. See [Hosting](docs/HOSTING.md).
 - **Maintainability and presentation:** add browser regression tests, refresh the dependency/runtime baseline, make initial capture explicitly reproducible from the committed manifest, and choose a project license. Some implementation comments and older operational notes need reconciliation with current behavior.
 
 ## What this project demonstrates
@@ -222,6 +233,7 @@ For Sleeper, use **Sleeper connection** with a username and season start year; n
 | [Model](docs/MODEL.md) | Scoring, equations, assumptions, pickup logic |
 | [Configuration](docs/CONFIGURATION.md) | Settings and league-scoring coverage |
 | [Operations](docs/OPERATIONS.md) | Commands, delivery, troubleshooting |
+| [Hosting](docs/HOSTING.md) | GitHub Pages, scheduled refresh, publication boundary, recovery |
 | [Test Week](docs/TEST_WEEK.md) | Practice controls and constraints |
 | [Historical replay](docs/HISTORICAL_REPLAY.md) | Capture and evaluation caveats |
 | [Walkthrough](docs/WALKTHROUGH.md) | Product workflow |

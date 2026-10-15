@@ -34,7 +34,7 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 | Pickup projection | Hand-tuned conservative estimate, not a fitted/calibrated forecast |
 | Position fit | Shared position compatibility; no full roster-slot optimization or waiver-budget strategy |
 | Local configuration | Atomic writes, but no cross-process configuration transaction lock; one editor process is intended |
-| Deployment | Local loopback app only; no public authentication, production server, or hosting configuration |
+| Deployment | GitHub Pages publishes public read-only reports; local Flask still has no public login or production server. Test Week and editing stay local. Schedules and upstream API availability are not guaranteed. |
 | Runtime | Existing Python 3.9/LibreSSL environment retained; modern runtime and dependency upgrade remains desirable |
 | License | No project license chosen |
 

@@ -15,3 +15,5 @@ The historical fixture was captured from an immutable third-party archive of NBA
 When changing model or scoring behavior, update the reference and regression tests together. Preserve provenance when recapturing data. Distinguish a functional replay from evidence of predictive accuracy.
 
 - [Test Week](TEST_WEEK.md): simulate morning/night decisions with banked scores and isolated rosters.
+
+- [Hosting](HOSTING.md): public read-only dashboard, scheduled refresh, safe export, and failure recovery.

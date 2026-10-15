@@ -1,4 +1,6 @@
 "use strict";
+const hosted = document.documentElement.dataset.hosting === "pages";
+let publishedSource = null;
 const $ = (s) => document.querySelector(s);
 const esc = (v) =>
   String(v ?? "").replace(
@@ -52,7 +54,13 @@ function portrait(p) {
     .map((x) => x[0])
     .slice(0, 2)
     .join("");
-  return `<div class="portrait"><span class="initials">${esc(initials)}</span>${p.player_id ? `<img src="/api/portrait/${encodeURIComponent(p.player_id)}" alt="${esc(p.player)}" loading="lazy">` : ""}</div>`;
+  const id = String(p.player_id || "");
+  const imageUrl = hosted
+    ? state.data?.portraits?.includes(id)
+      ? `./portraits/${encodeURIComponent(id)}.png`
+      : `https://cdn.nba.com/headshots/nba/latest/260x190/${encodeURIComponent(id)}.png`
+    : `/api/portrait/${encodeURIComponent(id)}`;
+  return `<div class="portrait"><span class="initials">${esc(initials)}</span>${/^\d+$/.test(id) ? `<img src="${imageUrl}" alt="${esc(p.player)}" loading="lazy">` : ""}</div>`;
 }
 function attachImageFallback() {
   document.querySelectorAll(".portrait img").forEach((img) => {
@@ -84,6 +92,23 @@ function fail(message) {
   $("#error").hidden = false;
 }
 async function api(path, body) {
+  if (hosted) {
+    if (body || !path.startsWith("/api/dashboard?"))
+      throw new Error(
+        "This published dashboard is read-only. Manage your teams in Sleeper.",
+      );
+    const response = await fetch(`./report.json?check=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!response.ok)
+      throw new Error(
+        "Could not load the published report. Please reload shortly.",
+      );
+    const source = await response.json();
+    const result = LockInPages.prepareReport(source);
+    publishedSource = source;
+    return result;
+  }
   let response = await fetch(path, {
     method: body ? "POST" : "GET",
     headers: body
@@ -126,25 +151,40 @@ async function load() {
   } catch (e) {
     if (requestId !== state.request) return;
     state.data = null;
+    if (hosted) publishedSource = null;
     $("#summary").innerHTML = "";
     $("#radar").innerHTML = "";
-    $("#content").innerHTML =
-      '<div class="empty">No current recommendations available.<br>Use Test Week to practice with saved historical data.</div>';
+    $("#content").innerHTML = hosted
+      ? '<div class="empty">The published report could not be loaded. Try Reload report.</div>'
+      : '<div class="empty">No current recommendations available.<br>Use Test Week to practice with saved historical data.</div>';
     fail(e.message);
   }
 }
 function render() {
+  if (hosted && publishedSource)
+    state.data = LockInPages.prepareReport(publishedSource);
+  if (!state.data) return;
   const t = team();
   $("#test-controls").hidden = state.mode !== "test";
-  $("#archive-control").hidden = state.mode === "test";
-  $("#mode-label").textContent =
-    state.mode === "test" ? "TEST WEEK · OFFLINE" : "LIVE WORKSPACE";
+  $("#archive-control").hidden = hosted || state.mode === "test";
+  $("#mode-label").textContent = hosted
+    ? "DAILY REPORT · READ ONLY"
+    : state.mode === "test"
+      ? "TEST WEEK · OFFLINE"
+      : "LIVE WORKSPACE";
   if (!t) {
+    $("#notice").textContent = state.data.notice || "Waiting for a report.";
+    $("#freshness").textContent =
+      "Report " + new Date(state.data.generated_at).toLocaleString();
+    $("#alert-count").textContent = state.data.alerts.length;
+    if (state.data.alerts.length)
+      fail(state.data.alerts.map((a) => a.message).join(" "));
     $("#team-list").innerHTML = "";
     $("#team-count").textContent = "0";
     $("#page-title").textContent = "Your next season starts here.";
-    $("#page-subtitle").textContent =
-      "Sync Sleeper to load your leagues, or open Test Week to practice.";
+    $("#page-subtitle").textContent = hosted
+      ? "No leagues available in the latest published report."
+      : "Sync Sleeper to load your leagues, or open Test Week to practice.";
     $("#content").innerHTML =
       '<div class="empty">No leagues in this view.</div>';
     return;
@@ -206,13 +246,15 @@ function render() {
     (state.mode === "test" ? "Test Week / " : "") +
     $("#breadcrumb").textContent;
   $("#freshness").textContent =
-    "Updated " +
-    new Date(state.data.generated_at).toLocaleTimeString([], {
+    (hosted && state.data.stale ? "Outdated · " : "Report · ") +
+    new Date(state.data.generated_at).toLocaleString([], {
+      month: "short",
+      day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
   $("#notice").innerHTML =
-    `<span class="context-icon">${state.mode === "test" ? "↺" : "◉"}</span><span>${esc(state.data.notice)}</span>`;
+    `<span class="context-icon">${state.mode === "test" ? "↺" : "◉"}</span><span>${esc(state.data.notice)}${hosted && state.data.stale ? " This report is outdated; current recommendations are unavailable." : hosted && state.data.refresh_status === "failed" ? " The latest refresh failed. Review Data alerts." : ""}</span>`;
   const account = state.data.sleeper.username || state.account?.username;
   $("#account-label").textContent = account
     ? "@" + account
@@ -259,7 +301,7 @@ function render() {
       ),
     );
   $(".tabs").hidden = state.view !== "team";
-  $("#edit-roster").hidden = state.view !== "team";
+  $("#edit-roster").hidden = hosted || state.view !== "team";
   $("#edit-roster").textContent =
     t.source === "sleeper" ? "Synced roster" : "Edit roster";
   $("#league-scope").hidden = state.view !== "rise";
@@ -324,7 +366,9 @@ function renderContent() {
             `<article class="pickup-item"><div class="pickup-heading"><button class="player-ident" data-pickup="${i}">${portrait(p)}<span><span class="player-name">${esc(p.player)}</span><span class="player-meta">${esc(p.nba_team)} · ${esc((p.positions || []).join(" / "))}</span></span></button><span class="lift">+${fmt(p.lift)} <small style="font-size:12px">FP</small></span></div><div class="pickup-metrics"><span>Last ${p.games_recent} games<b>${fmt(p.recent_fp)} FP</b></span><span>Earlier ${p.games_baseline} games<b>${fmt(p.baseline_fp)} FP</b></span><span>Minutes / game<b>${fmt(p.baseline_minutes)} → ${fmt(p.minutes)}</b></span></div><p class="pickup-context">${Math.round(p.consistency * 100)}% of recent games above baseline. ${esc(p.availability)}.${p.replacement ? ` Estimated fit: ${fmt(p.team_gain)} FP versus ${esc(p.replacement)}.` : " Position-compatible replacement not established."}</p>${p.risks.length ? `<p class="pickup-risks">${esc(p.risks.join(" "))}</p>` : ""}</article>`,
         )
         .join("") ||
-      '<div class="empty">No qualifying candidates in this view.<br>Completed and undrafted leagues have no live pickup analysis. Use Test Week to explore sample signals.</div>';
+      '<div class="empty">No qualifying candidates in this view.<br>Completed and undrafted leagues have no live pickup analysis.' +
+        (hosted ? "" : " Use Test Week to explore sample signals.") +
+        "</div>";
     attachImageFallback();
     return;
   }
@@ -344,7 +388,9 @@ function renderContent() {
           `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><div class="player-ident"><span class="roster-number" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>${portrait(p)}<div><div class="player-name">${esc(p.player)}</div><div class="player-meta">${esc(p.nba_team || "NBA")} <span>·</span> ${esc((p.positions || []).join("/") || "—")} <span class="slot">${p.starter ? "START" : "BENCH"}</span></div></div></div><div class="numeric">${fmt(p.last_game_fp)}<small>${p.last_game_date ? esc(p.last_game_date.slice(5)) : "No eligible game"}</small></div><div class="baseline baseline-col">${fmt(p.fp_mean_recent)}<small>${p.remaining_games_est == null ? "Schedule unconfirmed" : p.remaining_games_est + " game" + (p.remaining_games_est === 1 ? "" : "s") + " left"}</small></div><div>${badge(p)}${p.banked ? `<div class="banked-score">${fmt(p.banked.fp)} FP kept · ${esc(p.banked.game_date.slice(5))}</div>` : ""}<div class="status-note">${p.p_lock != null ? Math.round(p.p_lock * 100) + "% lock score" : p.status === "SCORING_INCOMPLETE" ? "Partial FP estimate" : "Open for details"}</div>${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div></div>`,
       )
       .join("") +
-    (rows.length ? "" : '<div class="empty">No players in this view.</div>');
+    (rows.length
+      ? ""
+      : `<div class="empty">${!t.results.length && t.league_status === "pre_draft" ? "Draft pending. Players will appear after your draft and the next scheduled refresh." : "No players in this view."}</div>`);
   attachImageFallback();
 }
 function showPlayer(p) {
@@ -511,7 +557,13 @@ $("#show-archived").addEventListener("change", (e) => {
   load();
 });
 $("#connect").addEventListener("click", () => $("#connect-dialog").showModal());
-$("#refresh").addEventListener("click", () => {
+$("#refresh").addEventListener("click", async () => {
+  if (hosted) {
+    $("#refresh").disabled = true;
+    await load();
+    $("#refresh").disabled = false;
+    return;
+  }
   state.mode = "live";
   state.view = "team";
   state.data = null;
@@ -542,6 +594,19 @@ $("#add-form").addEventListener("submit", (e) => {
 });
 (async () => {
   try {
+    if (hosted) {
+      for (const selector of [
+        "#connect",
+        "#mobile-connect",
+        "#archive-control",
+        "#edit-roster",
+        '[data-view="test"]',
+      ])
+        $(selector).hidden = true;
+      $("#refresh").textContent = "↻ Reload report";
+      await load();
+      return;
+    }
     const init = await api("/api/bootstrap");
     state.csrf = init.csrf;
     state.account = init.sleeper;
@@ -603,4 +668,20 @@ async function testAction(action, player) {
     state.busy = false;
     if (state.mode === "test" && state.data) renderTestControls(team());
   }
+}
+
+// Recheck expiry even if a tab stays open across midnight or a device sleeps.
+if (hosted) {
+  function recheckPublishedReport() {
+    if (!state.data || !publishedSource) return;
+    const next = LockInPages.prepareReport(publishedSource);
+    if (next.stale === state.data.stale) return;
+    render();
+    if (state.data.stale && $("#player-dialog").open)
+      $("#player-dialog").close();
+  }
+  setInterval(recheckPublishedReport, 60000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) recheckPublishedReport();
+  });
 }

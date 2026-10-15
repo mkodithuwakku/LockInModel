@@ -84,3 +84,7 @@ All personal/generated paths are ignored by Git. A saved report is distinct from
 ## Remaining boundaries
 
 Snapshot writes are atomic, but roster configuration does not yet use a cross-process transaction lock. One local dashboard process is the intended editing workflow. Background job state lives in memory, so restarting the server loses job-status polling; completed config/report files remain on disk.
+
+## Static publication boundary
+
+`pages.py` initializes a minimal CI configuration from public model defaults and the `SLEEPER_USERNAME` repository secret. It imports current Sleeper teams, invokes the shared live engine, and exports an explicit field allowlist to `dist/pages`. No Flask endpoints run on GitHub Pages. The shared frontend selects its read-only adapter via the exported HTML attribute; relative URLs support repository subpaths. `web/pages.js` checks report age and Edmonton calendar date on load and while a tab remains open. See [Hosting](HOSTING.md) for persistence and failure behavior.

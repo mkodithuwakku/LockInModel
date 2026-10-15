@@ -1821,3 +1821,12 @@ dialog label {
     scroll-behavior: auto !important;
   }
 }
+
+/* Published reports expose browsing only; hide local controls before JS loads. */
+html[data-hosting="pages"] #connect,
+html[data-hosting="pages"] #mobile-connect,
+html[data-hosting="pages"] #archive-control,
+html[data-hosting="pages"] #edit-roster,
+html[data-hosting="pages"] [data-view="test"] {
+  display: none !important;
+}
