@@ -264,7 +264,7 @@ def build_dashboard(
             else (
                 "Regular season starts "
                 + str(provider.calendar.start)
-                + ". Opening-week schedule shown; lock scores appear after games."
+                + ". Opening-week schedule shown; no completed games to lock yet."
                 if getattr(provider, "preseason", False)
                 else "Live analysis. Sleeper roster freshness and scoring coverage are shown per league."
             )
