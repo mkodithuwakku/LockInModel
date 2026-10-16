@@ -43,7 +43,11 @@
       for (const t of report.teams) {
         t.pickups = [];
         for (const p of t.results) {
-          if (["LEAGUE_COMPLETE", "PRE_DRAFT", "DRAFTING"].includes(p.status))
+          if (
+            ["LEAGUE_COMPLETE", "PRE_DRAFT", "DRAFTING", "UPCOMING"].includes(
+              p.status,
+            )
+          )
             continue;
           Object.assign(p, {
             status: "STALE",

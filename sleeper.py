@@ -104,6 +104,24 @@ def sync(username, season):
         )
         roster_names = names(player_ids)
         starters = names(owner.get("starters") or [])
+        starter_slots = [
+            slot
+            for slot in details.get("roster_positions", [])
+            if slot not in ("BN", "IR")
+        ]
+        slot_by_id = {
+            str(pid): slot
+            for pid, slot in zip(owner.get("starters") or [], starter_slots)
+            if str(pid) != "0"
+        }
+        # Sleeper's starters array defines slot order, including empty slots.
+        ordered_ids = list(
+            dict.fromkeys(
+                [pid for pid in (owner.get("starters") or []) if str(pid) != "0"]
+                + player_ids
+            )
+        )
+        roster_names = names(ordered_ids)
         occupied = names(
             [
                 pid
@@ -152,6 +170,29 @@ def sync(username, season):
                     ): {
                         "positions": directory[str(pid)].get("fantasy_positions", []),
                         "injury_status": directory[str(pid)].get("injury_status"),
+                        "nba_team": directory[str(pid)].get("team")
+                        or directory[str(pid)].get("team_abbr"),
+                        "roster_slot": slot_by_id.get(
+                            str(pid),
+                            (
+                                "IR"
+                                if pid in (owner.get("reserve") or [])
+                                else (
+                                    "TAXI"
+                                    if pid in (owner.get("taxi") or [])
+                                    else (
+                                        "START"
+                                        if str(pid)
+                                        in {
+                                            str(p)
+                                            for p in (owner.get("starters") or [])
+                                        }
+                                        else "BN"
+                                    )
+                                )
+                            ),
+                        ),
+                        "lineup_order": ordered_ids.index(pid),
                         "sleeper_id": str(pid),
                     }
                     for pid in player_ids

@@ -2,6 +2,7 @@
 
 import datetime as dt
 import math
+import re
 import unicodedata
 import numpy as np
 import pandas as pd
@@ -42,7 +43,7 @@ def _season_for_today(reference=None):
 
 
 def canonical_name(name):
-    return (
+    normalized = (
         "".join(
             c
             for c in unicodedata.normalize("NFKD", name)
@@ -51,10 +52,20 @@ def canonical_name(name):
         .casefold()
         .strip()
     )
+    return re.sub(r"(?:,?\s+(?:jr\.?|sr\.?|ii|iii|iv))$", "", normalized)
+
+
+def player_directory():
+    # Sleeper omits Jr./II on some names. Prefer the active player over a retired
+    # relative with the same normalized name (for example Tim Hardaway).
+    return {
+        canonical_name(p["full_name"]): p["id"]
+        for p in sorted(players.get_players(), key=lambda p: bool(p.get("is_active")))
+    }
 
 
 def resolve_player_ids(names):
-    directory = {canonical_name(p["full_name"]): p["id"] for p in players.get_players()}
+    directory = player_directory()
     result = {}
     for name in names:
         key = canonical_name(name)

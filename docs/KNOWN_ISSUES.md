@@ -3,7 +3,9 @@
 ## Corrected in this implementation
 
 - Bonus flags now survive normalization and scoring; threshold and stacking cases are tested.
-- Empty/failed schedules no longer become zero remaining games or confident LOCKs.
+- Empty/failed schedules no longer become zero remaining games or confident LOCKs. The live calendar is fetched once per season-cache window and shared across players.
+- Drafted preseason leagues no longer request nonexistent regular-season stats; opening-week opponents and UPCOMING status remain visible.
+- NBA team labels and ordered lineup slots survive provider failures; shortened Sleeper names prefer active NBA identities.
 - The UI and reports share canonical YAML; the disconnected Tkinter selection path was replaced.
 - `.env`, virtual environments, editor files, and runtime state were removed from tracking and ignored.
 - HTTP calls are cached, paced, time-bounded, and protected by persistent failure cooldowns.
@@ -25,7 +27,8 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 | --- | --- |
 | League scoring | Flagrant fouls are deliberately ignored; other unavailable rules, including technical fouls, still cause partial FP and no lock decision |
 | Sleeper lock state | Read-only rosters are imported, but existing lock selections are not; the app does not submit actions |
-| Live availability | NBA Stats timed out during this session; historical operation is verified, live provider availability is not guaranteed |
+| Live availability | NBA Stats may reject hosted runners. Rosters and independently verified Sleeper schedules remain visible; no performance recommendations are invented during an outage |
+| Schedule feed | Public Sleeper schedule schema is not part of the core documented v1 league API. Dates/opponents are available; tip-off times are not. Changes/postponements wait for cache refresh |
 | Offseason | Completed leagues produce no active recommendations; new-season rosters must exist before meaningful live analysis |
 | Historical schedules | Finalized schedule and last observed team assignment, not timestamped historical schedule/transaction snapshots |
 | Practice fidelity | Whole-night clock and sample rosters/rules; no exact game deadlines, full Sleeper transaction rules, or opponent matchup simulation |

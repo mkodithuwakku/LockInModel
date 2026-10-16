@@ -16,11 +16,13 @@ Test Week, roster editing, account editing, and archive browsing remain in the l
 
 ## Phone layout
 
-The same GitHub Pages URL automatically switches to a phone layout at 740px and below. It includes bottom navigation for My teams, On the rise, and Data alerts; horizontally scrollable team cards; full-width search; and roster cards that keep latest fantasy points, baseline, remaining games, and the recommendation visible together. Player details open in a scrollable bottom sheet. Navigation and dialogs account for device safe areas; the page reserves space for the bottom bar.
+The same GitHub Pages URL automatically switches to a phone layout at 740px and below. It includes bottom navigation for My teams, On the rise, and Data alerts; horizontally scrollable team cards; compact search; and dense roster rows with colored lineup slots, NBA team/injury labels, lock indicators, and a seven-day opponent/observed-FP strip. Starters, bench, and reserve/taxi players are grouped separately. Unknown schedules show question marks rather than pretending the player has an off day. Player details open in a scrollable bottom sheet. Navigation and dialogs account for device safe areas; the page reserves space for the bottom bar.
 
 No mobile server, separate deployment, or app installation is required. **Reload report** still retrieves the published snapshot; phone visits do not trigger NBA requests.
 
 The [mobile roster](screenshots/mobile-roster.png) and [player sheet](screenshots/mobile-player-detail.png) screenshots use generic sample teams and clearly labeled historical fixture data. Browser checks covered 320px, 390px, and 468px phone widths plus the 1440px desktop layout, including horizontal overflow, team switching, player search, pickup browsing, and profile dialogs. These are responsive browser checks, not physical iOS/Android device certification. The desktop README screenshots show the local Test Week workflow.
+
+Before opening night, the grid previews the opening week and players show UPCOMING. This is a valid report with no completed score to lock, not a failed refresh. Game times are unavailable in this schedule feed; dates/opponents are shown without invented tip-off times.
 
 ## Schedule and publication
 
@@ -31,23 +33,23 @@ The workflow runs offline Python and frontend-policy tests first. It then:
 1. Restores saved HTTP responses, host cooldowns, and the previous sanitized report from Actions cache.
 2. Creates a temporary configuration from checked-in model defaults and `SLEEPER_USERNAME` (a repository secret). No `.env` or email settings are uploaded.
 3. Imports this year's Sleeper NBA leagues, falling back to the previous season when none exist yet. No sample rosters are published as personal teams.
-4. Runs the shared live analysis, skipping NBA analysis for completed/undrafted leagues.
+4. Runs shared live analysis. Completed/undrafted leagues skip NBA analysis. Drafted leagues load one cached Sleeper season schedule first; NBA Stats is skipped until a regular-season game can enter the observation cutoff.
 5. Exports only allowed report fields and the four frontend assets to a fresh `dist/pages` directory.
 6. Uploads that directory to Pages and deploys it with GitHub's Pages action.
 
-Jobs serialize through one concurrency group. Network requests retain existing pacing, bounded timeouts, and cooldowns. There is no historical capture or automatic rapid retry. Actions cache is an optimization and can be evicted; on a cold run the same request pacing applies. The shared provider currently has no verified alternative if NBA Stats rejects a hosted runner.
+Jobs serialize through one concurrency group. Network requests retain existing pacing, bounded timeouts, and cooldowns. There is no historical capture or automatic rapid retry. Actions cache is an optimization and can be evicted; on a cold run the same request pacing applies. A hosted NBA Stats outage still prevents fresh performance analysis; it no longer prevents displaying independently verified roster metadata and schedule data.
 
 ## Freshness and failure behavior
 
 The browser suppresses lock/wait probabilities, decisions, and pickup recommendations when the report is older than six hours, has an invalid/future timestamp, or belongs to a different Edmonton date. It checks every minute and when a hidden tab becomes visible; open player details close when the report expires. Completed/drafting league statuses remain visible. Device clock accuracy matters to browser expiry.
 
-A top-level provider failure produces a new report with a visible failure alert and no actionable calls. Saved rosters may remain visible, but are explicitly described as potentially outdated. If no roster could be imported on a clean runner, the previous sanitized report supplies the fallback roster. Its original timestamp is retained. Player-level schedule errors are handled by the shared engine.
+Statistics and schedule failures produce specific alerts while preserving independent data. Missing performances suppress decisions and pickups; missing schedules suppress lock decisions while retaining observed scores. Mixed active and undrafted leagues remain visible. A roster-sync or unexpected top-level failure produces a new report with a visible failure alert and no actionable calls. Saved rosters may remain visible, but are explicitly described as potentially outdated. If no roster could be imported on a clean runner, the previous sanitized report supplies the fallback roster. Its original timestamp is retained. Player-level schedule errors are handled by the shared engine.
 
 If tests, packaging, or deployment fail, the previous deployed site remains available and will expire in the browser. The Pages workflow log records whether refresh was successful, partial, or failed. A successful deployment of an error report is not proof of successful data retrieval.
 
 ## Public data boundary
 
-The published report contains team/league display names, season, roster players, starter flags, scoring coverage, observations, recommendations, and pickup results. Treat these as public information. It contains no account username field, recipient addresses, email credentials, raw configuration, full league ownership list, or internal dataset paths. League-derived IDs are public identifiers, not credentials. Arbitrary newly added internal fields are excluded unless added to the export allowlist.
+The published report contains team/league display names, season, roster players, starter flags, lineup slots/order, NBA team and injury labels, weekly opponents and observed game FP, scoring coverage, observations, recommendations, and pickup results. Nested schedule fields are explicitly allowlisted. Treat these as public information. It contains no account username field, recipient addresses, email credentials, raw configuration, full league ownership list, or internal dataset paths. League-derived IDs are public identifiers, not credentials. Arbitrary newly added internal fields are excluded unless added to the export allowlist.
 
 Only `dist/pages` is uploaded. `.env`, `config.local.yaml`, `state`, and raw API caches are never part of the Pages artifact. Actions caches hold public API responses and the sanitized report; they are not a secret store. Never add credentials to those paths. Headshots use locally available images when exported, otherwise NBA's image CDN, with initials if loading fails. The image CDN and optional Google Fonts are separate external requests, not NBA Stats calls.
 

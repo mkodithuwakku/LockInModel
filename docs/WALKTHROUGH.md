@@ -10,7 +10,7 @@ It does not submit the decision to Sleeper. It also does not infer that you have
 
 Open the dashboard and choose a team. The roster shows the latest score, recent baseline, remaining opportunities, and a decision status. Open a player to inspect actual observed game history and the explanation behind the recommendation.
 
-The Scouting Desk uses a paper-and-ink layout with court-orange accents, numbered navigation, a scoreboard summary, and a ruled roster sheet. Green indicates LOCK, blue indicates WAIT, and amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. Each state also has a text label. A lock score is a heuristic preference; it is not calibrated confidence.
+The dashboard uses a compact dark lineup layout with colored position slots, small headshots, NBA team/injury labels, and a seven-day opponent strip. Starters, bench, and reserve players are grouped separately. Completed performances show fantasy points in their game tile; an unknown schedule shows question marks rather than off days. Green indicates LOCK, blue indicates WAIT, and amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. Each state also has a text label. A lock score is a heuristic preference; it is not calibrated confidence.
 
 On phones, teams scroll horizontally and roster rows prioritize the latest score and decision; open player details for the baseline and history. A skip link and visible keyboard focus support navigation. Test Week's nightly box scores are expandable so the roster remains easier to reach.
 
@@ -20,7 +20,7 @@ Sleeper rosters are managed in Sleeper; **Refresh live data** also checks for ne
 
 **Test Week** starts Monday morning, December 22, 2025. Reveal each night, inspect box scores and model calls, bank a score per starter, and move to the next morning. Progress persists through Sunday, December 28. The morning hides that night’s outcomes; banked scores stay fixed as later performances appear. [Full simulator guide](TEST_WEEK.md).
 
-Live analysis is an explicit refresh. It uses completed observations through the previous day for a noon report, counts remaining schedule opportunities, and labels unavailable data. Merely opening the dashboard does not start NBA retrieval. Saved live reports become stale after six hours or a date change, at which point lock recommendations are withheld until refreshed.
+Live analysis is an explicit refresh. It uses completed observations through the previous day for a noon report, counts remaining schedule opportunities, and labels unavailable data. Before regular-season games enter the observation cutoff, the report shows UPCOMING and previews the opening-week schedule without requesting NBA Stats. A drafted fantasy league is not proof that the NBA regular season has begun. Roster, schedule, and performance availability are handled separately. Merely opening the dashboard does not start NBA retrieval. Saved live reports become stale after six hours or a date change, at which point lock recommendations are withheld until refreshed.
 
 Completed, pre-draft, and drafting leagues display their state without NBA analysis. A newer imported season archives older teams; enable **Show archived leagues** to view them. The daily automation and live refresh discover the current season (2026 for 2026–27), falling back to the last saved season until new leagues exist. The automation runs at noon, not continuously.
 

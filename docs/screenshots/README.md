@@ -1,30 +1,27 @@
 # README screenshots
 
-These images were captured from the redesigned application in a local browser
-using the sample configuration and an isolated practice-state file. They show
-historical data through December 25, 2025, not current recommendations. Personal
-configuration and the user's saved practice run were not changed.
+These captures show generic sample teams and historical performances through
+December 25, 2025. They do not show current recommendations or personal account
+settings. The desktop Test Week uses an isolated practice-state file.
 
-- `test-week-night.png`: full desktop Test Week after revealing Thursday's games;
-  shows the practice clock, scoreboard, roster decisions, court diagram, and a
-  score banked earlier in the week. Nightly box scores are collapsed by default.
-- `player-detail.png`: a player with usable historical data; show the latest score,
-  baseline, opportunities, explanation, and recent performance chart.
-- `mobile-roster.png`: the 390-pixel-wide roster view, scrolled to the scoreboard
-  and player rows.
+- `test-week-night.png`: desktop Test Week scrolled to the practice clock,
+  banked total, summary, and compact roster with weekly game tiles.
+- `player-detail.png`: desktop player sheet with latest score, baseline,
+  remaining opportunities, weekly opponents, explanation, and production chart.
+- `mobile-roster.png`: 390px phone roster with position slots, team labels,
+  grouped starters/bench, decision badges, and observed points in game tiles.
+- `mobile-player-detail.png`: the phone bottom sheet with the same player context.
 
-Verification covered 320, 390, 768, 1024, and 1440-pixel viewport widths without
-horizontal page overflow; search, filters, team switching, pickup and alert views,
-connection and roster dialogs, practice advance/bank/persistence, roster toggling,
-and keyboard opening/closing of player details. Browser errors were empty. These
-are manual browser checks, not a new automated CI browser suite.
+The compact layout was checked at 320px and 390px phone widths and 1024px desktop,
+including overflow, search, bench filters, player details, pickup browsing, and
+Test Week score banking. A 390px roster viewport fits about seven complete rows
+after scrolling past the header. These are browser checks, not physical-device
+certification or an automated browser test suite.
 
-The captures were refreshed after correcting transparent headshots: initials are
-visible while loading or after an image error, and hidden behind a successfully
-loaded portrait. The follow-up browser check covered Giannis's cached headshot,
-the loading state, and a deliberately failed image request.
+The sample position assignments are explicit practice inputs. Current injury
+labels are omitted from historical replay; historical team labels come from the
+observed game data. Future replay scores remain hidden until revealed.
 
-When these screens change, replace the relevant capture using sample/practice data
-and keep the same filename where practical. Wait for loading and transient toasts
-to finish. Keep personal account names, email addresses, and connection settings
-out of screenshots. Verify README captions still describe the visible state.
+When these screens change, replace affected captures and keep captions accurate.
+Keep personal account names, email addresses, and connection settings out of the
+images. Wait for loading and transient toasts to finish before capture.

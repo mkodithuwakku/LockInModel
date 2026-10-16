@@ -61,3 +61,7 @@ Pickup thresholds are currently explicit constants in `pickups.py`: five recent 
 `main.py` and `app.py` load `.env`. Copy `.env.example` for placeholders; never commit credentials. `DEBUG_DUMP_DIR`, the old `gui.title`, and SMS settings are no longer active application controls.
 
 The application date uses America/Edmonton. Test Week controls its own morning/night clock; the CLI `--date` option selects an end-of-day historical cutoff. Neither changes the computer's clock.
+
+## Imported player display metadata
+
+Sleeper imports preserve the ordered starter slots from `roster_positions` and `starters`, including empty positions in the source array. Bench/reserve/taxi players receive BN/IR/TAXI labels. `player_meta` stores NBA team, fantasy positions, injury status, lineup order, and source player ID. Display metadata remains available when performance data fails. It is refreshed by import; avoid manually editing synced team records. Local practice teams without slot metadata show START/BN instead of guessing a league position.

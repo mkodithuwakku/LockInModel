@@ -8,7 +8,7 @@ Python · Flask · pandas · NumPy · vanilla JavaScript · pytest · GitHub Pag
 
 ## Screenshots and demo
 
-The interface takes its visual cues from a printed basketball scouting report: warm paper, dark ink, court-orange accents, numbered navigation, a scoreboard strip, and a ruled roster sheet. These browser captures show historical/sample data, not current NBA recommendations.
+The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. These browser captures show historical/sample data, not current NBA recommendations.
 
 ![The Scouting Desk in Test Week on Thursday night, showing the scoreboard, roster decisions, a banked score, and weekly court diagram](docs/screenshots/test-week-night.png)
 
@@ -18,17 +18,19 @@ The interface takes its visual cues from a printed basketball scouting report: w
 
 *Player details connect a recommendation to the observed performance and remaining opportunities.*
 
-[View the mobile roster](docs/screenshots/mobile-roster.png) and [phone player details](docs/screenshots/mobile-player-detail.png). Below 740px, the dashboard uses fixed bottom navigation, a swipeable team selector, and player cards with the latest score, baseline, remaining games, and recommendation. Profiles open in a bottom sheet. The same URL adapts automatically; no app installation or separate mobile site is needed. Keyboard focus indicators, a skip link, reduced-motion styles, and safe-area spacing support navigation.
+[View the mobile roster](docs/screenshots/mobile-roster.png) and [phone player details](docs/screenshots/mobile-player-detail.png). At 740px and below, the dashboard uses fixed bottom navigation, a swipeable team selector, and compact roster rows with lineup slots, team labels, weekly games, and recommendation indicators. About seven complete rows fit in the tested 390px roster viewport after scrolling past the header. Profiles open in a bottom sheet. The same URL adapts automatically; no app installation or separate mobile site is needed. Keyboard focus indicators, a skip link, reduced-motion styles, and safe-area spacing support navigation.
 
 *Mobile screenshots show the hosted interface with generic sample teams and historical performances, not current recommendations. Desktop screenshots above show the local Test Week workflow.*
 
 To try the workflow, follow [setup](#running-locally), select **Test Week**, reveal games, open a player, and bank an eligible score. Progress saves locally. The hosted dashboard publishes live snapshots; Test Week and roster editing remain local.
 
+A drafted league can be active before NBA opening night. The live provider checks the season schedule first and displays **UPCOMING** with opening-week opponents until completed games are available. A later statistics outage preserves roster and schedule data; a schedule outage preserves available box scores but withholds lock decisions.
+
 ## Problem and scope
 
 A strong fantasy performance needs context: how unusual was it for this player, how many chances remain this week, and how does this league score the box score? Managing multiple teams also means tracking different rules and deciding whether a rising player would improve a particular roster.
 
-LockIn brings those checks into one personal workspace. A manager imports Sleeper teams or uses sample rosters, reviews scores and explanations, and makes the actual league decisions in Sleeper. The repository implements the dashboard, Flask API, analysis engine, data adapters, local persistence, historical capture, practice simulator, report delivery, and tests. Sleeper supplies league data; NBA data supplies observations.
+LockIn brings those checks into one personal workspace. A manager imports Sleeper teams or uses sample rosters, reviews scores and explanations, and makes the actual league decisions in Sleeper. The repository implements the dashboard, Flask API, analysis engine, data adapters, local persistence, historical capture, practice simulator, report delivery, and tests. Sleeper supplies league data, player metadata, and the season schedule; NBA Stats supplies observed performances once regular-season games have been played.
 
 The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock and pickup scores are **explainable heuristics, not calibrated predictions or a proven optimal policy**.
 
@@ -50,7 +52,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 | Backend | Python and Flask, with one background worker for sync/refresh jobs |
 | Analysis | pandas and NumPy for normalization, weighted statistics, and candidate screening |
 | Persistence | PyYAML configuration, JSON snapshots/ledgers, Parquet through PyArrow; no database service |
-| Integrations | nba_api endpoint definitions, Requests, Sleeper REST API, archived NBA tables, Gmail SMTP over TLS |
+| Integrations | nba_api endpoint definitions, Requests, Sleeper league/player/schedule feeds, archived NBA tables, Gmail SMTP over TLS |
 | Configuration | python-dotenv, checked-in sample YAML, ignored local overrides |
 | Verification | pytest, Black, GitHub Actions configured for Python 3.11 and 3.12 |
 | Runtime | Local Flask on 127.0.0.1:8765 for interactive practice; GitHub Pages for public read-only reports, built on scheduled GitHub Actions runners |
@@ -97,7 +99,7 @@ flowchart TD
 | Files | Responsibility |
 | --- | --- |
 | [app.py](app.py), [web/](web/) | HTTP boundary, jobs, interface state, rendering, and user actions |
-| [engine.py](engine.py), [providers.py](providers.py) | Shared orchestration and explicit live/replay input policies |
+| [engine.py](engine.py), [providers.py](providers.py), [schedule.py](schedule.py) | Shared orchestration, live/replay policies, and cached weekly schedule |
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |
 | [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
 | [simulation.py](simulation.py), [storage.py](storage.py) | Practice transitions, config validation, atomic file replacement |

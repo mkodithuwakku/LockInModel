@@ -180,3 +180,12 @@ def test_saved_flagrant_rule_migrates_without_ignoring_other_gaps():
     assert team["ignored_scoring"] == {"ff": -2}
     assert team["unsupported_scoring"] == {"tf": -1}
     assert validate_config(cfg)["teams"][0] == team
+
+
+def test_sleeper_suffix_variants_resolve_to_active_player():
+    from fetch_data import resolve_player_ids, canonical_name
+
+    result = resolve_player_ids(["Tim Hardaway", "Tim Hardaway Jr.", "Wendell Carter"])
+    assert result["Tim Hardaway"] == result["Tim Hardaway Jr."] == 203501
+    assert result["Wendell Carter"] == 1628976
+    assert canonical_name("Gary Payton II") == canonical_name("Gary Payton")

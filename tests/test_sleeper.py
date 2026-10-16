@@ -111,3 +111,36 @@ def test_new_season_discovery_falls_back_until_draft_leagues_exist(monkeypatch):
     monkeypatch.setattr(sleeper, "sync", fake_sync)
     assert sleeper.sync_current()["count"] == 3
     assert calls == ["2026", "2025"]
+
+
+def test_import_preserves_lineup_slots_empty_slots_bench_and_team(
+    tmp_path, monkeypatch
+):
+    def data(path, ttl=900):
+        value = payload(path)
+        if path == "/league/l":
+            value["roster_positions"] = ["PG", "SG", "UTIL", "BN"]
+        if path == "/players/nba":
+            value["1"].update(team="PHI", injury_status="DTD")
+            value["3"] = {
+                "full_name": "Bam Adebayo",
+                "fantasy_positions": ["C"],
+                "team": "MIA",
+            }
+        if path == "/league/l/rosters":
+            value[0].update(players=["2", "3", "1"], starters=["1", "0", "3"])
+        return value
+
+    monkeypatch.setattr(sleeper, "ROOT", tmp_path)
+    monkeypatch.setattr(sleeper, "get", data)
+    monkeypatch.setattr(sleeper, "load_cfg", lambda: {"teams": []})
+    saved = []
+    monkeypatch.setattr(sleeper, "save_cfg", saved.append)
+    sleeper.sync("example", "2025")
+    team = saved[0]["teams"][0]
+    assert team["players"] == ["Tyrese Maxey", "Bam Adebayo", "Derrick White"]
+    meta = team["player_meta"]
+    assert meta["bam adebayo"]["roster_slot"] == "UTIL"
+    assert meta["derrick white"]["roster_slot"] == "BN"
+    assert meta["tyrese maxey"]["nba_team"] == "PHI"
+    assert meta["tyrese maxey"]["injury_status"] == "DTD"

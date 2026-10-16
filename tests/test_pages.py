@@ -54,12 +54,22 @@ def report():
 def test_export_allowlist_and_subpath(tmp_path):
     raw = report()
     raw["teams"].append({"archived": True, "team_name": "ARCHIVED_SECRET"})
+    raw["teams"][0]["results"][0]["week_games"] = [
+        {
+            "date": "2026-10-14",
+            "opponent": "BOS",
+            "home": True,
+            "fp": 30,
+            "private": "PRIVATE_GAME",
+        }
+    ]
     out = tmp_path / "site"
     pages.export_site(raw, out)
     exported = json.loads((out / "report.json").read_text())
     assert "PRIVATE" not in json.dumps(exported)
     assert "ARCHIVED_SECRET" not in json.dumps(exported)
     assert exported["teams"][0]["results"][0]["history"][0]["fp"] == 30
+    assert exported["teams"][0]["results"][0]["week_games"][0]["opponent"] == "BOS"
     html = (out / "index.html").read_text()
     assert 'data-hosting="pages"' in html
     assert "/assets/" not in html

@@ -3,10 +3,9 @@
 import datetime as dt
 import pandas as pd
 from zoneinfo import ZoneInfo
-from nba_api.stats.static import players
-from storage import ROOT, load_cfg, read_json, write_json
+from storage import ROOT, load_cfg, read_json
 from providers import FixtureProvider, LiveProvider
-from fetch_data import canonical_name, parse_dates
+from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
 from decide import per_player_week_decision
 from pickups import find_pickups
 from scoring import apply_scoring_policy
@@ -31,7 +30,9 @@ def build_dashboard(
         ):
             return roster_dashboard(cfg)
     provider = provider or (
-        FixtureProvider() if mode == "replay" else LiveProvider(today())
+        FixtureProvider()
+        if mode == "replay"
+        else LiveProvider(dt.date.fromisoformat(str(reference or today())))
     )
     reference = dt.date.fromisoformat(
         str(
@@ -62,9 +63,9 @@ def build_dashboard(
     }
     identity.update(
         {
-            canonical_name(p["full_name"]): str(p["id"])
-            for p in players.get_players()
-            if canonical_name(p["full_name"]) not in identity
+            name: str(pid)
+            for name, pid in player_directory().items()
+            if name not in identity
         }
     )
     sleeper_players = read_json(ROOT / "state/sleeper-players.json", {})
@@ -76,11 +77,12 @@ def build_dashboard(
         for p in sleeper_players.values()
     }
     results = []
-    alerts = []
+    alerts = list(getattr(provider, "alerts", []))
     decision_cache = {}
     for team in cfg["teams"]:
         team = apply_scoring_policy(dict(team))
         if mode == "live" and team.get("league_status", "in_season") != "in_season":
+            results.extend(roster_dashboard(dict(cfg, teams=[team]))["teams"])
             continue
         weights = team.get("weights") or cfg["weights"]
         rows = []
@@ -96,7 +98,26 @@ def build_dashboard(
             )
         for name in team["players"]:
             pid = identity.get(canonical_name(name))
-            if pid is None:
+            meta = roster_metadata(team, name, sleeper_players)
+            if mode == "live" and getattr(provider, "preseason", False):
+                row = {
+                    "player": name,
+                    "player_id": pid,
+                    "status": "UPCOMING",
+                    "decision": None,
+                    "note": "Regular season begins "
+                    + str(provider.calendar.start)
+                    + ". No completed regular-season game to lock yet.",
+                }
+            elif mode == "live" and getattr(provider, "stats_error", None):
+                row = {
+                    "player": name,
+                    "player_id": pid,
+                    "status": "DATA_UNAVAILABLE",
+                    "decision": None,
+                    "note": "Performance data unavailable. Schedule and roster are still shown; no lock recommendation issued.",
+                }
+            elif pid is None:
                 row = {
                     "player": name,
                     "status": "UNRESOLVED",
@@ -110,9 +131,21 @@ def build_dashboard(
                     schedule_error = None
                     try:
                         remaining = (
-                            provider.remaining(pid, history, reference)
-                            if not history.empty
-                            else None
+                            provider.remaining_for_team(
+                                meta.get("nba_team")
+                                or (
+                                    str(history.iloc[-1].get("TEAM_ABBREVIATION", ""))
+                                    if not history.empty
+                                    else None
+                                ),
+                                reference,
+                            )
+                            if mode == "live"
+                            else (
+                                provider.remaining(pid, history, reference)
+                                if not history.empty
+                                else None
+                            )
                         )
                     except (DataUnavailable, ValueError, KeyError, IndexError) as exc:
                         remaining = None
@@ -140,7 +173,17 @@ def build_dashboard(
                 row = dict(decision_cache[key])
                 row["player"] = name
             row["starter"] = name in team["starters"]
-            row["positions"] = positions.get(canonical_name(name), [])
+            row["positions"] = meta.get("positions") or positions.get(
+                canonical_name(name), []
+            )
+            row["roster_slot"] = meta.get("roster_slot") or (
+                "START" if row["starter"] else "BN"
+            )
+            row["lineup_order"] = meta.get("lineup_order", team["players"].index(name))
+            row["injury_status"] = meta.get("injury_status") if mode == "live" else None
+            if mode == "live":
+                row["nba_team"] = meta.get("nba_team") or row.get("nba_team")
+            add_week_schedule(row, provider, reference, cutoff, mode)
             if team.get("unsupported_scoring") and row.get("last_game_fp") is not None:
                 row.update(
                     status="SCORING_INCOMPLETE",
@@ -153,7 +196,10 @@ def build_dashboard(
                 "SCHEDULE_UNAVAILABLE",
                 "DATA_UNAVAILABLE",
                 "UNRESOLVED",
-            ]:
+            ] and not (
+                row["status"] == "DATA_UNAVAILABLE"
+                and getattr(provider, "stats_error", None)
+            ):
                 alerts.append(
                     {
                         "severity": "error",
@@ -163,7 +209,11 @@ def build_dashboard(
                 )
             rows.append(row)
         try:
-            candidates = find_pickups(observed, team, cfg, reference, positions)
+            candidates = (
+                find_pickups(observed, team, cfg, reference, positions)
+                if not observed.empty
+                else []
+            )
         except (DataUnavailable, ValueError, KeyError) as exc:
             candidates = []
             alerts.append(
@@ -193,6 +243,16 @@ def build_dashboard(
         "mode": mode,
         "date": str(reference),
         "observation_cutoff": str(cutoff.date()),
+        "schedule_week": (
+            provider.calendar.display_week(reference)
+            if getattr(provider, "calendar", None)
+            else [str(d.date()) for d in get_week_bounds(reference)]
+        ),
+        "season_start": (
+            str(provider.calendar.start)
+            if getattr(provider, "calendar", None)
+            else None
+        ),
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "teams": results,
         "alerts": alerts,
@@ -201,9 +261,92 @@ def build_dashboard(
         "notice": (
             "Historical replay: completed-game schedule, prior-season average, and current/sample rosters. Ownership is not historical."
             if mode == "replay"
-            else "Live analysis. Sleeper roster freshness and scoring coverage are shown per league."
+            else (
+                "Regular season starts "
+                + str(provider.calendar.start)
+                + ". Opening-week schedule shown; lock scores appear after games."
+                if getattr(provider, "preseason", False)
+                else "Live analysis. Sleeper roster freshness and scoring coverage are shown per league."
+            )
         ),
     }
+
+
+def roster_metadata(team, name, directory=None):
+    directory = (
+        directory
+        if directory is not None
+        else read_json(ROOT / "state/sleeper-players.json", {})
+    )
+    p = next(
+        (
+            p
+            for p in directory.values()
+            if canonical_name(
+                p.get("full_name")
+                or (p.get("first_name", "") + " " + p.get("last_name", ""))
+            )
+            == canonical_name(name)
+        ),
+        {},
+    )
+    saved = team.get("player_meta", {}).get(canonical_name(name), {})
+    return dict(
+        {
+            "nba_team": p.get("team") or p.get("team_abbr"),
+            "positions": p.get("fantasy_positions", []),
+            "injury_status": p.get("injury_status"),
+        },
+        **saved
+    )
+
+
+def add_week_schedule(row, provider, reference, cutoff, mode):
+    from fetch_data import get_week_bounds
+
+    row["week_games"] = []
+    row["schedule_state"] = "unavailable"
+    try:
+        if mode == "live":
+            if not getattr(provider, "calendar", None):
+                return
+            games = provider.calendar.for_team(
+                row.get("nba_team"), provider.calendar.display_week(reference)
+            )
+        else:
+            team_code = row.get("nba_team")
+            schedule = provider.schedule
+            if (
+                not {"TEAM_ABBREVIATION", "MATCHUP"}.issubset(schedule.columns)
+                or not team_code
+                or team_code not in set(schedule.TEAM_ABBREVIATION)
+            ):
+                return
+            start, end = get_week_bounds(reference)
+            games = [
+                {
+                    "date": str(r.GAME_DATE.date()),
+                    "opponent": str(r.MATCHUP).split()[-1],
+                    "home": "vs." in str(r.MATCHUP),
+                    "status": "complete" if r.GAME_DATE <= cutoff else "pre_game",
+                }
+                for _, r in schedule[
+                    (schedule.TEAM_ABBREVIATION == team_code)
+                    & schedule.GAME_DATE.between(start, end)
+                ].iterrows()
+            ]
+        history = {h["date"]: h["fp"] for h in row.get("history", [])}
+        for game in games:
+            # Never reveal a fixture performance beyond the observation cutoff.
+            game["fp"] = (
+                history.get(game["date"])
+                if game["date"] <= str(cutoff.date())
+                else None
+            )
+        row["week_games"] = games
+        row["schedule_state"] = "verified"
+    except DataUnavailable as exc:
+        row.setdefault("warnings", []).append(str(exc))
 
 
 def roster_dashboard(cfg, include_archived=False):
@@ -227,6 +370,7 @@ def roster_dashboard(cfg, include_archived=False):
         )
         rows = []
         for name in t["players"]:
+            meta = roster_metadata(t, name)
             try:
                 pid = resolve_player_ids([name])[name]
             except (ValueError, KeyError):
@@ -238,9 +382,14 @@ def roster_dashboard(cfg, include_archived=False):
                     "status": status,
                     "decision": None,
                     "note": note,
-                    "positions": t.get("player_meta", {})
-                    .get(canonical_name(name), {})
-                    .get("positions", []),
+                    "positions": meta.get("positions", []),
+                    "nba_team": meta.get("nba_team"),
+                    "injury_status": meta.get("injury_status"),
+                    "roster_slot": meta.get("roster_slot")
+                    or ("START" if name in t["starters"] else "BN"),
+                    "lineup_order": meta.get("lineup_order", t["players"].index(name)),
+                    "week_games": [],
+                    "schedule_state": "unavailable",
                     "starter": name in t["starters"],
                 }
             )

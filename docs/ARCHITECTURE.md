@@ -16,7 +16,8 @@
 | `decide.py` | One player's weekly result and failure states |
 | `model.py` | Weighted baseline, variance guards, rarity, future-score probability |
 | `pickups.py` | Separate-window improvement screening and roster fit |
-| `sleeper.py` | Read-only NBA roster/scoring import with complete ownership snapshot |
+| `sleeper.py` | Read-only roster/scoring import, ordered lineup slots, NBA team/injury metadata, complete ownership snapshot |
+| `schedule.py` | Validated, cached full-season schedule; weekly opponents and remaining-game counts |
 | `capture.py` | Resumable immutable archive capture and fixture manifest |
 | `main.py` | CLI reports, daily delivery guard, pickup alert cooldown |
 | `notify.py` | SMTP transport with an explicit timeout |
@@ -45,16 +46,21 @@ Requests pass through `CachedHTTP`. Cache keys include URL and query parameters.
 
 A filesystem lock serializes requests across processes. Requests are paced per host, with a three-second interval for NBA Stats and a one-second interval for Sleeper. The client uses connect/read timeouts. HTTP 429 honors Retry-After, with a conservative fallback; transport or JSON failures open a five-minute host cooldown. It makes one attempt and requires a later explicit retry, avoiding retry storms.
 
-Live logs use a league-wide bulk request rather than fetching every player's logs. Schedule calls are reused per player inside an analysis. The live prior is computed from older observed season data, eliminating repeated career calls. The fixture provider never requests NBA data.
+The live provider first loads one Sleeper regular-season schedule (six-hour cache, three-second pacing). It validates records and season dates, shares that calendar across all players, and uses the current Sleeper NBA team assignment for live scheduling. Before the first game can enter the observation cutoff, it skips NBA Stats entirely and returns UPCOMING rows. This distinguishes a drafted fantasy league from an NBA season with observed performances.
+
+Once games can be observed, live logs use one league-wide bulk request rather than fetching every player's logs. Statistics and schedule errors are independent: missing statistics preserve the calendar and roster; missing schedules preserve observed scores but never establish a zero remaining-game count. The live prior uses older observed season data. The fixture provider never requests NBA data.
+
+The Sleeper schedule feed is a public read-only endpoint used by this adapter, outside the core v1 league API. Its schema can change; invalid/empty/wrong-season responses fail closed. It currently provides dates and opponents, not tip-off times. Week views follow the model's Monday–Sunday convention; before opening night, the visible grid previews the opening week while the analysis cutoff stays unchanged.
 
 ## Data contracts
 
 Normalized game frames require valid `GAME_DATE` and finite, nonnegative PTS, REB, AST, STL, BLK, TOV, and FG3M. Other shooting fields are added as zero if absent. MIN, when present, is parsed from numeric values or minute/second strings and validated. IDs, source metadata, and DD/TD/PTS40/PTS50 are retained.
 
-Decision results include player identity, status, optional decision/score, observed history, warnings, and available baseline/schedule information. Incomplete results have `decision: null`; consumers must not infer WAIT or LOCK from absent fields.
+Decision results include player identity, lineup slot/order, NBA team, live injury label, status, optional decision/score, observed history, warnings, and weekly schedule information. `schedule_state` distinguishes a verified off day from unknown data; `week_games` carries date, opponent, home/away, status, and observed FP only. Replay scores never appear beyond the observation cutoff. Suffix normalization and active-player preference resolve Sleeper names such as Tim Hardaway and Wendell Carter without selecting a retired relative. Incomplete results have `decision: null`; consumers must not infer WAIT or LOCK from absent fields.
 
 | Status | Meaning |
 | --- | --- |
+| `UPCOMING` | No regular-season game has entered the observation cutoff yet; show schedule, issue no decision |
 | `LOCK`, `WAIT` | An actionable model preference with usable inputs |
 | `SCHEDULE_UNAVAILABLE` | Remaining opportunities cannot be established |
 | `DATA_UNAVAILABLE` | Missing or invalid game/model inputs |

@@ -12,9 +12,7 @@ import sys
 from engine import build_dashboard, roster_dashboard, today
 from storage import ROOT, load_cfg, read_json, save_cfg, write_json
 
-REPORT_FIELDS = (
-    "mode date observation_cutoff generated_at notice refresh_status".split()
-)
+REPORT_FIELDS = "mode date observation_cutoff generated_at notice refresh_status schedule_week season_start".split()
 TEAM_FIELDS = (
     "id team_name league_name source season league_status archived synced_at "
     "ownership_complete unsupported_scoring ignored_scoring"
@@ -22,7 +20,7 @@ TEAM_FIELDS = (
 PLAYER_FIELDS = (
     "player player_id status decision note reason starter positions nba_team week "
     "last_game_date last_game_fp remaining_games_est fp_mean_recent fp_std_recent "
-    "sample_size p_lock p_wait warnings"
+    "sample_size p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state"
 ).split()
 HISTORY_FIELDS = "date fp minutes pts reb ast stl blk tov".split()
 PICKUP_FIELDS = (
@@ -50,6 +48,10 @@ def public_report(report):
         item["results"] = []
         for player in team.get("results", []):
             row = select(player, PLAYER_FIELDS)
+            row["week_games"] = [
+                select(g, ["date", "opponent", "home", "status", "fp"])
+                for g in player.get("week_games", [])
+            ]
             row["history"] = [
                 select(h, HISTORY_FIELDS) for h in player.get("history", [])[-25:]
             ]
@@ -110,10 +112,10 @@ def refresh_report():
             report,
             "Scheduled refresh failed. Saved rosters may be out of date; lock and pickup recommendations are withheld. The next scheduled run will try again.",
         )
-    report["notice"] = (
-        "Scheduled report · refreshes daily around 12:17 PM America/Edmonton. "
-        "Reload checks the latest published report. Manage rosters and locks in Sleeper."
-    )
+    if not report.get("season_start") or report["date"] >= report["season_start"]:
+        report["notice"] = (
+            "Daily update · 12:17 PM Edmonton. Reload checks the published report; manage locks in Sleeper."
+        )
     report["published_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     result = public_report(report)
     result["published_at"] = report["published_at"]

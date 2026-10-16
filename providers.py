@@ -1,16 +1,12 @@
 """Explicit live and historical inputs for one shared analysis pipeline."""
 
 import hashlib
-import datetime as dt
 import pandas as pd
 from storage import ROOT, read_json
 from fetch_data import (
     bulk_player_logs,
     parse_dates,
     normalize_stats_for_scoring,
-    canonical_name,
-    compute_career_fp,
-    estimate_remaining_games_this_week,
     _season_for_today,
 )
 from scoring import add_fantasy_points
@@ -73,31 +69,49 @@ class FixtureProvider:
 
 class LiveProvider:
     def __init__(self, reference):
+        from schedule import SeasonSchedule
+
         self.mode = "live"
         self.manifest = {
             "season": _season_for_today(reference),
-            "source": "NBA Stats API",
-            "prior_policy": "Current career base-stat average; bonus frequencies unavailable",
+            "source": "NBA Stats API; Sleeper season schedule",
         }
-        self.games = parse_dates(bulk_player_logs(self.manifest["season"]))
-        self.priors = {}
-        self.schedules = {}
-
-    def remaining(self, pid, observed, reference):
-        from fetch_data import get_week_bounds
-
-        if str(pid) not in self.schedules:
-            # Count future games from today; provider failures propagate.
-            self.schedules[str(pid)] = estimate_remaining_games_this_week(
-                pid,
-                pd.Timestamp(reference) - pd.Timedelta(days=1),
-                get_week_bounds(reference)[1],
+        self.alerts = []
+        self.calendar = None
+        self.stats_error = None
+        self.preseason = False
+        self.games = pd.DataFrame(columns=["PLAYER_ID", "PLAYER_NAME", "GAME_DATE"])
+        try:
+            self.calendar = SeasonSchedule(self.manifest["season"].split("-")[0])
+            self.preseason = reference <= self.calendar.start
+        except DataUnavailable as exc:
+            self.alerts.append(
+                {"severity": "error", "message": "Schedule unavailable: " + str(exc)}
             )
-        return self.schedules[str(pid)]
+        # A drafted fantasy league is already 'in_season' before the NBA tips off.
+        # There are no regular-season performances to request or score yet.
+        if not self.preseason:
+            try:
+                self.games = parse_dates(bulk_player_logs(self.manifest["season"]))
+            except DataUnavailable as exc:
+                self.stats_error = str(exc)
+                self.alerts.append(
+                    {
+                        "severity": "error",
+                        "message": "NBA performances unavailable: "
+                        + str(exc)
+                        + " Rosters and any verified schedule remain available.",
+                    }
+                )
+
+    def remaining_for_team(self, team, reference):
+        if self.calendar is None:
+            raise DataUnavailable(
+                "Season schedule unavailable. Lock decisions withheld."
+            )
+        return self.calendar.remaining(team, reference)
 
     def prior(self, pid, weights, reference):
-        # Avoid additional per-player career traffic. Use observed season-to-date
-        # history as an explicitly labeled alternative prior for live operation.
         history = self.games[
             (self.games.PLAYER_ID.astype(str) == str(pid))
             & (self.games.GAME_DATE < pd.Timestamp(reference) - pd.Timedelta(days=14))

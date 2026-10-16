@@ -44,6 +44,7 @@ const statuses = {
   UNRESOLVED: ["UNMATCHED", "review"],
   NO_GAME: ["NO GAME", ""],
   NO_HISTORY: ["NO HISTORY", ""],
+  UPCOMING: ["UPCOMING", "upcoming"],
   STALE: ["STALE DATA", "review"],
 };
 const team = () =>
@@ -311,26 +312,14 @@ function render() {
       : `${t.league_name} · ${t.team_name} · ${t.ownership_complete ? "All league rosters, reserves and taxi players excluded" : "League ownership unknown"}. ${t.synced_at ? "Ownership snapshot: " + new Date(t.synced_at).toLocaleString() : ""}. Switch teams to compare a different league.`;
   renderTestControls(t);
   renderContent();
-  const start = new Date(
-    (state.data.dataset.week_start || state.data.date) + "T12:00:00",
-  );
-  if (state.mode === "live")
-    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  $("#week-days").innerHTML = Array.from({ length: 7 }, (_, i) => {
-    let d = new Date(start);
-    d.setDate(d.getDate() + i);
-    let iso =
-      d.getFullYear() +
-      "-" +
-      String(d.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(d.getDate()).padStart(2, "0");
-    return `<div class="day ${iso === state.data.date ? "selected" : ""}">${["M", "T", "W", "T", "F", "S", "S"][i]}<b>${d.getDate()}</b></div>`;
-  }).join("");
+  $("#week-days").innerHTML = displayWeek()
+    .map(
+      (iso, i) =>
+        `<div class="day ${iso === state.data.date ? "selected" : ""}">${["M", "T", "W", "T", "F", "S", "S"][i]}<b>${Number(iso.slice(8))}</b></div>`,
+    )
+    .join("");
   $("#week-caption").textContent =
-    state.mode === "test"
-      ? `${state.data.dataset.week_start} — ${state.data.dataset.week_end} · replay`
-      : "Monday through Sunday · current week";
+    `${displayWeek()[0]} — ${displayWeek()[6]}${state.mode === "test" ? " · replay" : ""}`;
   $("#radar").innerHTML =
     t.pickups
       .slice(0, 3)
@@ -380,18 +369,91 @@ function renderContent() {
           (state.filter === "starters" ? p.starter : !p.starter)) &&
         p.player.toLowerCase().includes(search),
     );
+  rows.sort((a, b) => (a.p.lineup_order ?? a.i) - (b.p.lineup_order ?? b.i));
+  const groups = [
+    ["Starters", rows.filter(({ p }) => p.starter)],
+    [
+      "Bench",
+      rows.filter(
+        ({ p }) => !p.starter && !["IR", "TAXI"].includes(p.roster_slot),
+      ),
+    ],
+    [
+      "Injured reserve / taxi",
+      rows.filter(
+        ({ p }) => !p.starter && ["IR", "TAXI"].includes(p.roster_slot),
+      ),
+    ],
+  ];
+  const week = displayWeek();
+  const weekLabel = week.length
+    ? new Date(week[0] + "T12:00:00").toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }) +
+      "–" +
+      new Date(week[6] + "T12:00:00").toLocaleDateString("en-US", {
+        day: "numeric",
+      })
+    : "Schedule";
   $("#content").innerHTML =
-    '<div class="table-head"><span>PLAYER</span><span>LATEST FP</span><span class="baseline-col">BASELINE</span><span>THE CALL</span></div>' +
-    rows
+    groups
+      .filter(([, group]) => group.length)
       .map(
-        ({ p, i }) =>
-          `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><div class="player-ident"><span class="roster-number" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>${portrait(p)}<div><div class="player-name">${esc(p.player)}</div><div class="player-meta">${esc(p.nba_team || "NBA")} <span>·</span> ${esc((p.positions || []).join("/") || "—")} <span class="slot">${p.starter ? "START" : "BENCH"}</span></div></div></div><div class="numeric"><span class="mobile-stat-label">Latest FP</span>${fmt(p.last_game_fp)}<small>${p.last_game_date ? esc(p.last_game_date.slice(5)) : "No eligible game"}</small></div><div class="baseline baseline-col"><span class="mobile-stat-label">Baseline</span>${fmt(p.fp_mean_recent)}<small>${p.remaining_games_est == null ? "Schedule unconfirmed" : p.remaining_games_est + " game" + (p.remaining_games_est === 1 ? "" : "s") + " left"}</small></div><div class="player-call">${badge(p)}${p.banked ? `<div class="banked-score">${fmt(p.banked.fp)} FP kept · ${esc(p.banked.game_date.slice(5))}</div>` : ""}<div class="status-note">${p.p_lock != null ? Math.round(p.p_lock * 100) + "% lock score" : p.status === "SCORING_INCOMPLETE" ? "Partial FP estimate" : "Open for details"}</div>${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div></div>`,
+        ([label, group]) =>
+          `<section class="roster-group" aria-label="${label}"><div class="roster-group-title"><h3>${label} <span>${group.length}</span></h3><span>${esc(weekLabel)} <small>· @ away</small></span></div>${group.map(({ p, i }) => rosterRow(p, i, week)).join("")}</section>`,
       )
-      .join("") +
-    (rows.length
-      ? ""
-      : `<div class="empty">${!t.results.length && t.league_status === "pre_draft" ? '<span class="empty-mark" aria-hidden="true">↗</span><strong>Your next season starts here.</strong><p>Draft pending. Your players will appear after your draft and the next scheduled refresh.</p>' : "No players in this view."}</div>`);
+      .join("") ||
+    `<div class="empty">${!t.results.length && t.league_status === "pre_draft" ? "<strong>Waiting for the draft.</strong><p>Your roster appears after the next sync.</p>" : "No players in this view."}</div>`;
   attachImageFallback();
+}
+function displayWeek() {
+  const start = new Date(
+    (state.data.schedule_week?.[0] || state.data.date) + "T12:00:00",
+  );
+  if (!state.data.schedule_week)
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(start);
+    date.setDate(date.getDate() + i);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  });
+}
+function gameStatus(value) {
+  return (
+    {
+      pre_game: "Scheduled",
+      in_progress: "Live",
+      complete: "Final",
+      final: "Final",
+      post_game: "Final",
+    }[value] || String(value || "Unconfirmed").replaceAll("_", " ")
+  );
+}
+function rosterRow(p, i, week) {
+  const slot = p.roster_slot || (p.starter ? "START" : "BN");
+  const injury =
+    p.injury_status && p.injury_status !== "Healthy"
+      ? `<span class="injury">${esc(p.injury_status)}</span>`
+      : "";
+  const games = week
+    .map((date, day) => {
+      const onDay = (p.week_games || []).filter((g) => g.date === date);
+      const known = p.schedule_state === "verified";
+      const desc = !known
+        ? "Schedule unavailable"
+        : !onDay.length
+          ? "No game scheduled"
+          : onDay
+              .map(
+                (g) =>
+                  `${g.home ? "vs" : "at"} ${g.opponent}${g.fp != null ? ` · ${fmt(g.fp)} FP` : ` · ${gameStatus(g.status)}`}`,
+              )
+              .join("; ");
+      return `<span class="game-day ${onDay.length ? "has-game" : ""} ${date === state.data.date ? "is-today" : ""} ${!known ? "unknown" : ""}" title="${esc(date + ": " + desc)}" aria-label="${esc(date + ": " + desc)}"><small>${["M", "T", "W", "T", "F", "S", "S"][day]}</small>${onDay.map((g) => `<b>${g.home ? "" : "@"}${esc(g.opponent)}</b>${g.fp != null ? `<em>${fmt(g.fp)} FP</em>` : ""}`).join("") || `<b>${known ? "—" : "?"}</b>`}</span>`;
+    })
+    .join("");
+  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div><div class="player-meta"><span class="nba-team">${esc(p.nba_team || "FA / unknown")}</span><span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.status === "UPCOMING" ? "Season starts soon" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div></div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
 }
 function showPlayer(p) {
   let h = p.history || [];
@@ -403,7 +465,7 @@ function showPlayer(p) {
   let last = h.slice(-10);
   let max = Math.max(1, ...last.map((r) => Math.abs(r.fp)));
   $("#player-detail").innerHTML =
-    `<div class="detail-hero">${portrait(p)}<div><div class="eyebrow">${esc(p.nba_team || "PLAYER PROFILE")}</div><h2>${esc(p.player)}</h2>${p.status ? badge(p) : '<span class="status lock">ON THE RISE</span>'}</div></div><div class="detail-stats"><div class="detail-stat"><small>${p.recent_fp != null ? "Recent average" : "Latest score"}</small><b>${fmt(p.recent_fp ?? p.last_game_fp)} <small style="display:inline">FP</small></b></div><div class="detail-stat"><small>Baseline</small><b>${fmt(p.baseline_fp ?? p.fp_mean_recent)}</b></div><div class="detail-stat"><small>${p.consistency != null ? "Above baseline" : "Remaining games"}</small><b>${p.consistency != null ? Math.round(p.consistency * 100) + "%" : fmt(p.remaining_games_est, 0)}</b></div></div><div class="detail-reason">${esc(p.note || p.reason || p.availability + ". " + (p.replacement ? "Estimated replacement: " + p.replacement + "." : "Team fit needs review."))}</div>${[...(p.warnings || []), ...(p.risks || [])].map((w) => `<p class="detail-warning">${esc(w)}</p>`).join("")}${
+    `<div class="detail-hero">${portrait(p)}<div><div class="eyebrow">${esc(p.nba_team || "PLAYER PROFILE")}</div><h2>${esc(p.player)}</h2>${p.status ? badge(p) : '<span class="status lock">ON THE RISE</span>'}</div></div><div class="detail-stats"><div class="detail-stat"><small>${p.recent_fp != null ? "Recent average" : "Latest score"}</small><b>${fmt(p.recent_fp ?? p.last_game_fp)} <small style="display:inline">FP</small></b></div><div class="detail-stat"><small>Baseline</small><b>${fmt(p.baseline_fp ?? p.fp_mean_recent)}</b></div><div class="detail-stat"><small>${p.consistency != null ? "Above baseline" : p.remaining_games_est != null ? "Remaining games" : "Scheduled this week"}</small><b>${p.consistency != null ? Math.round(p.consistency * 100) + "%" : fmt(p.remaining_games_est ?? (p.schedule_state === "verified" ? p.week_games.length : null), 0)}</b></div></div><div class="detail-reason">${esc(p.note || p.reason || p.availability + ". " + (p.replacement ? "Estimated replacement: " + p.replacement + "." : "Team fit needs review."))}</div>${p.week_games?.length ? `<div class="detail-schedule"><h3>This week</h3>${p.week_games.map((g) => `<div><span>${esc(g.date.slice(5))}</span><strong>${g.home ? "vs" : "@"} ${esc(g.opponent)}</strong><span>${g.fp != null ? fmt(g.fp) + " FP" : esc(gameStatus(g.status))}</span></div>`).join("")}<p>Schedule dates shown. Tip-off times are unavailable.</p></div>` : ""}${[...(p.warnings || []), ...(p.risks || [])].map((w) => `<p class="detail-warning">${esc(w)}</p>`).join("")}${
       last.length
         ? `<div class="section-label" style="margin-top:25px">RECENT FANTASY PRODUCTION</div><div class="chart">${last.map((r) => `<div class="bar-wrap" title="${esc(r.date)}: ${fmt(r.fp)} FP"><span>${fmt(r.fp, 0)}</span><div class="bar" style="height:${Math.max(2, (Math.abs(r.fp) / max) * 108)}px;${r.fp < 0 ? "background:var(--orange)" : ""}"></div></div>`).join("")}</div><p>Most recent games, oldest to newest. ${esc(state.data.observation_cutoff || state.data.date)} is the observation cutoff.</p><table class="history-table"><thead><tr><th>Date</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>FP</th></tr></thead><tbody>${h
             .slice(-10)
@@ -413,7 +475,9 @@ function showPlayer(p) {
                 `<tr><td>${esc(r.date.slice(5))}</td><td>${fmt(r.minutes, 0)}</td><td>${fmt(r.pts, 0)}</td><td>${fmt(r.reb, 0)}</td><td>${fmt(r.ast, 0)}</td><td>${fmt(r.stl, 0)}</td><td>${fmt(r.blk, 0)}</td><td>${fmt(r.fp)}</td></tr>`,
             )
             .join("")}</tbody></table>`
-        : "<p>Rise scores compare five recent games with a separate earlier baseline. They are screening signals, not probabilities of future success.</p>"
+        : p.recent_fp != null
+          ? "<p>Rise scores compare five recent games with a separate earlier baseline. They are screening signals, not probabilities of future success.</p>"
+          : "<p>No observed performances available for this player in this report.</p>"
     }`;
   attachImageFallback();
   $("#player-dialog").showModal();
