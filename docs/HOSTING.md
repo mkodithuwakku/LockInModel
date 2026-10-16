@@ -14,7 +14,13 @@ GitHub Pages hosts a public, read-only version of the shared dashboard. GitHub A
 
 Test Week, roster editing, account editing, and archive browsing remain in the local Flask app. The hosted interface hides those controls rather than presenting nonfunctional buttons. It never submits Sleeper actions or sends email. The existing local email automation is independent.
 
-The README screenshots show the local application. A clean hosted screenshot is pending: the browser capture produced scaling artifacts during this run. The hosted layout and interactions were checked separately in the browser using a clearly labeled historical UI fixture.
+## Phone layout
+
+The same GitHub Pages URL automatically switches to a phone layout at 740px and below. It includes bottom navigation for My teams, On the rise, and Data alerts; horizontally scrollable team cards; full-width search; and roster cards that keep latest fantasy points, baseline, remaining games, and the recommendation visible together. Player details open in a scrollable bottom sheet. Navigation and dialogs account for device safe areas; the page reserves space for the bottom bar.
+
+No mobile server, separate deployment, or app installation is required. **Reload report** still retrieves the published snapshot; phone visits do not trigger NBA requests.
+
+The [mobile roster](screenshots/mobile-roster.png) and [player sheet](screenshots/mobile-player-detail.png) screenshots use generic sample teams and clearly labeled historical fixture data. Browser checks covered 320px, 390px, and 468px phone widths plus the 1440px desktop layout, including horizontal overflow, team switching, player search, pickup browsing, and profile dialogs. These are responsive browser checks, not physical iOS/Android device certification. The desktop README screenshots show the local Test Week workflow.
 
 ## Schedule and publication
 

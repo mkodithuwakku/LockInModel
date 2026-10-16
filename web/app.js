@@ -385,12 +385,12 @@ function renderContent() {
     rows
       .map(
         ({ p, i }) =>
-          `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><div class="player-ident"><span class="roster-number" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>${portrait(p)}<div><div class="player-name">${esc(p.player)}</div><div class="player-meta">${esc(p.nba_team || "NBA")} <span>·</span> ${esc((p.positions || []).join("/") || "—")} <span class="slot">${p.starter ? "START" : "BENCH"}</span></div></div></div><div class="numeric">${fmt(p.last_game_fp)}<small>${p.last_game_date ? esc(p.last_game_date.slice(5)) : "No eligible game"}</small></div><div class="baseline baseline-col">${fmt(p.fp_mean_recent)}<small>${p.remaining_games_est == null ? "Schedule unconfirmed" : p.remaining_games_est + " game" + (p.remaining_games_est === 1 ? "" : "s") + " left"}</small></div><div>${badge(p)}${p.banked ? `<div class="banked-score">${fmt(p.banked.fp)} FP kept · ${esc(p.banked.game_date.slice(5))}</div>` : ""}<div class="status-note">${p.p_lock != null ? Math.round(p.p_lock * 100) + "% lock score" : p.status === "SCORING_INCOMPLETE" ? "Partial FP estimate" : "Open for details"}</div>${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div></div>`,
+          `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><div class="player-ident"><span class="roster-number" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>${portrait(p)}<div><div class="player-name">${esc(p.player)}</div><div class="player-meta">${esc(p.nba_team || "NBA")} <span>·</span> ${esc((p.positions || []).join("/") || "—")} <span class="slot">${p.starter ? "START" : "BENCH"}</span></div></div></div><div class="numeric"><span class="mobile-stat-label">Latest FP</span>${fmt(p.last_game_fp)}<small>${p.last_game_date ? esc(p.last_game_date.slice(5)) : "No eligible game"}</small></div><div class="baseline baseline-col"><span class="mobile-stat-label">Baseline</span>${fmt(p.fp_mean_recent)}<small>${p.remaining_games_est == null ? "Schedule unconfirmed" : p.remaining_games_est + " game" + (p.remaining_games_est === 1 ? "" : "s") + " left"}</small></div><div class="player-call">${badge(p)}${p.banked ? `<div class="banked-score">${fmt(p.banked.fp)} FP kept · ${esc(p.banked.game_date.slice(5))}</div>` : ""}<div class="status-note">${p.p_lock != null ? Math.round(p.p_lock * 100) + "% lock score" : p.status === "SCORING_INCOMPLETE" ? "Partial FP estimate" : "Open for details"}</div>${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div></div>`,
       )
       .join("") +
     (rows.length
       ? ""
-      : `<div class="empty">${!t.results.length && t.league_status === "pre_draft" ? "Draft pending. Players will appear after your draft and the next scheduled refresh." : "No players in this view."}</div>`);
+      : `<div class="empty">${!t.results.length && t.league_status === "pre_draft" ? '<span class="empty-mark" aria-hidden="true">↗</span><strong>Your next season starts here.</strong><p>Draft pending. Your players will appear after your draft and the next scheduled refresh.</p>' : "No players in this view."}</div>`);
   attachImageFallback();
 }
 function showPlayer(p) {
@@ -498,6 +498,8 @@ document.addEventListener("click", (e) => {
   }
   b = e.target.closest("[data-view]");
   if (b) {
+    if (window.matchMedia("(max-width: 740px)").matches)
+      $("#main-content").scrollIntoView({ block: "start" });
     if (b.dataset.view === "test" || b.dataset.view === "team") {
       state.mode = b.dataset.view === "test" ? "test" : "live";
       state.view = "team";

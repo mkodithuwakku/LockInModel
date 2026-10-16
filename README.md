@@ -18,7 +18,9 @@ The interface takes its visual cues from a printed basketball scouting report: w
 
 *Player details connect a recommendation to the observed performance and remaining opportunities.*
 
-[View the mobile roster](docs/screenshots/mobile-roster.png). Small screens use a horizontal team selector and a compact roster; the baseline remains available in player details. Keyboard focus indicators, a skip link, and reduced-motion styles support navigation.
+[View the mobile roster](docs/screenshots/mobile-roster.png) and [phone player details](docs/screenshots/mobile-player-detail.png). Below 740px, the dashboard uses fixed bottom navigation, a swipeable team selector, and player cards with the latest score, baseline, remaining games, and recommendation. Profiles open in a bottom sheet. The same URL adapts automatically; no app installation or separate mobile site is needed. Keyboard focus indicators, a skip link, reduced-motion styles, and safe-area spacing support navigation.
+
+*Mobile screenshots show the hosted interface with generic sample teams and historical performances, not current recommendations. Desktop screenshots above show the local Test Week workflow.*
 
 To try the workflow, follow [setup](#running-locally), select **Test Week**, reveal games, open a player, and bank an eligible score. Progress saves locally. The hosted dashboard publishes live snapshots; Test Week and roster editing remain local.
 
