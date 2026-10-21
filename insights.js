@@ -81,6 +81,9 @@
     sandwich: ["🥪", "Turnover sandwich", "turnovers"],
     merchant: ["🧾", "Free-throw merchant", "made free throws"],
     heartbreak: ["💔", "Heartbreaker", "missed threes"],
+    shield: ["🛡️", "Two-way menace", "steals + blocks"],
+    creator: ["🧠", "Clean creator", "assists minus turnovers (5+ assists)"],
+    magician: ["🎩", "Triple-double magic", "triple-doubles"],
     overachiever: ["🚀", "Above expectations", "FP above projection"],
     underachiever: ["🫠", "Below expectations", "FP below projection"],
     efficient: ["⚡", "Minute maximizer", "FP/min"],
@@ -105,7 +108,17 @@
         return {...b, icon, name, label: `${name} · ${b.tied ? "Tied #" : "#"}${b.rank} ${scope} · ${value} ${stat}${comparison}${coverage} · ${b.date}`};
       });
   }
-  const helpers = { gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate };
+  function seasonContributors(team) {
+    const observed = new Map((team.season_review?.players || []).map(p => [String(p.player_id), p]));
+    return (team.results || []).map((p, index) => ({...p, ...observed.get(String(p.player_id)), index}))
+      .sort((a, b) => (b.total_fp ?? -Infinity) - (a.total_fp ?? -Infinity) || a.player.localeCompare(b.player));
+  }
+  function seasonHighlights(players) {
+    const best = (key, minGames) => players.filter(p => p.games >= minGames && Number.isFinite(p[key]))
+      .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
+    return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
+  }
+  const helpers = { seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate };
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);

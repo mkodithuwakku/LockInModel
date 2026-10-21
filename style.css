@@ -2925,3 +2925,83 @@ button.lineup-name:hover strong { color: #c6b3d6; }
 .available-stats b { display:block; font-size:16px; font-weight:500; margin-top:3px; }
 .available-more { display:block; margin:20px auto; padding:10px 18px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); cursor:pointer; }
 @media(max-width:520px) { .available-stats { gap:10px; } .available-stats span:nth-child(2) { display:none; } .available-row { gap:8px; } .available-row .player-name { font-size:13px; } }
+
+/* Season review: restrained surfaces, readable totals, compact player identities. */
+.season-review { padding-top: 18px; }
+.review-teams { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+.review-team { padding:15px; min-width:0; text-align:left; border:1px solid var(--line); border-radius:10px; background:var(--panel); color:var(--ink); cursor:pointer; }
+.review-team.selected { border-color:var(--purple); box-shadow:inset 3px 0 var(--purple); }
+.review-team-heading { display:flex; gap:10px; align-items:center; }
+.review-team-heading>span:last-child { min-width:0; }
+.review-team-heading strong { display:block; font-size:13px; overflow-wrap:anywhere; }
+.review-team-heading small { display:block; font-size:10px; color:var(--muted); margin-top:2px; }
+.review-team .team-symbol { width:30px; height:30px; flex:0 0 30px; font-size:10px; }
+.review-team-score { display:block; font:600 30px var(--display); margin:12px 0 6px; font-variant-numeric:tabular-nums; }
+.review-team-score small { font:11px var(--font); color:var(--muted); }
+.review-team-footer { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:10px; }
+.review-section-heading { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; margin:26px 0 12px; }
+.review-section-heading h3 { font:600 24px var(--display); margin:0; }
+.review-section-heading>span, .review-section-heading small { font:11px var(--font); color:var(--muted); }
+.review-scope, .review-footnote { font-size:11px; color:var(--muted); max-width:850px; line-height:1.65; margin:0 0 18px; }
+.review-footnote { margin-top:14px; }
+.review-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:18px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.review-metric { min-width:0; font-variant-numeric:tabular-nums; }
+.review-metric>span { display:block; color:var(--muted); font-size:10px; }
+.review-metric>strong { display:block; font:600 29px var(--display); margin:3px 0; }
+.review-metric>small { display:block; font-size:10px; color:var(--muted); }
+.review-stats { display:grid; grid-template-columns:repeat(9,1fr); gap:10px; padding:16px 0; }
+.review-stats .review-metric>strong { font-size:20px; }
+.review-highlights { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.review-highlight { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; min-width:0; }
+.review-kicker { display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--purple); margin-bottom:14px; }
+.review-person { display:flex; align-items:center; gap:10px; padding:0; min-width:0; max-width:100%; color:var(--ink); background:none; border:0; text-align:left; cursor:pointer; }
+.review-person>span { min-width:0; }
+.review-person strong { display:block; font-size:13px; line-height:1.4; }
+.review-person small { display:block; font-size:10px; color:var(--muted); margin-top:3px; }
+.review-person .portrait { width:36px; height:36px; flex:0 0 36px; border-radius:6px; }
+.review-person .portrait img { width:100%; height:100%; max-width:100%; left:0; bottom:0; object-fit:contain; object-position:center bottom; }
+.review-person .nba-team-logo { width:13px; height:13px; }
+.review-highlight-value { display:block; font:600 24px var(--display); margin-top:15px; }
+.review-highlight p, .review-pending { color:var(--muted); font-size:11px; line-height:1.65; margin:5px 0 0; }
+.review-empty { padding:16px; margin-bottom:16px; background:var(--panel); border-radius:8px; color:var(--muted); }
+.review-weekly { padding-bottom:18px; border-bottom:1px solid var(--line); }
+.review-chart { display:block; width:100%; height:144px; overflow:visible; }
+.review-chart polyline { fill:none; stroke:var(--purple); stroke-width:2; vector-effect:non-scaling-stroke; }
+.review-chart circle { fill:var(--purple); }
+.review-chart-guide { stroke:var(--line); stroke-dasharray:4 5; }
+.review-chart-labels { display:flex; justify-content:space-between; color:var(--muted); font-size:10px; }
+.review-weekly summary { cursor:pointer; color:var(--muted); font-size:11px; margin-top:16px; }
+.review-week-table { max-height:300px; overflow:auto; }
+.review-week-table table { width:100%; font-size:11px; border-collapse:collapse; }
+.review-week-table td, .review-week-table th { padding:8px 4px; text-align:right; border-bottom:1px solid var(--line); }
+.review-week-table th:first-child { text-align:left; }
+.review-contributor { display:grid; grid-template-columns:minmax(180px,1fr) 1.3fr; align-items:center; gap:10px 24px; padding:14px 0; border-bottom:1px solid var(--line); }
+.review-player-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; text-align:right; }
+.review-player-metrics .review-metric>strong { font:500 16px var(--font); }
+.review-contribution { grid-column:1/-1; height:2px; background:var(--line); }
+.review-contribution>span { display:block; height:2px; background:var(--purple); opacity:.6; }
+@media(max-width:1100px) { .review-highlights { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:740px) {
+  .nav { white-space:normal; text-align:center; }
+  .review-teams { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .review-team { padding:12px; }
+  .review-team-heading { align-items:flex-start; gap:7px; }
+  .review-team-heading strong { font-size:11px; }
+  .review-team-heading small { font-size:9px; }
+  .review-team-score { font-size:25px; }
+  .review-team-footer { font-size:9px; }
+  .review-team .team-symbol { width:24px; height:24px; flex-basis:24px; }
+  .review-metrics { grid-template-columns:repeat(2,1fr); gap:18px; }
+  .review-stats { grid-template-columns:repeat(3,1fr); gap:14px; }
+  .review-highlight { padding:12px; }
+  .review-highlight .review-person { align-items:flex-start; gap:7px; }
+  .review-highlight .review-person .portrait { width:28px; height:28px; flex-basis:28px; }
+  .review-person strong { font-size:12px; }
+  .review-highlight-value { font-size:22px; }
+  .review-contributor { grid-template-columns:1fr; gap:12px; }
+  .review-player-metrics { text-align:left; gap:8px; }
+  .review-contribution { grid-column:1; }
+  .review-section-heading h3 { font-size:22px; }
+  .review-chart { height:110px; }
+}
+@media(max-width:360px) { .review-teams, .review-highlights { grid-template-columns:1fr; } }
