@@ -302,12 +302,35 @@ def test_extra_badges_require_real_game_milestones_and_creator_volume():
     awards = previous_night_badges(frame, "2025-12-26")
     a = {b["key"]: b["value"] for b in awards["a"]}
     assert a["shield"] == 5 and a["creator"] == 8 and a["magician"] == 1
+    assert a["coffee"] == 1
     assert not any(
-        b["key"] in {"creator", "magician"} for pid in ("b", "c") for b in awards[pid]
+        b["key"] in {"creator", "magician", "coffee"}
+        for pid in ("b", "c")
+        for b in awards[pid]
     )
     frame.attrs["imputed_stats"] = ["STL", "TOV"]
     assert not any(
-        b["key"] in {"shield", "creator", "magician"}
+        b["key"] in {"shield", "creator", "magician", "coffee"}
         for bs in previous_night_badges(frame, "2025-12-26").values()
         for b in bs
     )
+
+
+def test_coffee_qualifies_every_double_double_pair_and_all_tied_players():
+    from itertools import combinations
+
+    stats = ("PTS", "REB", "AST", "STL", "BLK")
+    rows = [game(str(i), **dict.fromkeys(stats, 0)) for i in range(10)]
+    for row, pair in zip(rows, combinations(stats, 2)):
+        row.update(dict.fromkeys(pair, 10))
+    rows += [game("short", PTS=10, REB=9, TOV=10, FGM=10, MIN=30)]
+    awards = previous_night_badges(pd.DataFrame(rows), "2025-12-26")
+    winners = {
+        pid: next((b for b in bs if b["key"] == "coffee"), None)
+        for pid, bs in awards.items()
+    }
+    assert all(
+        winners[str(i)]["value"] == 1 and winners[str(i)]["tied"] for i in range(10)
+    )
+    assert winners["short"] is None
+    assert not any(b["key"] == "magician" for bs in awards.values() for b in bs)

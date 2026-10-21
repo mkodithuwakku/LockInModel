@@ -19,6 +19,7 @@ fantasy-point badges use each league's own formula across the NBA player pool.
 | 💔 | Heartbreaker | Missed threes (FG3A − FG3M) |
 | 🛡️ | Two-way menace | Steals + blocks |
 | 🧠 | Clean creator | Assists minus turnovers, with at least 5 assists per game and a positive margin |
+| ☕ | Double-double | Number of games with 10+ in at least two of PTS/REB/AST/STL/BLK |
 | 🎩 | Triple-double magic | Number of games with 10+ in at least three of PTS/REB/AST/STL/BLK |
 | 🚀 | Above expectations | Largest positive actual FP − saved pregame projected FP |
 | 🫠 | Below expectations | Largest shortfall below saved pregame projected FP |
@@ -33,7 +34,7 @@ zero-minute/DNP rows. There is no minimum-minutes threshold beyond positive
 playing time: a short appearance can qualify. Exact ties use unrounded values.
 Duplicate player/game records count once, with the last correction retained. Multiple games on a date are summed; the per-game forecast is multiplied by the number of observed games for that player-night.
 
-Triple-doubles are derived per game before daily aggregation: two separate sub-threshold games cannot combine into a triple-double. Clean-creator scores use only games with at least five assists.
+Double-doubles and triple-doubles are derived per game before daily aggregation: separate sub-threshold games cannot combine into a milestone. Any two of points, rebounds, assists, steals, and blocks qualify for ☕; turnovers, minutes, and shooting counters do not. Triple-doubles also qualify for ☕ alongside 🎩. Tied qualifiers all receive the badge. Clean-creator scores use only games with at least five assists.
 
 Missing, imputed, nonfinite, or invalid category inputs suppress the category.
 A performance-provider failure suppresses all badges. Yesterday's real results

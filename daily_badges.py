@@ -20,6 +20,7 @@ CATEGORIES = {
     "shield": ("STL", "BLK"),
     "creator": ("AST", "TOV"),
     "magician": ("PTS", "REB", "AST", "STL", "BLK"),
+    "coffee": ("PTS", "REB", "AST", "STL", "BLK"),
 }
 
 
@@ -57,8 +58,9 @@ def previous_night_badges(games, reference):
             scores = values.sum(axis=1)
         elif key == "creator":
             scores = (values.AST - values.TOV).where(values.AST >= 5, 0)
-        elif key == "magician":
-            scores = ((values >= 10).sum(axis=1) >= 3).astype(int)
+        elif key in {"magician", "coffee"}:
+            threshold = 3 if key == "magician" else 2
+            scores = ((values >= 10).sum(axis=1) >= threshold).astype(int)
         totals = scores.groupby(night.PLAYER_ID).sum()
         totals = totals[totals > 0]
         ranks = totals.rank(method="min", ascending=False)
