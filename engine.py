@@ -11,6 +11,7 @@ from pickups import find_pickups
 from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import project_players, recommend_lineup, unavailable_lineup
+from daily_badges import previous_night_badges
 
 
 def today():
@@ -55,6 +56,11 @@ def build_dashboard(
         else pd.Timestamp(reference) - pd.Timedelta(days=1)
     )
     observed = games[games.GAME_DATE <= cutoff]
+    daily_badges = (
+        {}
+        if getattr(provider, "stats_error", None)
+        else previous_night_badges(observed, reference)
+    )
     if mode == "replay":
         provider.include_today = phase == "morning"
     # Player directory identity may use all rows; every statistical input uses observations only.
@@ -197,6 +203,7 @@ def build_dashboard(
                     decision_cache[key] = calculated
                 row = dict(decision_cache[key])
                 row["player"] = name
+            row["daily_badges"] = daily_badges.get(str(pid), [])
             row["starter"] = name in team["starters"]
             row["positions"] = meta.get("positions") or positions.get(
                 canonical_name(name), []

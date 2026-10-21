@@ -152,3 +152,14 @@ pictures fall back to initials. The existing daily sync updates changed photos.
 This adds no image database or new scheduled job. The inline LI emblem and matching
 SVG favicon are local assets; the charcoal/plum palette preserves the responsive
 layout and text labels for every status.
+
+
+### Previous-night badges
+
+`daily_badges.py` ranks the prior day's NBA observations once before the roster
+loop. Results are keyed by player ID and reused across all leagues. Provider
+failures suppress awards; forecasts and older-season fallback histories never
+enter the ranking. The public exporter allowlists each badge's display fields.
+`web/insights.js` validates badge keys and dates; `web/app.js` renders the tiny
+roster strip and detailed labels, with midnight/wake expiry. See
+[Daily badges](DAILY_BADGES.md) for category and tie rules.

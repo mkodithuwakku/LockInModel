@@ -37,3 +37,14 @@ test("empty rosters and single or constant-score charts remain usable", () => {
     assert.doesNotMatch(sparkline(scores), /NaN|Infinity|undefined/);
   }
 });
+
+test("daily badges expire by calendar date and retain human-readable ties", () => {
+  const { dailyBadges, previousDate } = require("../web/insights.js");
+  const p = {daily_badges: [{key:"sniper", date:"2025-12-31", rank:3, value:5, tied:true}]};
+  assert.equal(previousDate("2026-01-01"), "2025-12-31");
+  assert.equal(dailyBadges(p, "2026-01-01")[0].label, "Sniper · Tied #3 NBA-wide · 5 made threes · 2025-12-31");
+  assert.deepEqual(dailyBadges(p, "2026-01-02"), []);
+  assert.deepEqual(dailyBadges(p, "2025-12-31"), []);
+  assert.deepEqual(dailyBadges({daily_badges:[{...p.daily_badges[0],key:"unknown"}]}, "2026-01-01"), []);
+  assert.deepEqual(dailyBadges({daily_badges:[{...p.daily_badges[0],value:null}]}, "2026-01-01"), []);
+});

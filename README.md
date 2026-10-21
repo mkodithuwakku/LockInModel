@@ -17,6 +17,8 @@ One local SQLite database retains live game history for every league. A daily Ma
 
 The interface uses a compact fantasy lineup layout: warm charcoal and plum surfaces, ivory text, copper/gold accents, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. A custom interlocking LI emblem anchors the wordmark and favicon. Team selection uses each league’s custom Sleeper photo, then the owner’s profile photo, with initials if neither loads. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. The earlier lineup/form captures below show the previous navy palette and historical/sample data, not current NBA recommendations.
 
+**Daily details:** tiny previous-night badges mark NBA-wide top-three performances in threes, made baskets, rebounds, missed shots, steals, blocks, minutes, assists, and turnovers. Ties qualify; three icons stay visible beside a name, with the full breakdown on tap. These are fun stat annotations, separate from fantasy scoring. See the [badge rules and sample](docs/DAILY_BADGES.md).
+
 ![Recommended daily lineup and recent form beside a generic practice roster](docs/screenshots/daily-lineup-desktop.png)
 
 *The daily plan shows positions, opponents, projected FP, and an expandable list of excluded players. The five highest recent averages appear first; expand to see the full team or select a player for details. On [mobile](docs/screenshots/daily-lineup-mobile.png), the panel sits above the roster. Sparse history shows its actual sample size; unavailable values remain dashes. Form is an observed average, separate from the model's weighted baseline.*
@@ -119,6 +121,7 @@ flowchart TD
 
 | Files | Responsibility |
 | --- | --- |
+| [daily_badges.py](daily_badges.py) | League-independent previous-night leaders, tie handling and observation-only badges |
 | [app.py](app.py), [web/](web/) | HTTP boundary, jobs, interface state, rendering, and user actions; [insights.js](web/insights.js) derives observed team form |
 | [engine.py](engine.py), [providers.py](providers.py), [schedule.py](schedule.py) | Shared orchestration, live/replay policies, and cached weekly schedule |
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |

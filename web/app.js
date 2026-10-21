@@ -518,7 +518,22 @@ function rosterRow(p, i, week) {
       return `<span class="game-day ${onDay.length ? "has-game" : ""} ${date === state.data.date ? "is-today" : ""} ${!known ? "unknown" : ""}" title="${esc(date + ": " + desc)}" aria-label="${esc(date + ": " + desc)}"><small>${["M", "T", "W", "T", "F", "S", "S"][day]}</small>${onDay.map((g) => `<b>${g.home ? "" : "@"}${esc(g.opponent)}</b>${g.fp != null ? `<em>${fmt(g.fp)} FP</em>` : ""}`).join("") || `<b>${known ? "—" : "?"}</b>`}</span>`;
     })
     .join("");
-  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div><div class="player-meta"><span class="nba-team">${esc(p.nba_team || "FA / unknown")}</span><span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
+  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta"><span class="nba-team">${esc(p.nba_team || "FA / unknown")}</span><span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
+}
+function playerDailyBadges(p) {
+  if (state.data?.stale || state.data?.refresh_status === "failed") return [];
+  const reference = state.mode === "test" ? state.data.date : LockInPages.currentDate(new Date());
+  return LockInInsights.dailyBadges(p, reference);
+}
+function dailyBadgeStrip(p) {
+  const badges = playerDailyBadges(p);
+  if (!badges.length) return "";
+  return `<span class="daily-badges" aria-label="${esc(badges.map(b => b.label).join('; '))}">${badges.slice(0, 3).map(b => `<span class="daily-badge" title="${esc(b.label)}" aria-hidden="true">${b.icon}</span>`).join("")}${badges.length > 3 ? `<small title="${esc(badges.slice(3).map(b => b.label).join('; '))}">+${badges.length - 3}</small>` : ""}</span>`;
+}
+function dailyBadgeDetails(p) {
+  const badges = playerDailyBadges(p);
+  if (!badges.length) return "";
+  return `<section class="daily-badge-details" aria-label="Previous-night badges"><div class="daily-badge-heading">Last night's badges <span>${esc(badges[0].date)}</span></div>${badges.map(b => `<div><span aria-hidden="true">${b.icon}</span><span>${esc(b.label.split(' · ').slice(0, -1).join(' · '))}</span></div>`).join("")}</section>`;
 }
 function showPlayer(p) {
   let h = p.history || [];
@@ -530,7 +545,7 @@ function showPlayer(p) {
   let last = h.slice(-10);
   let max = Math.max(1, ...last.map((r) => Math.abs(r.fp)));
   $("#player-detail").innerHTML =
-    `<div class="detail-hero">${portrait(p)}<div><div class="eyebrow">${esc(p.nba_team || "PLAYER PROFILE")}</div><h2>${esc(p.player)}</h2>${p.status ? badge(p) : '<span class="status lock">ON THE RISE</span>'}${p.injury_status && p.injury_status !== "Healthy" ? `<span class="injury">${esc(p.injury_status)}</span>` : ""}</div></div><div class="detail-stats"><div class="detail-stat"><small>${p.projection ? "Projected per game" : p.recent_fp != null ? "Recent average" : "Latest score"}</small><b>${fmt(p.projection?.projected_fp ?? p.recent_fp ?? p.last_game_fp)} <small style="display:inline">FP</small></b></div><div class="detail-stat"><small>${p.projection ? "Last observed game" : "Baseline"}</small><b>${p.projection ? (h.length ? fmt(p.last_game_fp ?? h[h.length - 1].fp) : "No games") : fmt(p.baseline_fp ?? p.fp_mean_recent)}</b></div><div class="detail-stat"><small>${p.consistency != null ? "Above baseline" : p.remaining_games_est != null ? "Remaining games" : "Scheduled this week"}</small><b>${p.consistency != null ? Math.round(p.consistency * 100) + "%" : fmt(p.remaining_games_est ?? (p.schedule_state === "verified" ? p.week_games.length : null), 0)}</b></div></div><div class="detail-reason">${esc(p.note || p.reason || p.availability + ". " + (p.replacement ? "Estimated replacement: " + p.replacement + "." : "Team fit needs review."))}</div>${projectionDetail(p)}${p.week_games?.length ? `<div class="detail-schedule"><h3>This week</h3>${p.week_games.map((g) => `<div><span>${esc(g.date.slice(5))}</span><strong>${g.home ? "vs" : "@"} ${esc(g.opponent)}</strong><span>${g.fp != null ? fmt(g.fp) + " FP" : esc(gameStatus(g.status))}</span></div>`).join("")}<p>Schedule dates shown. Tip-off times are unavailable.</p></div>` : ""}${[...(p.warnings || []), ...(p.risks || [])].map((w) => `<p class="detail-warning">${esc(w)}</p>`).join("")}${
+    `<div class="detail-hero">${portrait(p)}<div><div class="eyebrow">${esc(p.nba_team || "PLAYER PROFILE")}</div><h2>${esc(p.player)}</h2>${p.status ? badge(p) : '<span class="status lock">ON THE RISE</span>'}${p.injury_status && p.injury_status !== "Healthy" ? `<span class="injury">${esc(p.injury_status)}</span>` : ""}</div></div><div class="detail-stats"><div class="detail-stat"><small>${p.projection ? "Projected per game" : p.recent_fp != null ? "Recent average" : "Latest score"}</small><b>${fmt(p.projection?.projected_fp ?? p.recent_fp ?? p.last_game_fp)} <small style="display:inline">FP</small></b></div><div class="detail-stat"><small>${p.projection ? "Last observed game" : "Baseline"}</small><b>${p.projection ? (h.length ? fmt(p.last_game_fp ?? h[h.length - 1].fp) : "No games") : fmt(p.baseline_fp ?? p.fp_mean_recent)}</b></div><div class="detail-stat"><small>${p.consistency != null ? "Above baseline" : p.remaining_games_est != null ? "Remaining games" : "Scheduled this week"}</small><b>${p.consistency != null ? Math.round(p.consistency * 100) + "%" : fmt(p.remaining_games_est ?? (p.schedule_state === "verified" ? p.week_games.length : null), 0)}</b></div></div><div class="detail-reason">${esc(p.note || p.reason || p.availability + ". " + (p.replacement ? "Estimated replacement: " + p.replacement + "." : "Team fit needs review."))}</div>${dailyBadgeDetails(p)}${projectionDetail(p)}${p.week_games?.length ? `<div class="detail-schedule"><h3>This week</h3>${p.week_games.map((g) => `<div><span>${esc(g.date.slice(5))}</span><strong>${g.home ? "vs" : "@"} ${esc(g.opponent)}</strong><span>${g.fp != null ? fmt(g.fp) + " FP" : esc(gameStatus(g.status))}</span></div>`).join("")}<p>Schedule dates shown. Tip-off times are unavailable.</p></div>` : ""}${[...(p.warnings || []), ...(p.risks || [])].map((w) => `<p class="detail-warning">${esc(w)}</p>`).join("")}${
       last.length
         ? `<div class="section-label" style="margin-top:25px">${p.history_source === "prior_season" ? "PRIOR-SEASON FANTASY PRODUCTION" : "RECENT FANTASY PRODUCTION"}</div><div class="chart">${last.map((r) => `<div class="bar-wrap" title="${esc(r.date)}: ${fmt(r.fp)} FP"><span>${fmt(r.fp, 0)}</span><div class="bar" style="height:${Math.max(2, (Math.abs(r.fp) / max) * 108)}px;${r.fp < 0 ? "background:var(--orange)" : ""}"></div></div>`).join("")}</div><p>Most recent games, oldest to newest. ${esc(state.data.observation_cutoff || state.data.date)} is the observation cutoff.</p><table class="history-table"><thead><tr><th>Date</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>FP</th></tr></thead><tbody>${h
             .slice(-10)
@@ -810,10 +825,11 @@ if (hosted) {
   function recheckPublishedReport() {
     if (!state.data || !publishedSource) return;
     const next = LockInPages.prepareReport(publishedSource);
-    const lineupChanged = next.teams.some((t) => t.recommended_lineup?.status !== state.data.teams[i]?.recommended_lineup?.status);
-    if (next.stale === state.data.stale && !lineupChanged) return;
+    const lineupChanged = next.teams.some((t, i) => t.recommended_lineup?.status !== state.data.teams[i]?.recommended_lineup?.status);
+    const badgesExpired = !!document.querySelector(".daily-badges, .daily-badge-details") && state.data.date !== LockInPages.currentDate(new Date());
+    if (next.stale === state.data.stale && !lineupChanged && !badgesExpired) return;
     render();
-    if (state.data.stale && $("#player-dialog").open)
+    if ((state.data.stale || badgesExpired) && $("#player-dialog").open)
       $("#player-dialog").close();
   }
   setInterval(recheckPublishedReport, 60000);
@@ -826,7 +842,13 @@ if (hosted) {
 if (!hosted) {
   function recheckLocalLineup() {
     const daily = team()?.recommended_lineup;
-    if (state.data && state.mode !== "test" && daily && daily.date !== LockInPages.currentDate(new Date())) renderLineup();
+    if (state.data && state.mode !== "test" && state.data.date !== LockInPages.currentDate(new Date())) {
+      if (daily) renderLineup();
+      if (document.querySelector(".daily-badges, .daily-badge-details")) {
+        renderContent();
+        if ($("#player-dialog").open) $("#player-dialog").close();
+      }
+    }
   }
   setInterval(recheckLocalLineup, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) recheckLocalLineup(); });

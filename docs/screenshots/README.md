@@ -8,7 +8,18 @@
   photo, demonstrating the initials fallback. Real imported league photos are
   verified separately and excluded from committed screenshots.
 
-All other captures below use the earlier navy/teal palette. They remain feature
+## Daily badge captures
+
+- `daily-badges-desktop.png`: generic Night Shift practice roster, showing small
+  previous-night icons and the overflow count beside player names.
+- `daily-badges-mobile.png`: phone player details with every earned badge's
+  category, observed value, rank and date.
+
+These use real December 25, 2025 observations and the December 26 practice clock,
+not current live recommendations. They use the current warm palette. The existing
+identity captures predate badges.
+
+The older feature captures below use the earlier navy/teal palette. They remain feature
 walkthroughs, not examples of the current branding.
 
 

@@ -19,3 +19,5 @@ When changing model or scoring behavior, update the reference and regression tes
 The [screenshot notes](screenshots/README.md) distinguish the captured generic layout from new scoring/publication behavior that those images do not demonstrate.
 
 [Projections](PROJECTIONS.md) documents full-roster forecast coverage, source precedence, stat normalization, and expected milestone bonuses.
+
+- [Daily badges](DAILY_BADGES.md): icon meanings, NBA-wide ranking, ties, date expiry, and screenshot scope.
