@@ -43,12 +43,12 @@ Exported HTML includes content hashes in script, stylesheet, and icon URLs. This
 
 Pushing `main` runs CI; it does not publish the website. The publisher uses the code and website assets in this local checkout, without automatically pulling GitHub source. If changes were made elsewhere, pull them locally and update dependencies as needed before the next publication. Use `.venv/bin/python publication.py run --force` to publish immediately, or let the next daily slot publish them. Documentation-only changes need a source push, not a new report.
 
-The SQLite file is authoritative for live observations, while `gh-pages` is a replaceable display snapshot with Git history. No database migration or hosted database synchronization is involved in publication. Existing HTTP caches are still used for requests such as rosters and schedules; they are not an alternative authoritative game history.
+The SQLite file is authoritative for live observations, while `gh-pages` is a replaceable display snapshot with Git history. No database migration or hosted database synchronization is involved in publication. Existing HTTP caches are still used for requests such as rosters and projections; they are not an alternative authoritative game history.
 
 ## Operations and recovery
 
 ```bash
-# Run a fresh report now; retains provider cooldowns and same-day database reuse.
+# Run a fresh report now; rechecks same-day finals while retaining provider cooldowns.
 .venv/bin/python publication.py run --force
 
 # Inspect the most recent success, pending upload, or retry reason.
@@ -68,6 +68,8 @@ Back up `data/lockin.sqlite3` while no refresh is running, together with private
 
 The browser and local dashboard suppress actionable results after 26 hours: one daily publication interval plus two hours of delay allowance. Midnight within the same fantasy week does not expire the report; a previous week expires when the next Monday begins. Invalid/future timestamps also suppress recommendations. The website checks every minute and when a hidden tab becomes visible. Expired player details close, while completed/drafting/upcoming statuses remain visible. The original snapshot date/time stays visible, and device clock accuracy affects browser expiry.
 
+An explicit refresh includes confirmed same-day finals, including opening night. NBA Stats outages or missing recent games use reconciled Sleeper / Sportradar final box scores. A forced publication reruns this fetch even if an earlier refresh succeeded that day. The scheduler still publishes once daily around 12:17 PM; it does not automatically republish after every game.
+
 Statistics and schedule failures preserve independent roster/schedule information without inventing a lock call. Missing performances suppress decisions and pickups. Unknown scoring rules still produce scoring gaps; omitted fouls and approximated rebound splits produce informational notes. Milestone bonuses are computed per league from observations.
 
 **Reload report** retrieves the published JSON; it does not trigger a local run. Team switching, player profiles, searches, filters, and pickup research work from the snapshot. Test Week, account connection, roster editing, and archived-league browsing remain in the local Flask app.
@@ -78,7 +80,7 @@ The same URL adapts at 740px and below, with bottom navigation, horizontally scr
 
 ## Public data boundary
 
-The exported report contains team/league names, league-derived IDs, roster players, lineup slots, NBA teams/injury labels, opponents, observed fantasy points, scoring notes, recommendations, pickup results, and publication metadata. It contains no account username field, email addresses, credentials, full ownership lists, or internal database paths. These display fields are public.
+The exported report contains team/league names, league-derived IDs, roster players, lineup slots, NBA teams/injury labels, opponents, observed fantasy points, scoring notes, recommendations, pickup results, the available-player directory and ownership timestamp, and publication metadata. It contains no account username field, email addresses, credentials, full ownership lists, or internal database paths. These display fields are public.
 
 Only generated files are committed to the publishing branch, including `insights.js` for the Recent form panel. It computes descriptive averages from the already-allowlisted player histories, requiring no new endpoint or database fields. Existing images can be included; otherwise the site uses NBA's image CDN with an initials fallback. Google Fonts and the image CDN are independent browser requests. The database and local reports are not copied into GitHub Actions caches or the publishing branch.
 

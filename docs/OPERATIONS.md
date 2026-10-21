@@ -40,7 +40,7 @@ python main.py --live
 python main.py --live --send --daily
 ```
 
-The first command explicitly retrieves current inputs but does not send email. The second is intended for the noon automated run. It refreshes Sleeper rosters, skips completed, pre-draft, and drafting leagues, and reports failures instead of inventing recommendations. NBA observations through the previous day are used for noon analysis.
+The first command explicitly retrieves current inputs but does not send email. The second is intended for the noon automated run. It refreshes Sleeper rosters, skips completed, pre-draft, and drafting leagues, and reports failures instead of inventing recommendations. Live analysis includes completed observations through the refresh day; same-day games require a confirmed final schedule status.
 
 Delivery requires local EMAIL_USER and EMAIL_APP_PASSWORD and an intended recipient in `config.local.yaml`. A report is saved before attempting delivery. The application records an attempt before SMTP to avoid duplicate automatic sends after an ambiguous failure. If delivery is uncertain, investigate before manually changing the ledger; automatically retrying may send duplicates.
 
@@ -111,7 +111,7 @@ The Mac publishes the public dashboard with `publication.py`; GitHub serves only
 .venv/bin/python publication.py status
 ```
 
-Initial setup publishes the branch, configures Pages to serve it, and requests the first Pages build. Installation creates `~/Library/LaunchAgents/com.lockin.publish.plist`; Codex and Flask do not need to remain open. Keep the Mac logged in and connected for updates. The agent runs after missed sleep intervals/login and retries transient failures. Inspect `logs/publication.log`, `logs/publication-error.log`, and `state/publication.json`. A manual `publication.py run --force` bypasses the daily publication guard, but does not bypass provider cooldowns or force another same-day game-data download. Source changes made on another computer must be pulled into this checkout before publication. See [Hosting](HOSTING.md) for verification and recovery.
+Initial setup publishes the branch, configures Pages to serve it, and requests the first Pages build. Installation creates `~/Library/LaunchAgents/com.lockin.publish.plist`; Codex and Flask do not need to remain open. Keep the Mac logged in and connected for updates. The agent runs after missed sleep intervals/login and retries transient failures. Inspect `logs/publication.log`, `logs/publication-error.log`, and `state/publication.json`. A manual `publication.py run --force` bypasses the daily publication guard, and fetches game updates again, even on the same day; it still respects provider cooldowns. Source changes made on another computer must be pulled into this checkout before publication. See [Hosting](HOSTING.md) for verification and recovery.
 
 ## Database maintenance
 

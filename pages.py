@@ -81,6 +81,13 @@ def public_report(report):
             ]
             item["results"].append(row)
         item["pickups"] = [select(p, PICKUP_FIELDS) for p in team.get("pickups", [])]
+        item["available_players"] = [
+            select(
+                p,
+                "player player_id nba_team positions injury_status ownership_as_of recent_fp games_recent baseline_fp lift".split(),
+            )
+            for p in team.get("available_players", [])
+        ]
         if team.get("recommended_lineup"):
             daily = team["recommended_lineup"]
             item["recommended_lineup"] = select(daily, LINEUP_FIELDS)

@@ -83,7 +83,11 @@ class LiveProvider:
         self.games = pd.DataFrame(columns=["PLAYER_ID", "PLAYER_NAME", "GAME_DATE"])
         try:
             self.calendar = SeasonSchedule(self.manifest["season"].split("-")[0])
-            self.preseason = reference <= self.calendar.start
+            self.preseason = reference <= self.calendar.start and not any(
+                g["date"] <= str(reference)
+                and g["status"] in ("complete", "final", "post_game")
+                for g in self.calendar.games
+            )
         except DataUnavailable as exc:
             self.alerts.append(
                 {"severity": "error", "message": "Schedule unavailable: " + str(exc)}
@@ -93,7 +97,39 @@ class LiveProvider:
         if not self.preseason:
             try:
                 self.games = parse_dates(bulk_player_logs(self.manifest["season"]))
+                if self.calendar:
+                    final_pairs = {
+                        (g["date"], g[side])
+                        for g in self.calendar.games
+                        if g["status"] in ("complete", "final", "post_game")
+                        and str(reference - pd.Timedelta(days=7))
+                        <= g["date"]
+                        <= str(reference)
+                        for side in ("home", "away")
+                    }
+                    present = {
+                        (str(r.GAME_DATE.date()), r.TEAM_ABBREVIATION)
+                        for r in self.games.itertuples()
+                        if hasattr(r, "TEAM_ABBREVIATION")
+                    }
+                    if not final_pairs.issubset(present):
+                        raise DataUnavailable(
+                            "NBA Stats has not supplied all recent final games yet."
+                        )
             except DataUnavailable as exc:
+                if self.calendar:
+                    try:
+                        from sleeper_stats import completed_logs
+
+                        self.games = parse_dates(
+                            completed_logs(self.calendar, reference)
+                        )
+                        self.manifest["source"] = (
+                            "Sleeper / Sportradar final box scores; Sleeper schedule"
+                        )
+                        return
+                    except DataUnavailable as fallback_error:
+                        exc = DataUnavailable(str(exc) + " " + str(fallback_error))
                 self.stats_error = str(exc)
                 from game_store import GameStore
 

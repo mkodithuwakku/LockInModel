@@ -60,3 +60,57 @@ def test_candidates_and_scoring_are_specific_to_each_league():
     assert (
         find_pickups(h, c, cfg, "2025-12-19") == []
     )  # Same player, different scoring, below lift threshold.
+
+
+def test_available_directory_without_history_excludes_full_league_ownership():
+    from pickups import available_players
+
+    team = dict(
+        ownership_complete=True,
+        owned_players=["Rostered", "Reserve Jr."],
+        players=["Mine"],
+        owned_player_ids=["4"],
+        synced_at="2026-10-21T06:00:00Z",
+    )
+    directory = {
+        str(i): dict(full_name=name, active=True, fantasy_positions=["PG"], team="BOS")
+        for i, name in enumerate(
+            ["Available", "Rostered", "Reserve", "Mine", "Taxi", "Retired", "Team"]
+        )
+    }
+    directory["5"]["active"] = False
+    directory["6"]["fantasy_positions"] = ["TEAM"]
+    pool = available_players(team, directory)
+    assert [p["player"] for p in pool] == ["Available"]
+    assert pool[0]["ownership_as_of"] == team["synced_at"]
+    assert "projected_fp" not in pool[0]  # Missing analysis isn't zero.
+    assert available_players({**team, "ownership_complete": False}, directory) == []
+
+
+def test_available_players_show_actual_league_scored_values_before_trend_qualifies():
+    from pickups import available_players
+    from test_game_store import games
+
+    team = dict(
+        ownership_complete=True, owned_players=[], players=[], weights={"PTS": 2}
+    )
+    directory = {"1": dict(full_name="Example", active=True, fantasy_positions=["PG"])}
+    item = available_players(team, directory, games(points=0), load_cfg())[0]
+    assert item["recent_fp"] == 0 and item["games_recent"] == 1
+    assert item["baseline_fp"] is None and item["lift"] is None
+    assert (
+        available_players(team, directory, games(points=12), load_cfg())[0]["recent_fp"]
+        == 24
+    )
+
+
+def test_available_directory_survives_missing_weighted_stats():
+    from pickups import available_players
+    from test_game_store import games
+
+    team = dict(
+        ownership_complete=True, owned_players=[], players=[], weights={"FTA": 1}
+    )
+    directory = {"1": dict(full_name="Example", active=True, fantasy_positions=["PG"])}
+    result = available_players(team, directory, games(), load_cfg())
+    assert len(result) == 1 and "recent_fp" not in result[0]

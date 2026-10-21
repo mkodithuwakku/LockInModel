@@ -202,6 +202,14 @@ def sync(username, season):
                 "weights": weights,
                 "unsupported_scoring": unsupported,
                 "owned_players": occupied,
+                "owned_player_ids": sorted(
+                    {
+                        str(pid)
+                        for r in rosters
+                        for field in ["players", "reserve", "taxi"]
+                        for pid in (r.get(field) or [])
+                    }
+                ),
                 "ownership_complete": True,
                 "synced_at": dt.datetime.now(dt.timezone.utc).isoformat(),
                 "sleeper_username": username,

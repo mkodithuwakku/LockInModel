@@ -2907,3 +2907,19 @@ button.lineup-name:hover strong { color: #d0b483; }
   .game-day .game-score { font-size: 8px; }
   .game-score span { font-size: 7px; }
 }
+
+/* Available-player browsing remains separate from qualified pickup signals. */
+.available-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.available-heading h2 { font-size:21px; margin:16px 0 4px; }
+.available-heading small, .available-heading>span, .available-note { color:var(--muted); font-size:12px; font-weight:400; }
+.available-note { margin:4px 0 16px; }
+.available-list { border-top:1px solid var(--line); }
+.available-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--line); }
+.available-row .player-ident { min-width:0; }
+.available-row .portrait { width:42px; height:44px; flex:0 0 42px; }
+.available-row .player-name { font-size:15px; }
+.available-row .player-meta { font-size:11px; }
+.available-stats { display:flex; gap:24px; color:var(--muted); font-size:10px; text-align:right; flex-shrink:0; }
+.available-stats b { display:block; font-size:16px; font-weight:500; margin-top:3px; }
+.available-more { display:block; margin:20px auto; padding:10px 18px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); cursor:pointer; }
+@media(max-width:520px) { .available-stats { gap:10px; } .available-stats span:nth-child(2) { display:none; } .available-row { gap:8px; } .available-row .player-name { font-size:13px; } }

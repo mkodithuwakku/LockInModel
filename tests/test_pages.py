@@ -185,3 +185,20 @@ def test_lineup_export_is_allowlisted_and_failure_preserves_dated_snapshot():
     )
     assert failed["refresh_status"] == "failed"
     assert exported["teams"][0]["recommended_lineup"]["status"] == "ready"
+
+
+def test_available_directory_survives_failure_without_private_fields():
+    raw = report()
+    raw["teams"][0]["available_players"] = [
+        dict(
+            player="Available",
+            player_id="1",
+            positions=["PG"],
+            ownership_as_of="2026-10-20",
+            private="PRIVATE",
+        )
+    ]
+    public = pages.public_report(pages.unavailable(raw, "Refresh failed"))
+    assert public["teams"][0]["pickups"] == []
+    assert public["teams"][0]["available_players"][0]["player"] == "Available"
+    assert "PRIVATE" not in json.dumps(public)

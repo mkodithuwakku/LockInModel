@@ -168,7 +168,7 @@ def test_rookie_and_bench_projection_integration_without_nba_id(monkeypatch):
     row = report["teams"][0]["results"][0]
     assert row["projection"]["projected_fp"] is not None
     assert row["projection"]["projected_stats"]["MIN"] == 30
-    assert not row["starter"] and row["player_id"] is None
+    assert not row["starter"] and row["player_id"] == "sleeper:rookie"
     assert report["teams"][0]["recommended_lineup"]["filled_slots"] == 1
     assert report["alerts"] == [] and report["teams"][0]["scoring_notes"]
 

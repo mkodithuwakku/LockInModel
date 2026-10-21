@@ -79,7 +79,7 @@ def test_drafted_preseason_roster_does_not_request_nonexistent_stats(monkeypatch
     row = report["teams"][0]["results"][0]
     assert report["alerts"] == []
     assert report["schedule_week"] == ["2026-10-19", "2026-10-25"]
-    assert report["observation_cutoff"] == str(reference - dt.timedelta(days=1))
+    assert report["observation_cutoff"] == str(reference)
     assert row["status"] == "UPCOMING" and row["decision"] is None
     assert (row["nba_team"], row["roster_slot"]) == ("PHI", "G")
     assert [g["opponent"] for g in row["week_games"]] == ["BOS", "NYK"]

@@ -6,6 +6,7 @@ import pandas as pd
 from fetch_data import canonical_name, normalize_stats_for_scoring
 from scoring import add_fantasy_points, apply_scoring_policy, scoring_notes
 from model import rolling_baseline
+from transport import DataUnavailable
 
 
 def weighted(values, decay=0.92):
@@ -166,3 +167,75 @@ def find_pickups(games, team, cfg, reference, positions=None):
     return sorted(
         candidates, key=lambda p: (p["signal_score"], p["team_gain"] or 0), reverse=True
     )[:30]
+
+
+def available_players(team, directory, games=None, cfg=None):
+    """A verified ownership directory, independent of history or rising signals."""
+    if not team.get("ownership_complete"):
+        return []
+    from fetch_data import player_directory
+
+    identities = player_directory()
+    summaries = {}
+    if games is not None and not games.empty and cfg is not None:
+        policy = apply_scoring_policy(dict(team))
+        if not policy.get("unsupported_scoring"):
+            try:
+                scored = add_fantasy_points(
+                    normalize_stats_for_scoring(games),
+                    policy.get("weights") or cfg["weights"],
+                )
+            except (DataUnavailable, ValueError):
+                # Directory browsing must survive unavailable scoring inputs.
+                scored = pd.DataFrame(columns=["PLAYER_ID"])
+            for _, history in scored.groupby("PLAYER_ID"):
+                history = history.sort_values("GAME_DATE").tail(10)
+                recent = float(history.tail(5).FP.mean())
+                baseline = (
+                    float(history.head(5).FP.mean()) if len(history) == 10 else None
+                )
+                summaries[canonical_name(str(history.iloc[-1].PLAYER_NAME))] = {
+                    "recent_fp": round(recent, 2),
+                    "games_recent": min(5, len(history)),
+                    "baseline_fp": round(baseline, 2) if baseline is not None else None,
+                    "lift": (
+                        round(recent - baseline, 2) if baseline is not None else None
+                    ),
+                }
+    owned = {
+        canonical_name(n)
+        for n in team.get("owned_players", []) + team.get("players", [])
+    }
+    owned_ids = {str(pid) for pid in team.get("owned_player_ids", [])}
+    result = []
+    for sid, player in directory.items():
+        name = (
+            player.get("full_name")
+            or " ".join(
+                [player.get("first_name", ""), player.get("last_name", "")]
+            ).strip()
+        )
+        positions = player.get("fantasy_positions") or []
+        if (
+            not name
+            or player.get("active") is not True
+            or not set(positions) & {"PG", "SG", "SF", "PF", "C"}
+            or str(sid) in owned_ids
+            or canonical_name(name) in owned
+        ):
+            continue
+        pid = identities.get(canonical_name(name))
+        result.append(
+            {
+                "player": name,
+                "player_id": str(pid) if pid else None,
+                "nba_team": player.get("team") or player.get("team_abbr"),
+                "positions": positions,
+                "injury_status": player.get("injury_status"),
+                "ownership_as_of": team.get("synced_at"),
+                **summaries.get(canonical_name(name), {}),
+            }
+        )
+    return sorted(
+        result, key=lambda p: (not bool(p["nba_team"]), canonical_name(p["player"]))
+    )

@@ -64,7 +64,7 @@ class GameStore:
             )
         return parse_dates(pd.DataFrame([json.loads(row[0]) for row in rows]))
 
-    def refresh(self, season, fetch, reference):
+    def refresh(self, season, fetch, reference, force=False):
         from fetch_data import parse_dates, normalize_stats_for_scoring
 
         reference = dt.date.fromisoformat(str(reference))
@@ -79,7 +79,7 @@ class GameStore:
                 latest = db.execute(
                     "SELECT MAX(game_date) FROM games WHERE season=?", (season,)
                 ).fetchone()[0]
-            if previous and previous[0] == str(reference):
+            if not force and previous and previous[0] == str(reference):
                 return self.read(season)
             full = (
                 not previous
@@ -127,6 +127,25 @@ class GameStore:
                     "NBA returned empty game history; saved games retained."
                 )
             with self.connect() as db:
+                # Providers use different game IDs. Reconcile a fallback row with
+                # the NBA row for the same player's date, without double-counting.
+                for record in records:
+                    season_key, gid, pid, day, payload = record
+                    incoming = json.loads(payload)
+                    existing = db.execute(
+                        "SELECT game_id, payload FROM games WHERE season=? AND player_id=? AND game_date=? AND game_id<>?",
+                        (season_key, pid, day, gid),
+                    ).fetchall()
+                    for old_gid, old_payload in existing:
+                        old = json.loads(old_payload)
+                        if "Sleeper / Sportradar" in (
+                            old.get("SOURCE"),
+                            incoming.get("SOURCE"),
+                        ):
+                            db.execute(
+                                "DELETE FROM games WHERE season=? AND game_id=? AND player_id=?",
+                                (season_key, old_gid, pid),
+                            )
                 db.executemany(
                     """INSERT INTO games VALUES (?, ?, ?, ?, ?)
                     ON CONFLICT(season, game_id, player_id) DO UPDATE SET

@@ -93,3 +93,5 @@ Verified browser interactions include lineup-to-player detail links, excluded-pl
 - `player-projections-mobile.png`: 390px player details showing a rookie's full projected box score and source date. No NBA game history is invented.
 
 These use an isolated in-memory configuration, not personal team names or account settings. The earlier daily-lineup and team-insights screenshots predate per-row projected stat lines; retain them only as demonstrations of their specific features. Current-season projections are estimates, not observed scores or verified prediction accuracy.
+
+- `available-players-desktop.png` and `available-players-mobile.png`: current neutral theme, generic team labels, history-independent unrostered-player directory with observed averages where available and empty trend placeholders. Public NBA identities only; no personal team photos or account details.

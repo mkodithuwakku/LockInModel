@@ -43,7 +43,7 @@ A drafted league can be active before NBA opening night. The live provider check
 
 A strong fantasy performance needs context: how unusual was it for this player, how many chances remain this week, and how does this league score the box score? Managing multiple teams also means tracking different rules and deciding whether a rising player would improve a particular roster.
 
-LockIn brings those checks into one personal workspace. A manager imports Sleeper teams or uses sample rosters, reviews scores and explanations, and makes the actual league decisions in Sleeper. The repository implements the dashboard, Flask API, analysis engine, data adapters, local persistence, historical capture, practice simulator, report delivery, and tests. Sleeper supplies league data, player metadata, and the season schedule; NBA Stats supplies observed performances once regular-season games have been played.
+LockIn brings those checks into one personal workspace. A manager imports Sleeper teams or uses sample rosters, reviews scores and explanations, and makes the actual league decisions in Sleeper. The repository implements the dashboard, Flask API, analysis engine, data adapters, local persistence, historical capture, practice simulator, report delivery, and tests. Sleeper supplies league data, player metadata, and the season schedule. Observed performances come from NBA Stats, with validated Sleeper / Sportradar final box scores when NBA Stats is unavailable or missing recent finals.
 
 The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock and pickup scores are **explainable heuristics, not calibrated predictions or a proven optimal policy**.
 
@@ -57,7 +57,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 - **On the Rise:** compare five recent games with an earlier baseline, discount fragile improvement signals, and estimate fit against compatible roster players.
 - **Offline Test Week:** reveal nights, bank one score per starter, edit practice rosters, and resume progress without changing live teams.
 - **Read-only Sleeper import:** fetch leagues, scoring, and league-wide ownership from a username; preserve the previous team configuration if an import fails.
-- **Shared live history:** SQLite accumulates observations across daily refreshes, updates corrected games without duplicates, and reuses successful same-day downloads across leagues and entry points.
+- **Shared live history:** SQLite accumulates observations across daily refreshes, updates corrected games without duplicates, and shares each refresh across every league. An explicit refresh rechecks completed games even after an earlier refresh that day.
 - **Daily web publication:** the Mac refreshes data and pushes an allowlisted static export; GitHub Pages serves it. Wake/login catch-up, bounded retries, and deployment confirmation handle interrupted runs. Failed data refreshes and expired reports suppress recommendations.
 - **Extensible league formulas:** configurable milestone bonuses, omitted unavailable fouls, and a disclosed total-rebound fallback support leagues without hardcoding team-specific rules.
 - **Local reporting:** save reports before optional email delivery, suppress repeated daily delivery attempts, and deduplicate pickup alerts.
@@ -176,7 +176,7 @@ The rationale below describes how each choice fits the implementation, rather th
 
 ## Technical challenges
 
-**Keeping replay honest.** Morning practice and live analysis use observations through the previous day; night replay includes the selected day. Future rows are excluded from model and pickup inputs. Tests change future scores and confirm present results stay unchanged. Finalized schedules and current/sample ownership still limit realism. The lesson is to distinguish time-safe statistical inputs from a fully realistic backtest.
+**Keeping replay honest.** Morning practice uses observations through the previous day; night replay includes the selected day. Live reports include same-day performances only after the schedule confirms the game is final. Future rows are excluded from model and pickup inputs. Tests change future scores and confirm present results stay unchanged. Finalized schedules and current/sample ownership still limit realism. The lesson is to distinguish time-safe statistical inputs from a fully realistic backtest.
 
 **Normalizing different scoring rules.** Core stats must be finite and nonnegative. Missing required weighted fields are rejected. Milestone bonuses are derived from each game, including 15+ assists and 20+ rebounds; positive thresholds for points, rebounds, assists, steals, and blocks are configurable. Double/triple-double and threshold bonuses stack. Unavailable fouls are omitted, and unavailable rebound splits use a disclosed total-rebound approximation. Unknown nonzero rules still create scoring gaps. Missing, zero, and intentionally ignored must remain different data states.
 
@@ -203,6 +203,10 @@ For a selected player, `per_player_week_decision()` in [decide.py](decide.py) fo
 
 5. Start the lock score at `1 - p_future_beats`, then apply rarity, small-sample, remaining-opportunity, and optional conservative-mode adjustments. Clamp to `[0, 1]`; scores at least `0.5` become `LOCK`. Those adjustments make the final value a heuristic preference, not a calibrated probability.
 6. Return the score, baseline, opportunities, history, and explanation. The engine withholds actionable output when league scoring is incomplete. The user acts in Sleeper, or banks the score locally in Test Week.
+
+**On the rise** also lists unrostered players from the complete league ownership snapshot, including reserves and taxi exclusions. Search covers the entire available pool; rows load in batches of 30, with NBA-assigned players first. Unranked players show their observed mean from up to five games when available and dashes for missing analysis, without becoming pickup recommendations. The dated directory remains visible if recommendations expire.
+
+![Available-player directory on mobile](docs/screenshots/available-players-mobile.png)
 
 Pickup analysis is separate: it needs at least 13 observations, compares the last five games with up to 20 earlier games, checks minutes and consistency, discounts shooting/steals/blocks spikes, and prefers a compatible bench replacement. It does not optimize every roster slot or model injuries.
 
@@ -266,7 +270,7 @@ After connecting Sleeper locally and configuring authenticated Git access to you
 .venv/bin/python publication.py run --force
 ```
 
-The default daily slot is 12:17 PM America/Edmonton. The agent checks every 15 minutes and catches up after wake/login; Codex and Flask need not be open. Pushing source to `main` runs CI but does not deploy the website. Publication uses the local checkout's code and assets, so another machine's source changes must be pulled locally before publication. `--force` bypasses the publication ledger, not provider cooldowns or same-day database reuse. See [Hosting](docs/HOSTING.md) for prerequisites, retry behavior, public fields, and recovery.
+The default daily slot is 12:17 PM America/Edmonton. The agent checks every 15 minutes and catches up after wake/login; Codex and Flask need not be open. Pushing source to `main` runs CI but does not deploy the website. Publication uses the local checkout's code and assets, so another machine's source changes must be pulled locally before publication. `--force` bypasses the publication ledger and fetches game updates again, including on the same day; provider cooldowns still apply. The scheduled cadence remains daily, not after every game. See [Hosting](docs/HOSTING.md) for prerequisites, retry behavior, public fields, and recovery.
 
 ## Limitations and next improvements
 

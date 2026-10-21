@@ -169,6 +169,8 @@ There are no injury, opponent, minutes-projection, home/away, or back-to-back fe
 
 ## 10. Player improvement screening
 
+The On the rise directory is independent of trend qualification: verified unrostered players remain browsable without history, using empty analysis placeholders. The directory itself is not a recommendation.
+
 `pickups.py` uses five recent observed games and a disjoint baseline of eight to twenty earlier games, within 90 days. Recent means use exponential decay 0.92. Candidates require at least 4 FP improvement, at least 0.5 baseline SD improvement, 60% of recent games above baseline, 18 recent minutes per game, and an appearance within seven days.
 
 The estimated future FP is:
@@ -196,3 +198,7 @@ The complete imported `roster_positions` list defines the active slots. PG/SG/SF
 The rectangular Hungarian solver maximizes the sum of projections with one player per eligible slot and at most one slot per player. Zero-value dummy assignments represent vacancies; negative-value players need not be started. Time is `O(S² × (P + S))`. Unit tests compare its result with independent exhaustive enumeration, including flexible-position conflicts. This guarantees the maximum **for the supplied eligible candidates and projections**, not maximum realized points. Missing inputs produce `partial`, no available games produces `no_games`, and unsupported slots/scoring or provider failures produce `unavailable`.
 
 Weekly Sleeper locks and Game Pick selections are not imported. This plan therefore assumes positions can be rearranged before games and is not a legal-move validator. Sleeper documents [position restrictions after locking](https://support.sleeper.com/en/articles/6522833-lock-in-mode-details); users must check existing locks and deadlines there. Known banked Test Week scores suppress the unrestricted preview until restart. The dated daily assignment remains displayed until the next report replaces it; it is not recomputed or erased at midnight. Older snapshots are labeled with their original date and report freshness.
+
+### Live final-game observations
+
+Live reports accept same-day box scores only when the schedule confirms a final. If NBA Stats is unavailable or missing recent finals, validated Sleeper / Sportradar game rows enter the same SQLite store and scoring path. The fallback verifies team scoring totals and playing-time coverage, and never uses season aggregates or projections as observations. Opening-night finals are eligible immediately on an explicit refresh. Historical replay retains its separate morning/night cutoffs.

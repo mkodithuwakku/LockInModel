@@ -7,7 +7,7 @@ from storage import ROOT, load_cfg, read_json
 from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
 from decide import per_player_week_decision
-from pickups import find_pickups
+from pickups import find_pickups, available_players
 from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import project_players, recommend_lineup, unavailable_lineup
@@ -52,10 +52,25 @@ def build_dashboard(
     games = parse_dates(provider.games)
     cutoff = (
         pd.Timestamp(reference)
-        if mode == "replay" and phase == "night"
+        if mode == "live" or phase == "night"
         else pd.Timestamp(reference) - pd.Timedelta(days=1)
     )
     observed = games[games.GAME_DATE <= cutoff]
+    if mode == "live":
+        # Same-day observations must be independently confirmed final. A replay
+        # still uses its selected morning/night cutoff exactly as before.
+        calendar = getattr(provider, "calendar", None)
+        final_teams = {
+            g[side]
+            for g in (calendar.games if calendar else [])
+            if g["date"] == str(reference)
+            and g["status"] in ("complete", "final", "post_game")
+            for side in ("home", "away")
+        }
+        current_final = observed.get(
+            "TEAM_ABBREVIATION", pd.Series("", index=observed.index)
+        ).isin(final_teams)
+        observed = observed[(observed.GAME_DATE < cutoff) | current_final]
     daily_badges = (
         {}
         if getattr(provider, "stats_error", None)
@@ -130,6 +145,9 @@ def build_dashboard(
         for name in team["players"]:
             pid = identity.get(canonical_name(name))
             meta = roster_metadata(team, name, sleeper_players)
+            if mode == "live" and pid is None and meta.get("sleeper_id"):
+                # New rookies can precede nba_api's static identity catalog.
+                pid = "sleeper:" + str(meta["sleeper_id"])
             if mode == "live" and getattr(provider, "preseason", False):
                 row = {
                     "player": name,
@@ -398,6 +416,20 @@ def build_dashboard(
                 "results": rows,
                 "recommended_lineup": daily_lineup,
                 "pickups": candidates,
+                "available_players": (
+                    available_players(
+                        team,
+                        sleeper_players,
+                        (
+                            observed
+                            if not getattr(provider, "stats_error", None)
+                            else None
+                        ),
+                        cfg,
+                    )
+                    if mode == "live"
+                    else []
+                ),
             }
         )
     return {
@@ -513,6 +545,7 @@ def add_week_schedule(row, provider, reference, cutoff, mode):
 def roster_dashboard(cfg, include_archived=False):
     """Show saved rosters even when the season or the live provider is unavailable."""
     teams = []
+    directory = read_json(ROOT / "state/sleeper-players.json", {})
     from fetch_data import resolve_player_ids
 
     for t in cfg["teams"]:
@@ -570,6 +603,7 @@ def roster_dashboard(cfg, include_archived=False):
                 "results": rows,
                 "recommended_lineup": unavailable_lineup(today(), note),
                 "pickups": [],
+                "available_players": available_players(t, directory),
             }
         )
     return {

@@ -13,7 +13,7 @@ class SeasonSchedule:
             if payload is not None
             else HTTP.get(
                 f"https://api.sleeper.app/schedule/nba/regular/{self.season}",
-                ttl=21600,
+                ttl=0,
                 pace=3,
             )
         )
@@ -41,6 +41,9 @@ class SeasonSchedule:
                         "away": away,
                         "game_id": str(item["game_id"]),
                         "status": str(item["status"]),
+                        "week": item.get("week"),
+                        "home_points": item["home"].get("points"),
+                        "away_points": item["away"].get("points"),
                     }
                 )
         except (KeyError, ValueError, TypeError, IndexError) as exc:

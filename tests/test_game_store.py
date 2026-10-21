@@ -78,3 +78,18 @@ def test_seasons_are_isolated_and_missing_stats_never_committed(tmp_path):
     with pytest.raises(DataUnavailable):
         store.refresh("2026-27", lambda _: games().drop(columns="REB"), "2026-10-22")
     assert store.read("2026-27").PTS.tolist() == [30]
+
+
+def test_explicit_refresh_updates_same_day_and_reconciles_provider_ids(tmp_path):
+    store = GameStore(tmp_path / "games.sqlite3")
+    store.refresh(
+        "2026-27",
+        lambda _: games(gid="sleeper-1").assign(SOURCE="Sleeper / Sportradar"),
+        "2026-10-20",
+    )
+    # An explicit refresh sees corrected final stats instead of today's cached row.
+    updated = store.refresh(
+        "2026-27", lambda _: games(points=25), "2026-10-20", force=True
+    )
+    assert len(updated) == 1 and updated.PTS.tolist() == [25]
+    assert updated.GAME_ID.tolist() == ["0022600001"]

@@ -269,7 +269,7 @@ def bulk_player_logs(season):
         return endpoint_frame(ep, ttl=0)
 
     return GameStore().refresh(
-        season, fetch, dt.datetime.now(ZoneInfo("America/Edmonton")).date()
+        season, fetch, dt.datetime.now(ZoneInfo("America/Edmonton")).date(), force=True
     )
 
 
