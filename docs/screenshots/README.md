@@ -1,5 +1,15 @@
 # README screenshots
 
+## Current roster-first layout
+
+- `roster-first-desktop.png`: generic five-player sample, full-width roster with
+  Recommended lineup and Recent form following below.
+- `roster-first-mobile.png`: 390px sample roster displayed before either insight
+  panel; both panels follow beneath the full sheet.
+
+All earlier screenshots below predate this layout order. They still demonstrate
+individual features but not current placement of the insight panels.
+
 ## Current visual identity
 
 - `identity-desktop.png`: generic sample roster, with the interlocking LI logo,

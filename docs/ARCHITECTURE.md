@@ -128,7 +128,7 @@ Sleeper sync now persists the full `roster_positions` array, preserving unoccupi
 
 The nested `recommended_lineup` contract contains date, status/reason, total FP, filled/eligible/missing counts, ordered slots, and unselected players with reasons. `pages.public_report()` explicitly allowlists both the summary and nested player fields; private configuration is never copied wholesale. Flask and the browser clear daily selections when the Edmonton date changes, independently of report expiry. `web/pages.js` is loaded on local and hosted pages so both use the same browser date policy. Open tabs recheck on visibility changes and every minute.
 
-The responsive card shares the right rail with Recent form, appears above the roster on phones, and places both panels side by side at tablet widths. Player links reuse canonical roster indexes. No API route, external database, remote Mac trigger, or automatic Sleeper action is added.
+The Roster sheet spans the full content width and comes first in both DOM and visual order. Recommended lineup and Recent form follow below the entire roster, side by side above 740px and stacked on phones. Player links reuse canonical roster indexes. No API route, external database, remote Mac trigger, or automatic Sleeper action is added.
 
 ## Full-roster forecasts and chart coverage
 
