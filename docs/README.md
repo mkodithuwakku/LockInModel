@@ -20,6 +20,7 @@ The [screenshot notes](screenshots/README.md) distinguish the captured generic l
 
 [Projections](PROJECTIONS.md) documents full-roster forecast coverage, source precedence, stat normalization, and expected milestone bonuses.
 
+- [Performance colours](PERFORMANCE_COLOURS.md): personal-average comparisons for completed games, roster tiles, and expanded player cards.
 - [Daily badges](DAILY_BADGES.md): icon meanings, NBA-wide ranking, ties, date expiry, and screenshot scope.
 
 ## Future epic proposals

@@ -183,3 +183,32 @@ test("signed awards render, milestones have no fake ranking, streak explains ave
   assert.doesNotMatch(make("milestone_pts_70",71).label, /#1/);
   assert.match(make("hot_streak",3,{season_average:25.35}).label, /season average 25.4 FP/);
 });
+
+test("performance colours share a personal baseline and inclusive near-average band", () => {
+  const {performanceScore} = require("../web/insights.js");
+  const p = {fp_mean_recent:40, baseline_source:"blended_seasons"};
+  assert.equal(performanceScore(p,45).tone,"good");
+  assert.equal(performanceScore(p,44).tone,"average");
+  assert.equal(performanceScore(p,36).tone,"average");
+  assert.equal(performanceScore(p,35).tone,"bad");
+  assert.match(performanceScore(p,45).label,/current \+ prior season/);
+  assert.equal(performanceScore(p,null).tone,"unknown");
+  assert.equal(performanceScore(p,NaN).tone,"unknown");
+});
+test("near-zero and negative averages retain signed, stable comparisons", () => {
+  const {performanceScore} = require("../web/insights.js");
+  for (const baseline of [0,-10,1]) {
+    const p={fp_mean_recent:baseline};
+    assert.equal(performanceScore(p,baseline+2).tone,"average");
+    assert.equal(performanceScore(p,baseline-2.1).tone,"bad");
+    assert.equal(performanceScore(p,baseline+2.1).tone,"good");
+  }
+});
+test("historical comparisons use observed history, exclude future rows and never use forecasts", () => {
+  const {performanceBaseline,performanceScore} = require("../web/insights.js");
+  const p={history_source:"prior_season",fp_mean_recent:999,projection:{projected_fp:999},history:[{date:"2025-03-01",fp:20},{date:"2025-03-02",fp:40},{date:"2026-10-22",fp:900},{date:"2025-03-03",fp:null}]};
+  assert.deepEqual(performanceBaseline(p,"2026-10-21"),{value:30,source:"Prior-season history average"});
+  assert.equal(performanceScore(p,40,"2026-10-21").tone,"good");
+  assert.equal(performanceScore({projection:p.projection},40).tone,"unknown");
+  assert.equal(performanceScore({history:[{date:"2025-01-01",fp:9}]},9).tone,"unknown");
+});

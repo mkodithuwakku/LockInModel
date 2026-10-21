@@ -3029,3 +3029,31 @@ button.lineup-name:hover strong { color: #c6b3d6; }
   html[data-hosting="pages"] .top-actions #freshness { flex: 1; text-align: center; font-size: 8px; min-width: 0; }
   html[data-hosting="pages"] .top-actions #refresh { white-space: nowrap; padding-inline: 4px; font-size: 9px; }
 }
+
+/* Personal FP comparisons: actual scores only, consistent in cards and roster. */
+:root { --performance-good: #8cd5ad; --performance-average: #e4c575; --performance-bad: #ee929d; }
+[data-performance="good"] { --performance-tone: var(--performance-good); }
+[data-performance="average"] { --performance-tone: var(--performance-average); }
+[data-performance="bad"] { --performance-tone: var(--performance-bad); }
+[data-performance="unknown"] { --performance-tone: var(--muted); }
+.performance-score { color: var(--performance-tone); font-variant-numeric: tabular-nums; }
+.history-table .performance-score { display: inline-block; min-width: 42px; border-radius: 4px; padding: 4px 6px; background: color-mix(in srgb, var(--performance-tone) 12%, transparent); }
+.bar-wrap[data-performance] .bar, .bar-wrap[data-performance]:last-child .bar { background: var(--performance-tone); }
+.bar-wrap[data-performance] > span { color: var(--performance-tone); }
+.game-day .game-score[data-kind="actual"] { color: var(--performance-tone); background: color-mix(in srgb, var(--performance-tone) 10%, transparent); border-radius: 3px; padding: 2px 4px; }
+.game-score[data-kind="actual"] span { color: inherit; }
+.performance-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 12px 0 6px; font: 11px var(--mono); }
+.performance-legend > span { color: var(--performance-tone); }
+.performance-legend small { width: 100%; color: var(--muted); font-size: 10px; line-height: 1.6; }
+#player-dialog .performance-note { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 6px 0 12px; }
+#player-dialog { border-top-color: var(--team-accent, var(--accent)); }
+#player-dialog .detail-hero { padding: 18px 16px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--team-accent) 28%, transparent); background: linear-gradient(115deg, color-mix(in srgb, var(--team-accent) 18%, transparent), transparent 85%); }
+#player-dialog .detail-hero .nba-team { font-size: 15px; letter-spacing: .06em; color: var(--ink); gap: 8px; }
+#player-dialog .detail-hero .nba-team-logo { width: 34px; height: 34px; }
+#player-dialog .detail-hero .portrait { background: color-mix(in srgb, var(--team-accent) 12%, transparent); border-radius: 8px; }
+@media (max-width: 740px) {
+  #player-dialog .detail-hero { padding: 14px 10px; gap: 12px; }
+  #player-dialog .detail-hero .nba-team { font-size: 13px; gap: 6px; }
+  #player-dialog .detail-hero .nba-team-logo { width: 28px; height: 28px; }
+  .game-day .game-score[data-kind="actual"] { padding: 2px; }
+}

@@ -45,6 +45,26 @@
     }
     return {kind: "unavailable", label: "Proj", value: null, description: "Projection unavailable for this game"};
   }
+  function performanceBaseline(player, cutoff) {
+    if (player.history_source !== "prior_season" && Number.isFinite(player.fp_mean_recent)) {
+      return {value: player.fp_mean_recent, source: player.baseline_source === "blended_seasons" ? "Recent average · current + prior season" : "Recent average"};
+    }
+    const history = (player.history || []).filter(r => Number.isFinite(r.fp) && /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") && (!cutoff || r.date <= cutoff));
+    if (history.length < 2) return null;
+    return {value: history.reduce((sum, r) => sum + r.fp, 0) / history.length,
+      source: player.history_source === "prior_season" ? "Prior-season history average" : "Stored history average"};
+  }
+  function performanceScore(player, value, cutoff) {
+    const baseline = performanceBaseline(player, cutoff);
+    if (!Number.isFinite(value) || !baseline) return {tone: "unknown", label: "Average comparison unavailable", baseline: null};
+    // A 2 FP floor keeps a near-zero or negative average useful and stable.
+    const band = Math.max(2, Math.abs(baseline.value) * 0.1);
+    const delta = value - baseline.value;
+    const tone = delta > band ? "good" : delta < -band ? "bad" : "average";
+    const description = {good: "Above average", average: "Near average", bad: "Below average"}[tone];
+    return {tone, baseline: baseline.value, band,
+      label: `${description} · ${baseline.source.toLowerCase()} ${baseline.value.toFixed(1)} FP · near-average range ±${band.toFixed(1)} FP`};
+  }
   function teamForm(players, cutoff) {
     const mean = (rows) => rows.reduce((sum, row) => sum + row.fp, 0) / rows.length;
     return players.map((player, index) => {
@@ -174,7 +194,7 @@
       .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
     return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
   }
-  const helpers = { seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
+  const helpers = { performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);
