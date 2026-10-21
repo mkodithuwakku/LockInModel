@@ -6,7 +6,7 @@ import pandas as pd
 
 from fetch_data import normalize_stats_for_scoring
 from model import rolling_baseline
-from scoring import add_fantasy_points
+from scoring import add_fantasy_points, effective_weights
 from transport import DataUnavailable
 
 POSITIONS = {"PG", "SG", "SF", "PF", "C"}
@@ -143,9 +143,58 @@ def project_players(games, fallback, weights, cfg, reference):
                 value = float(model["fp_mean"])
                 if not math.isfinite(value):
                     continue
+                # Project box-score components with the same recency/shrinkage weights.
+                dcfg = dict(
+                    cfg["decision"],
+                    **cfg["decision"]
+                    .get("player_overrides", {})
+                    .get(str(history.iloc[-1].PLAYER_NAME), {})
+                )
+                decay = dcfg.get("decay", 0.92)
+                factors = [decay ** (len(window) - i - 1) for i in range(len(window))]
+                stats = {}
+                for stat in (
+                    "PTS",
+                    "REB",
+                    "AST",
+                    "STL",
+                    "BLK",
+                    "TOV",
+                    "FG3M",
+                    "MIN",
+                    "FGM",
+                    "FGA",
+                    "FTM",
+                    "FTA",
+                    "OREB",
+                    "DREB",
+                    "PF",
+                ):
+                    if stat not in window or stat in window.attrs.get(
+                        "imputed_stats", []
+                    ):
+                        continue
+                    value_stat = sum(
+                        float(v) * f for v, f in zip(window[stat], factors)
+                    ) / sum(factors)
+                    prior_weight = (
+                        dcfg.get("prior_weight_games", 12) if prior is not None else 0
+                    )
+                    if prior_weight:
+                        value_stat = (
+                            len(window) * value_stat
+                            + prior_weight * float(older[stat].mean())
+                        ) / (len(window) + prior_weight)
+                    if math.isfinite(value_stat):
+                        stats[stat] = round(value_stat, 2)
                 profiles[pid] = {
                     "projected_fp": round(value, 2),
                     "projection_source": source,
+                    "projected_stats": stats,
+                    "as_of": str(reference.date()),
+                    "scoring_notes": effective_weights(
+                        normalize_stats_for_scoring(history), weights
+                    )[1],
                     "sample_size": len(window),
                     "last_played": str(scored.GAME_DATE.max().date()),
                 }
@@ -201,6 +250,9 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
             "current_slot": row.get("roster_slot"),
             "injury_status": row.get("injury_status"),
         }
+        profile = row["projection"] if "projection" in row else profiles.get(pid)
+        if profile:
+            entry.update(profile)
         reason = None
         today_games = [g for g in row.get("week_games", []) if g["date"] == date]
         if row.get("roster_slot") in {"IR", "TAXI"}:
@@ -224,7 +276,7 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
             started += 1
         else:
             scheduled += 1
-            if pid not in profiles:
+            if not profile:
                 reason = "Projection unavailable"
                 missing += 1
             elif not any(eligible(row.get("positions"), slot) for slot in slots):
@@ -238,7 +290,7 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
             else:
                 game = today_games[0]
                 entry.update(
-                    profiles[pid], opponent=game.get("opponent"), home=game.get("home")
+                    profile, opponent=game.get("opponent"), home=game.get("home")
                 )
                 candidates.append(entry)
         if reason:

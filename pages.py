@@ -21,7 +21,7 @@ TEAM_FIELDS = (
 PLAYER_FIELDS = (
     "player player_id status decision note reason starter positions nba_team week "
     "last_game_date last_game_fp remaining_games_est fp_mean_recent fp_std_recent "
-    "sample_size p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state"
+    "sample_size p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state history_source"
 ).split()
 HISTORY_FIELDS = "date fp minutes pts reb ast stl blk tov".split()
 PICKUP_FIELDS = (
@@ -36,6 +36,20 @@ SAVED = ROOT / "state/pages-report.json"
 
 def select(value, fields):
     return {key: copy.deepcopy(value[key]) for key in fields if key in value}
+
+
+PROJECTION_FIELDS = "projected_fp projection_source sample_size last_played as_of source_updated_at scoring_notes".split()
+PROJECTION_STATS = (
+    "PTS REB AST STL BLK TOV FG3M MIN FGM FGA FTM FTA OREB DREB PF".split()
+)
+
+
+def public_projection(value):
+    result = select(value, PROJECTION_FIELDS)
+    result["projected_stats"] = select(
+        value.get("projected_stats", {}), PROJECTION_STATS
+    )
+    return result
 
 
 def public_report(report):
@@ -55,6 +69,10 @@ def public_report(report):
                 select(g, ["date", "opponent", "home", "status", "fp"])
                 for g in player.get("week_games", [])
             ]
+            if player.get("projection"):
+                row["projection"] = public_projection(player["projection"])
+            elif player.get("projection_note"):
+                row["projection_note"] = player["projection_note"]
             row["history"] = [
                 select(h, HISTORY_FIELDS) for h in player.get("history", [])[-25:]
             ]

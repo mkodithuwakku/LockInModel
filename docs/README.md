@@ -17,3 +17,5 @@ The historical fixture was captured from an immutable third-party archive of NBA
 When changing model or scoring behavior, update the reference and regression tests together. Preserve provenance when recapturing data. Distinguish a functional replay from evidence of predictive accuracy.
 
 The [screenshot notes](screenshots/README.md) distinguish the captured generic layout from new scoring/publication behavior that those images do not demonstrate.
+
+[Projections](PROJECTIONS.md) documents full-roster forecast coverage, source precedence, stat normalization, and expected milestone bonuses.

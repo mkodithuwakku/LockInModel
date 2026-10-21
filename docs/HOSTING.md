@@ -108,3 +108,7 @@ References: [Apple scheduled jobs and sleep/wake behavior](https://developer.app
 Every scheduled refresh imports the league's complete slot configuration and generates its recommended pregame lineup in the same public report. The website needs no new database, backend, or Mac trigger. A projection may use labeled prior-season history already present locally; it never requests another season just to fill missing forecasts.
 
 Daily lineups expire at Edmonton midnight, even if the broader report is still within 26 hours. Before the next scheduled publication, the card says it is waiting for today's report. Open tabs check each minute and after waking/returning to the tab. The report is a pregame snapshot: intraday injuries, starts, and weekly Sleeper locks are not continuously refreshed. Reload checks published JSON only.
+
+## Roster projection coverage
+
+The same daily job now also fetches validated current-season Sleeper / RotoWire forecasts and publishes an allowlisted per-player projection object. The website shows projected FP, PTS, REB, and AST in all roster rows and the full box score in player details, including for bench/out/off-day players. These are estimates conditional on playing, not proof that the player will appear. No remote refresh trigger or hosted database was added. Current-season game history has priority; the forecast fills early-season/rookie gaps. Actual API failures remain visible, while approved scoring-method choices no longer count as alerts.

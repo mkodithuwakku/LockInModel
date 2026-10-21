@@ -10,7 +10,12 @@ One local SQLite database retains live game history for every league. A daily Ma
 
 ## Screenshots and demo
 
-The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. These browser captures show historical/sample data, not current NBA recommendations.
+![Full-roster forecasts with projected FP and PTS/REB/AST for every player](docs/screenshots/roster-projections-desktop.png)
+
+*Generic sample roster with real current-season Sleeper / RotoWire inputs and sample scoring. Bench, injured, and off-day players retain per-game estimates. Open a player for the [complete projected box score](docs/screenshots/player-projections-mobile.png). Approved scoring adjustments are available under Scoring method, not counted as Data alerts.*
+
+
+The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. The earlier lineup/form captures below show historical/sample data, not current NBA recommendations.
 
 ![Recommended daily lineup and recent form beside a generic practice roster](docs/screenshots/daily-lineup-desktop.png)
 
@@ -43,6 +48,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 ## Key features
 
 - **Multi-team analysis:** separate league scoring, starters/bench filters, player histories, and saved archives for older Sleeper seasons.
+- **Projections for the full roster:** per-game FP and PTS/REB/AST on every roster row, with a complete projected box score in player details. Current-season Sleeper / RotoWire forecasts cover players without usable current game history, including rookies; bench/off-day/injured players retain their baseline. [Projection sources and bonus estimates](docs/PROJECTIONS.md).
 - **Daily recommended lineup:** exact maximum-weight assignment across each league’s PG/SG/SF/PF/C, G/F, and repeated UTIL slots, using scheduled roster players and pregame league-scored projections. Shows unfilled slots and exclusion reasons; no Sleeper changes are submitted.
 - **Compact team insights:** ranked five-game form, per-player sparklines, change versus the previous five games, and expandable full-team coverage on desktop and phones.
 - **Lock/wait explanations:** compare the latest eligible score with a weighted baseline and verified remaining opportunities; missing inputs produce explicit review states.
@@ -118,7 +124,7 @@ flowchart TD
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |
 | [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
 | [simulation.py](simulation.py), [storage.py](storage.py) | Practice transitions, config validation, atomic file replacement |
-| [lineup.py](lineup.py) | Pregame projections and exact positional assignment for each league |
+| [lineup.py](lineup.py), [projections.py](projections.py) | History-based and validated Sleeper forecasts, projected box scores, and exact positional assignment |
 | [game_store.py](game_store.py) | Permanent SQLite history, incremental daily upserts, weekly reconciliation |
 | [sleeper.py](sleeper.py), [transport.py](transport.py), [capture.py](capture.py) | League import, cached/paced requests, historical capture |
 | [pages.py](pages.py), [publication.py](publication.py), [web/pages.js](web/pages.js) | Allowlisted export, local daily publication, wake catch-up, browser expiry |
@@ -199,7 +205,7 @@ Pickup analysis is separate: it needs at least 13 observations, compares the las
 
 ## Deep dive: the daily lineup
 
-The engine scores history strictly **before the selected day**, then uses the configured recency-weighted baseline to project one game per eligible roster player. The projection uses current-season observations first; when none are usable, it can use the preceding season already saved in SQLite or its checksum-verified local fixture. Prior-season estimates are labeled. Missing weighted stats or history never become invented zero-point forecasts.
+The engine scores history strictly **before the selected day**, then uses the configured recency-weighted baseline to project one game per eligible roster player. The projection uses current-season observations first, then current-season Sleeper / RotoWire forecasts, then locally saved historical baselines. Every roster player receives a forecast independently of daily start eligibility. Sources and dates are labeled; missing inputs never become invented zero-point forecasts. Expected milestone bonuses use supplied frequencies or an explicit Poisson approximation, rather than thresholding an average stat line.
 
 `lineup.py` solves a maximum-weight assignment with the Hungarian algorithm. A flexible 50-FP PG/SG goes into SG when that frees PG for a 49-FP PG-only player, instead of greedily blocking that player. Every active league slot is represented, including duplicate UTIL slots and currently empty starters; players appear at most once. Zero-point vacancies allow unfillable or negative-contribution positions to remain empty. Runtime is `O(slots² × (players + slots))`, with no extra dependency or hardcoded league shape.
 

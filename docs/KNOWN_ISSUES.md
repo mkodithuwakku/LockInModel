@@ -2,6 +2,8 @@
 
 ## Corrected in this implementation
 
+- Full-roster projected box scores are visible independently of start eligibility. Validated current-season Sleeper forecasts cover missing current history, including rookies. Approved scoring choices no longer inflate Data alerts.
+
 - Daily lineups preserve full league slots (including empties), maximize eligible projected FP with exact assignment, and expire at midnight separately from the report. Predictions are baselines, not demonstrated accuracy.
 
 - Bonuses are recomputed from observations, including configurable points/rebounds/assists/steals/blocks thresholds. Boundary and stacking cases are tested.
@@ -58,3 +60,7 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 5. Add richer injury/role context and precise historical roster/schedule snapshots where useful.
 
 There are no established accuracy, profit, win-rate, or production-scale claims.
+
+## Forecast limitations
+
+The current Sleeper forecast feed is outside the documented v1 league API and may change schema. Invalid records cannot authorize projections. Projected box-score averages do not determine milestone frequencies; missing frequencies use an explicitly labeled Poisson approximation (and independence for multi-category bonuses). Forecasts are conditional on playing, not injury-adjusted appearance probabilities. Historical charts use actual observations only, so a new NBA player can have a forecast without a chart.

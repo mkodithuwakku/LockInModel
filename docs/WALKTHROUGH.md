@@ -61,3 +61,9 @@ Select a team to see **Recommended lineup** for the report day. The card shows t
 The optimizer can move flexible players among eligible slots and promote bench players to improve the total. Projections use only history before the day and the selected league's scoring; prior-season fallbacks are labeled. Unfilled positions and incomplete inputs remain explicit. When no player can start, a compact slot list and reason replace empty player rows. This is a pregame plan: check existing locks and tipoffs in Sleeper. It never changes the actual roster. After midnight, wait for the next scheduled report for today's plan.
 
 Test Week previews the selected day before its outcomes, even at night. A banked practice score disables the unrestricted lineup preview until the week is restarted, so it cannot suggest moving a known locked player.
+
+## Projections for every player
+
+Every roster row shows projected FP plus PTS/REB/AST, even when that player is on the bench, injured, or has no game today. Open the row for projected minutes, points, rebounds, assists, steals, blocks, turnovers, threes, and shooting makes/attempts. The source and snapshot date sit beside the estimate. These are per-game expectations when active; the daily lineup separately enforces availability and positions.
+
+Scoring method in player details explains the approved foul/rebound adjustments and any estimated bonus frequencies. Those choices no longer appear as data errors. Data alerts now reflects real failures or unsupported rules. Prior-season charts use actual saved performances and are labeled; a rookie forecast does not imply fabricated NBA game history.

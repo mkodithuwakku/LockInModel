@@ -8,7 +8,7 @@ from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
 from decide import per_player_week_decision
 from pickups import find_pickups
-from scoring import apply_scoring_policy, scoring_notes, effective_weights
+from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import project_players, recommend_lineup, unavailable_lineup
 
@@ -83,6 +83,25 @@ def build_dashboard(
     fallback = getattr(provider, "priors", None)
     if mode == "live" and hasattr(provider, "lineup_history"):
         fallback = provider.lineup_history()
+    forecasts = {}
+    if mode == "live" and any(
+        t.get("source") == "sleeper"
+        and any(m.get("sleeper_id") for m in t.get("player_meta", {}).values())
+        for t in cfg["teams"]
+    ):
+        from projections import fetch_forecasts
+
+        try:
+            forecasts = fetch_forecasts(
+                str(reference.year if reference.month >= 10 else reference.year - 1)
+            )
+        except DataUnavailable as exc:
+            alerts.append(
+                {
+                    "severity": "warning",
+                    "message": "Current-season projections unavailable: " + str(exc),
+                }
+            )
     projection_cache = {}
     for team in cfg["teams"]:
         team = apply_scoring_policy(dict(team))
@@ -91,16 +110,7 @@ def build_dashboard(
             continue
         weights = team.get("weights") or cfg["weights"]
         rows = []
-        notes = scoring_notes(team, observed, weights)
         weights, _ = effective_weights(observed, weights)
-        if notes:
-            alerts.append(
-                {
-                    "severity": "info",
-                    "team": team["name"],
-                    "message": "Scoring estimate: " + " ".join(notes),
-                }
-            )
         if team.get("unsupported_scoring"):
             alerts.append(
                 {
@@ -255,6 +265,99 @@ def build_dashboard(
                 cfg,
                 reference,
             )
+        profiles = dict(projection_cache[projection_key])
+        from projections import forecast_profile
+
+        for row in rows:
+            pid = str(row.get("player_id") or "")
+            profile = profiles.get(pid)
+            meta = roster_metadata(team, row["player"], sleeper_players)
+            forecast = forecasts.get(str(meta.get("sleeper_id")))
+            # Current game history wins; current forecasts replace old-season baselines.
+            if getattr(provider, "stats_error", None):
+                profile = None
+            if forecast and (
+                not profile or profile.get("projection_source") != "current_season"
+            ):
+                try:
+                    profile = forecast_profile(
+                        forecast, team.get("weights") or cfg["weights"], reference
+                    )
+                except (ValueError, KeyError):
+                    pass
+            if (
+                not row.get("history")
+                and fallback is not None
+                and not fallback.empty
+                and pid
+            ):
+                from scoring import add_fantasy_points
+                from fetch_data import normalize_stats_for_scoring
+
+                old = fallback[
+                    (fallback.PLAYER_ID.astype(str) == pid)
+                    & (fallback.GAME_DATE < pd.Timestamp(reference))
+                ]
+                if not old.empty:
+                    try:
+                        old = (
+                            add_fantasy_points(
+                                normalize_stats_for_scoring(old),
+                                team.get("weights") or cfg["weights"],
+                            )
+                            .sort_values("GAME_DATE")
+                            .tail(25)
+                        )
+                        row["history"] = [
+                            {
+                                "date": str(h.GAME_DATE.date()),
+                                "fp": float(h.FP),
+                                **{
+                                    key: float(h[stat]) if stat in old else None
+                                    for key, stat in {
+                                        "minutes": "MIN",
+                                        "pts": "PTS",
+                                        "reb": "REB",
+                                        "ast": "AST",
+                                        "stl": "STL",
+                                        "blk": "BLK",
+                                        "tov": "TOV",
+                                    }.items()
+                                },
+                            }
+                            for _, h in old.iterrows()
+                        ]
+                        row["history_source"] = "prior_season"
+                    except (DataUnavailable, ValueError, KeyError):
+                        pass
+            if profile and not team.get("unsupported_scoring"):
+                row["projection"] = dict(profile)
+            else:
+                row["projection"] = None
+                row["projection_note"] = (
+                    "Scoring inputs unavailable."
+                    if team.get("unsupported_scoring")
+                    else "No usable game history or current-season forecast."
+                )
+        # Approved scoring choices belong in methodology, not operational alerts.
+        notes = list(
+            dict.fromkeys(
+                (
+                    [
+                        "Unavailable foul penalties omitted: "
+                        + ", ".join(sorted(team["ignored_scoring"]))
+                        + "."
+                    ]
+                    if team.get("ignored_scoring")
+                    else []
+                )
+                + [
+                    note
+                    for row in rows
+                    for note in (row.get("projection") or {}).get("scoring_notes", [])
+                ]
+            )
+        )
         daily_lineup = recommend_lineup(
             team,
             rows,
@@ -266,7 +369,7 @@ def build_dashboard(
                 if team.get("unsupported_scoring")
                 else (
                     "Fresh performance data unavailable."
-                    if getattr(provider, "stats_error", None)
+                    if getattr(provider, "stats_error", None) and not forecasts
                     else None
                 )
             ),

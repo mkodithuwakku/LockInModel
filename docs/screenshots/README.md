@@ -48,3 +48,10 @@ uses observed historical scores; these captures do not verify live provider upti
 The isolated sample run uses PG, SG, F, C, and UTIL slots and historical December 25, 2025 schedules. Its pregame projections use only earlier games, while night replay displays the day's observed roster scores separately. This is a demonstration, not a claim of historical injury/lineup eligibility or prediction accuracy. The older team-insights images predate the daily lineup card.
 
 Verified browser interactions include lineup-to-player detail links, excluded-player expansion, switching to a team with a different configuration, and no horizontal overflow at 320px, 390px, 1024px, and 1280px. These are manual browser checks, not device certification.
+
+## Full-roster projection captures
+
+- `roster-projections-desktop.png`: generic five-player sample roster at 1280px, with current-season Sleeper / RotoWire forecasts rescored using the checked-in sample weights. Every player is deliberately on the bench to demonstrate independent forecast coverage.
+- `player-projections-mobile.png`: 390px player details showing a rookie's full projected box score and source date. No NBA game history is invented.
+
+These use an isolated in-memory configuration, not personal team names or account settings. The earlier daily-lineup and team-insights screenshots predate per-row projected stat lines; retain them only as demonstrations of their specific features. Current-season projections are estimates, not observed scores or verified prediction accuracy.

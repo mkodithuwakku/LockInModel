@@ -89,3 +89,7 @@ roster_positions: [PG, SG, F, C, UTIL, UTIL, BN, IR]
 PG/SG/SF/PF/C, G/F, and UTIL are supported active slots. BN/IR/TAXI are excluded. The config validator preserves order and duplicates and normalizes names to uppercase. Unrecognized active slot names make the recommendation unavailable rather than silently changing a league's rules. Local teams without this field use one UTIL slot per starter. Imported teams without it request a resync.
 
 Daily projections reuse `decision.lookback_games`, `recent_days`, `decay`, and `prior_weight_games`, together with that league's scoring weights. No player-specific or league-specific lineup algorithm is needed. Read [daily lineup assumptions](MODEL.md#11-daily-lineup-projections-and-assignment) before treating a suggested arrangement as a legal Sleeper change.
+
+## Forecast fallback and scoring display
+
+Current-season Sleeper / RotoWire forecasts are retrieved during live refresh for imported players, with a six-hour cache. No credentials, new database, extra scheduler, or per-player configuration are needed. When current game history is absent, these forecasts precede the historical fallback and are rescored with each league's weights. See [Projections](PROJECTIONS.md) for expected milestone bonuses. Approved scoring adjustments appear inside player details under Scoring method rather than Data alerts.

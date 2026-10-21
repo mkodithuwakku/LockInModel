@@ -127,6 +127,23 @@ class LiveProvider:
                 and hashlib.sha256(path.read_bytes()).hexdigest() == digest
             ):
                 history = parse_dates(pd.read_parquet(path))
+        # A player may have missed the entire preceding season. Reuse verified
+        # older observations only for identities absent from the latest season.
+        directory = ROOT / "data/fixtures" / season
+        manifest = read_json(directory / "manifest.json", {})
+        prior_path = directory / "priors.parquet"
+        digest = manifest.get("files", {}).get("priors.parquet")
+        if (
+            digest
+            and prior_path.is_file()
+            and hashlib.sha256(prior_path.read_bytes()).hexdigest() == digest
+        ):
+            older = parse_dates(pd.read_parquet(prior_path))
+            known = set(history.PLAYER_ID.astype(str)) if not history.empty else set()
+            history = pd.concat(
+                [history, older[~older.PLAYER_ID.astype(str).isin(known)]],
+                ignore_index=True,
+            )
         self._lineup_history = history
         return history
 
