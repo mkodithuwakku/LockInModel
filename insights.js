@@ -84,6 +84,7 @@
     shield: ["🛡️", "Two-way menace", "steals + blocks"],
     creator: ["🧠", "Clean creator", "assists minus turnovers (5+ assists)"],
     magician: ["🎩", "Triple-double magic", "triple-doubles"],
+    coffee: ["☕", "Double-double", "double-doubles"],
     overachiever: ["🚀", "Above expectations", "FP above projection"],
     underachiever: ["🫠", "Below expectations", "FP below projection"],
     efficient: ["⚡", "Minute maximizer", "FP/min"],
