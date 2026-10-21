@@ -56,6 +56,24 @@ function portrait(p) {
     : `/api/portrait/${encodeURIComponent(id)}`;
   return `<div class="portrait"><span class="initials">${esc(initials)}</span>${/^\d+$/.test(id) ? `<img src="${imageUrl}" alt="${esc(p.player)}" loading="lazy">` : ""}</div>`;
 }
+// Stable NBA IDs keep provider abbreviations independent of logo URLs.
+const nbaTeamIds = {
+  ATL: 1610612737, BOS: 1610612738, CLE: 1610612739, NOP: 1610612740,
+  CHI: 1610612741, DAL: 1610612742, DEN: 1610612743, GSW: 1610612744,
+  HOU: 1610612745, LAC: 1610612746, LAL: 1610612747, MIA: 1610612748,
+  MIL: 1610612749, MIN: 1610612750, BKN: 1610612751, NYK: 1610612752,
+  ORL: 1610612753, IND: 1610612754, PHI: 1610612755, PHX: 1610612756,
+  POR: 1610612757, SAC: 1610612758, SAS: 1610612759, OKC: 1610612760,
+  TOR: 1610612761, UTA: 1610612762, MEM: 1610612763, WAS: 1610612764,
+  DET: 1610612765, CHA: 1610612766,
+};
+function nbaTeamLabel(value) {
+  const abbreviation = String(value || "").trim().toUpperCase();
+  const aliases = { GS: "GSW", NY: "NYK", NO: "NOP", SA: "SAS", PHO: "PHX", BRK: "BKN" };
+  const canonical = aliases[abbreviation] || abbreviation;
+  const id = Object.hasOwn(nbaTeamIds, canonical) ? nbaTeamIds[canonical] : null;
+  return `<span class="nba-team">${id ? `<img class="nba-team-logo" src="https://cdn.nba.com/logos/nba/${id}/primary/D/logo.svg" alt="" aria-hidden="true" width="14" height="14" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ""}${esc(abbreviation || "FA / unknown")}</span>`;
+}
 function teamPicture(t) {
   const initials = t.team_name.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("");
   let url = null;
@@ -68,8 +86,8 @@ function teamPicture(t) {
   return `<span class="team-symbol" aria-hidden="true"><span class="initials">${esc(initials)}</span>${url ? `<img src="${esc(url)}" alt="" referrerpolicy="no-referrer" decoding="async">` : ""}</span>`;
 }
 function attachImageFallback() {
-  document.querySelectorAll(".portrait img, .team-symbol img").forEach((img) => {
-    const container = img.closest(".portrait, .team-symbol");
+  document.querySelectorAll(".portrait img, .team-symbol img, .nba-team-logo").forEach((img) => {
+    const container = img.closest(".portrait, .team-symbol, .nba-team");
     const loaded = () => container.classList.add("is-loaded");
     const failed = () => {
       container.classList.remove("is-loaded");
@@ -518,7 +536,7 @@ function rosterRow(p, i, week) {
       return `<span class="game-day ${onDay.length ? "has-game" : ""} ${date === state.data.date ? "is-today" : ""} ${!known ? "unknown" : ""}" title="${esc(date + ": " + desc)}" aria-label="${esc(date + ": " + desc)}"><small>${["M", "T", "W", "T", "F", "S", "S"][day]}</small>${onDay.map((g) => `<b>${g.home ? "" : "@"}${esc(g.opponent)}</b>${g.fp != null ? `<em>${fmt(g.fp)} FP</em>` : ""}`).join("") || `<b>${known ? "—" : "?"}</b>`}</span>`;
     })
     .join("");
-  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta"><span class="nba-team">${esc(p.nba_team || "FA / unknown")}</span><span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
+  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
 }
 function playerDailyBadges(p) {
   if (state.data?.stale || state.data?.refresh_status === "failed") return [];
