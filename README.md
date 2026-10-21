@@ -282,6 +282,7 @@ The default daily slot is 12:17 PM America/Edmonton. The agent checks every 15 m
 ## Limitations and next improvements
 
 - **Credential history:** previous project documentation records a committed email credential. The delivery guard checks a local blocked-password hash; it is not a general secret scanner. Confirm revocation and public-history cleanup before showcasing the repository. This README does not establish their current external status.
+- **Opponent-aware projections — proposed, not implemented:** a [future epic](docs/epics/OPPONENT_AWARE_PROJECTIONS.md) explores player-style/opponent interactions, data-source options, versioned pregame inputs, per-stat modeling, league rescoring, and measured rollout gates. The current app still repeats its per-player baseline across upcoming opponents.
 - **Evaluation:** no measured win-rate or calibration result exists. Compare policies across held-out weeks against simple baselines before making effectiveness claims.
 - **Live/scoring fidelity:** provider availability varies; unknown scoring rules still withhold decisions, while the approved foul/rebound approximations permit estimated recommendations. Sleeper lock selections are not imported, and ownership reflects the latest snapshot rather than guaranteed claimability.
 - **Historical fidelity:** replay uses finalized schedules, last observed team assignments, and sample/current rosters. It lacks timestamped injuries, transactions, exact lock deadlines, and opponent simulation.
@@ -312,5 +313,6 @@ The default daily slot is 12:17 PM America/Edmonton. The agent checks every 15 m
 | [Historical replay](docs/HISTORICAL_REPLAY.md) | Capture and evaluation caveats |
 | [Walkthrough](docs/WALKTHROUGH.md) | Product workflow |
 | [Known issues](docs/KNOWN_ISSUES.md) | Follow-up work and earlier security notes |
+| [Opponent-aware projection epic](docs/epics/OPPONENT_AWARE_PROJECTIONS.md) | Proposed architecture, source research, evaluation and kickoff backlog; no implementation |
 
 **Keep this README current with code changes.** [AGENTS.md](AGENTS.md) requires a documentation review for every implementation, dependency, configuration, or workflow change, with affected README sections, linked guides, and screenshots updated in the same change. The pull request template records that review. If documented behavior is unchanged, record why no README edit is needed; do not add filler or a running changelog here.

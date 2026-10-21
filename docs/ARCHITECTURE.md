@@ -209,3 +209,12 @@ weekly details, and all roster members including missing-history placeholders.
 selects leaders without changing roster order. Home remains roster-first. These
 are current-roster observed totals, not historical ownership or Sleeper locked
 scores; see [metric definitions and limitations](SEASON_REVIEW.md).
+
+
+## Proposed future architecture
+
+[Opponent-aware projections](epics/OPPONENT_AWARE_PROJECTIONS.md) is a research
+and kickoff proposal, separate from the implemented contracts above. It proposes
+versioned input/forecast records in the existing local database, shared per-game
+stat distributions, league-specific rescoring, and static report delivery. No
+proposed table, adapter, model, or scheduled job has been added.

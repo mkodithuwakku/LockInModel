@@ -21,3 +21,7 @@ The [screenshot notes](screenshots/README.md) distinguish the captured generic l
 [Projections](PROJECTIONS.md) documents full-roster forecast coverage, source precedence, stat normalization, and expected milestone bonuses.
 
 - [Daily badges](DAILY_BADGES.md): icon meanings, NBA-wide ranking, ties, date expiry, and screenshot scope.
+
+## Future epic proposals
+
+- [Opponent-aware player projections](epics/OPPONENT_AWARE_PROJECTIONS.md): planning only. Audits existing data, investigates additional sources, proposes stat-level player/opponent interactions, and defines sustainable ingestion, evaluation gates, and an implementation backlog. It does not enable matchup adjustments or authorize data subscriptions.

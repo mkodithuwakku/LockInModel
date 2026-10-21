@@ -35,3 +35,13 @@ Roster rows show projected FP and PTS/REB/AST; player details add minutes, steal
 Historical charts remain observed-only. Verified older observations are shown with a prior-season label when current history is absent. A rookie may have a complete forecast and no NBA history chart. This is an honest absence of observations, not a broken forecast.
 
 The roster sheet uses the latest saved daily assignment and retains its original date until a new refresh replaces it, including across midnight. Per-game estimates remain dated baseline information in a saved report; they are not live availability or permission to start a player. The Mac's existing scheduled publication carries new forecasts to GitHub Pages without adding a database there.
+
+## Proposed opponent-aware extension
+
+The [opponent-aware projection epic](epics/OPPONENT_AWARE_PROJECTIONS.md) plans
+separate forecasts for each player/game, using opportunity estimates and
+player-style/opponent interactions before league scoring. It covers additional
+data sources, reproducible pregame snapshots, sparse-history treatment,
+validation, fallbacks, and later lock-model integration. **This is not implemented:**
+current weekly tiles still repeat the saved per-player baseline described above.
+No model or refresh behavior changes with the proposal.
