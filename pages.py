@@ -160,7 +160,7 @@ def export_site(report, destination):
         '<script src="./pages.js" defer></script>\n    <script src="./app.js" defer></script>',
     )
     (destination / "index.html").write_text(html)
-    for name in ("app.js", "pages.js", "style.css", "icon.svg"):
+    for name in ("app.js", "pages.js", "insights.js", "style.css", "icon.svg"):
         shutil.copyfile(ROOT / "web" / name, destination / name)
     (destination / ".nojekyll").touch()
     write_json(destination / "report.json", report)

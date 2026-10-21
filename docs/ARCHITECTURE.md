@@ -6,6 +6,7 @@
 | --- | --- |
 | `app.py` | Flask routes, same-origin protection, background refresh jobs, dashboard cache |
 | `web/` | Responsive interface, team navigation, player details, roster editing, import UI |
+| `web/insights.js` | Pure observed-form calculations and sparklines from scored report history; shared by local and hosted views |
 | `storage.py` | Canonical YAML loading/validation; atomic JSON/YAML writes |
 | `simulation.py` | Persistent morning/night replay, isolated practice roster snapshot, revision checks, banked scores |
 | `engine.py` | Shared dashboard/report orchestration and per-input decision reuse |
@@ -75,6 +76,10 @@ Decision results include player identity, lineup slot/order, NBA team, live inju
 | `BANKED` | User kept a fixed practice score |
 | `PRE_DRAFT` / `DRAFTING` | League exists but is not ready for live recommendations |
 | `LEAGUE_COMPLETE` | Imported league has ended its season |
+
+### Observed team form
+
+The Recent form panel consumes existing `history` records, bounded by `observation_cutoff`; it makes no additional requests. It sorts players by the arithmetic mean of up to five latest observed scores, preserving each player's roster index for detail links. A change value requires ten valid observations and compares two disjoint five-game means. Missing history is distinct from zero FP. Sparklines have individual vertical scales and describe shape rather than absolute comparisons between players. Stale/failed data is labeled saved history, with remaining-game labels suppressed; the panel does not authorize recommendations.
 
 ## Persistence
 

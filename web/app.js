@@ -30,6 +30,7 @@ let state = {
   archived: false,
   csrf: "",
   busy: false,
+  insightsExpanded: false,
 };
 const statuses = {
   BANKED: ["BANKED", "lock"],
@@ -136,7 +137,7 @@ async function load() {
   $("#error").hidden = true;
   state.data = null;
   $("#summary").innerHTML = "";
-  $("#radar").innerHTML = "";
+  $("#team-insights").innerHTML = "";
   $("#content").innerHTML =
     '<div class="loading"><div class="spinner"></div>Reading saved player data…</div>';
   try {
@@ -154,7 +155,7 @@ async function load() {
     state.data = null;
     if (hosted) publishedSource = null;
     $("#summary").innerHTML = "";
-    $("#radar").innerHTML = "";
+    $("#team-insights").innerHTML = "";
     $("#content").innerHTML = hosted
       ? '<div class="empty">The published report could not be loaded. Try Reload report.</div>'
       : '<div class="empty">No current recommendations available.<br>Use Test Week to practice with saved historical data.</div>';
@@ -173,7 +174,10 @@ function render() {
     : state.mode === "test"
       ? "TEST WEEK · OFFLINE"
       : "LIVE WORKSPACE";
+  $(".right-rail").hidden = !t || state.view !== "team";
+  $(".content-layout").classList.toggle("without-insights", !t || state.view !== "team");
   if (!t) {
+    $("#team-insights").innerHTML = "";
     $("#notice").textContent = state.data.notice || "Waiting for a report.";
     $("#freshness").textContent =
       "Report " + new Date(state.data.generated_at).toLocaleString();
@@ -312,23 +316,32 @@ function render() {
       : `${t.league_name} · ${t.team_name} · ${t.ownership_complete ? "All league rosters, reserves and taxi players excluded" : "League ownership unknown"}. ${t.synced_at ? "Ownership snapshot: " + new Date(t.synced_at).toLocaleString() : ""}. Switch teams to compare a different league.`;
   renderTestControls(t);
   renderContent();
-  $("#week-days").innerHTML = displayWeek()
-    .map(
-      (iso, i) =>
-        `<div class="day ${iso === state.data.date ? "selected" : ""}">${["M", "T", "W", "T", "F", "S", "S"][i]}<b>${Number(iso.slice(8))}</b></div>`,
-    )
-    .join("");
-  $("#week-caption").textContent =
-    `${displayWeek()[0]} — ${displayWeek()[6]}${state.mode === "test" ? " · replay" : ""}`;
-  $("#radar").innerHTML =
-    t.pickups
-      .slice(0, 3)
-      .map(
-        (p, i) =>
-          `<button class="radar-card" data-pickup="${i}">${portrait(p)}<span><strong>${esc(p.player)}</strong><small>+${fmt(p.lift)} FP above baseline</small></span></button>`,
-      )
-      .join("") || '<p class="muted">No qualifying signals in this window.</p>';
+  renderInsights();
   attachImageFallback();
+}
+function renderInsights() {
+  const t = team();
+  if (!t) return;
+  const players = LockInInsights.teamForm(t.results, state.data.observation_cutoff);
+  const count = players.filter((p) => p.average !== null).length;
+  const shown = state.insightsExpanded ? players : players.slice(0, 5);
+  const saved = state.data.stale || state.data.refresh_status === "failed" ||
+    t.results.some((p) => ["STALE", "DATA_UNAVAILABLE"].includes(p.status));
+  $("#team-insights").innerHTML = `
+    <header class="insights-heading"><div><span class="section-label">TEAM INSIGHTS</span><h3 id="insights-title">Recent form</h3></div><span class="insights-count">${count}/${players.length}<small>with history</small></span></header>
+    <p class="insights-context">${saved ? "Saved history" : "Observed games"} · through ${esc(state.data.observation_cutoff || state.data.date)}</p>
+    <div class="insight-columns" aria-hidden="true"><span>Player</span><span>Last 5</span><span>Avg FP</span></div>
+    <div id="insight-players">${shown.map((p) => {
+      const change = p.delta === null ? "—" : `${p.delta > 0 ? "+" : ""}${fmt(p.delta)}`;
+      const tone = p.delta > 0 ? "positive" : p.delta < 0 ? "negative" : "neutral";
+      const remaining = Number.isInteger(p.player.remaining_games_est) && p.player.remaining_games_est >= 0 && !saved ? `${p.player.remaining_games_est} left` : "Schedule —";
+      const sample = p.scores.length ? `${p.scores.length} game${p.scores.length === 1 ? "" : "s"}` : "No history";
+      return `<button class="insight-player" data-player="${p.index}" aria-label="${esc(p.player.player)}: ${p.average === null ? "no observed scores" : `${fmt(p.average)} average fantasy points over ${sample}`}. Open player details.">
+        <span class="insight-name"><strong title="${esc(p.player.player)}">${esc(p.player.player)}</strong><small>${esc(p.player.roster_slot || (p.player.starter ? "START" : "BN"))} · ${sample} · ${remaining}</small></span>
+        <span class="insight-trend" aria-hidden="true">${LockInInsights.sparkline(p.scores)}</span>
+        <span class="insight-value"><strong>${fmt(p.average)}</strong><small class="${tone}" title="Change in average FP versus the previous five games">${change}</small></span></button>`;
+    }).join("") || '<p class="insights-empty">No players on this roster.</p>'}</div>
+    <footer class="insights-footer"><span>Δ vs previous 5${count ? "" : " · awaiting scores"}</span>${players.length > 5 ? `<button data-insights-toggle aria-expanded="${state.insightsExpanded}" aria-controls="insight-players">${state.insightsExpanded ? "Show fewer ↑" : `All ${players.length} players ↓`}</button>` : ""}</footer>`;
 }
 function renderContent() {
   let t = team();
@@ -585,6 +598,13 @@ document.addEventListener("click", (e) => {
     renderContent();
     return;
   }
+  b = e.target.closest("[data-insights-toggle]");
+  if (b) {
+    state.insightsExpanded = !state.insightsExpanded;
+    renderInsights();
+    $("[data-insights-toggle]")?.focus({ preventScroll: true });
+    return;
+  }
   b = e.target.closest("[data-player]");
   if (b) {
     showPlayer(team().results[Number(b.dataset.player)]);
@@ -634,16 +654,12 @@ $("#refresh").addEventListener("click", async () => {
   state.view = "team";
   state.data = null;
   $("#summary").innerHTML = "";
-  $("#radar").innerHTML = "";
+  $("#team-insights").innerHTML = "";
   $("#content").innerHTML =
     '<div class="loading"><div class="spinner"></div>Refreshing live data. Previous decisions are hidden.</div>';
   $("#notice").textContent =
     "Live refresh in progress. No recommendations until data is verified.";
   job("/api/refresh", {});
-});
-$("#see-risers").addEventListener("click", () => {
-  state.view = "rise";
-  render();
 });
 $("#edit-roster").addEventListener("click", editRoster);
 $("#sync-form").addEventListener("submit", (e) => {

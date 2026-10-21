@@ -80,7 +80,7 @@ Website publication is separate: a native macOS LaunchAgent targets 12:17 PM Ame
 python -m pytest -q
 python -m black --check *.py tests
 # Node 20+ is needed only for these frontend policy tests.
-node --test tests/pages.test.cjs
+node --test tests/*.test.cjs
 ```
 
 Tests prohibit sockets and cover normalization, generic bonus thresholds, foul/rebound fallbacks, sparse histories, future-data exclusion, failure cooldowns, import atomicity, roster editing, pickup signals, and email guards. Store tests cover correction upserts and failed-refresh retention; publisher tests cover daily slots, retries, pending deployment confirmation, and exported files pushed to a temporary local Git remote. Node checks cover hosted report policies. Real-fixture tests skip on a clean checkout until capture has run. Manual browser checks are separate; CI does not include an automated browser suite or a physical sleep/wake test.

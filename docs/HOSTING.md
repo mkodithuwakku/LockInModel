@@ -78,14 +78,14 @@ The same URL adapts at 740px and below, with bottom navigation, horizontally scr
 
 The exported report contains team/league names, league-derived IDs, roster players, lineup slots, NBA teams/injury labels, opponents, observed fantasy points, scoring notes, recommendations, pickup results, and publication metadata. It contains no account username field, email addresses, credentials, full ownership lists, or internal database paths. These display fields are public.
 
-Only generated files are committed to the publishing branch. Existing images can be included; otherwise the site uses NBA's image CDN with an initials fallback. Google Fonts and the image CDN are independent browser requests. The database and local reports are not copied into GitHub Actions caches or the publishing branch.
+Only generated files are committed to the publishing branch, including `insights.js` for the Recent form panel. It computes descriptive averages from the already-allowlisted player histories, requiring no new endpoint or database fields. Existing images can be included; otherwise the site uses NBA's image CDN with an initials fallback. Google Fonts and the image CDN are independent browser requests. The database and local reports are not copied into GitHub Actions caches or the publishing branch.
 
 ## Verification
 
 ```bash
 .venv/bin/python -m pytest -q
 .venv/bin/python -m black --check *.py tests
-node --test tests/pages.test.cjs
+node --test tests/*.test.cjs
 ```
 
 Tests cover scoring policies, incremental upserts, failure retention, daily due slots, wake-equivalent catch-up timing, publication deduplication, backoff, delayed deployment confirmation, and a real local Git push to a temporary bare repository to inspect the exported file boundary. The LaunchAgent property list is validated. These checks do not constitute a physical sleep/wake hardware test or establish provider uptime/model accuracy.

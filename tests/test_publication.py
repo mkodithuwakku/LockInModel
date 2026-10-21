@@ -168,6 +168,7 @@ def test_publication_branch_contains_only_exports_and_preserves_history(
         "index.html",
         "app.js",
         "pages.js",
+        "insights.js",
         "style.css",
         "icon.svg",
         "report.json",

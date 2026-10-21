@@ -79,6 +79,7 @@ def test_export_allowlist_and_subpath(tmp_path):
         "index.html",
         "app.js",
         "pages.js",
+        "insights.js",
         "style.css",
         "icon.svg",
         "report.json",

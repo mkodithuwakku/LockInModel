@@ -4,7 +4,11 @@ These captures show generic sample teams and historical performances through
 December 25, 2025. They do not show current recommendations or personal account
 settings. The desktop Test Week uses an isolated practice-state file.
 
-- `test-week-night.png`: desktop Test Week scrolled to the practice clock,
+- `team-insights-desktop.png`: 1440px desktop with Recent form beside the roster,
+  five-game averages, changes versus the previous five games, and sparklines.
+- `team-insights-mobile.png`: 390px phone with the compact form panel above the
+  roster. Both new captures use generic teams in an isolated Test Week.
+- `test-week-night.png` (older layout; decorative court now removed): desktop Test Week scrolled to the practice clock,
   banked total, summary, and compact roster with weekly game tiles.
 - `player-detail.png`: desktop player sheet with latest score, baseline,
   remaining opportunities, weekly opponents, explanation, and production chart.
@@ -26,8 +30,12 @@ When these screens change, replace affected captures and keep captions accurate.
 Keep personal account names, email addresses, and connection settings out of the
 images. Wait for loading and transient toasts to finish before capture.
 
-The existing images document the roster and practice layout. They predate the
-local SQLite/daily publisher changes and do not demonstrate the current live
+The older roster/player images document the previous roster and practice layout.
+They predate the local SQLite/daily publisher changes and do not demonstrate the current live
 scoring-policy notes, 26-hour expiry, or wake catch-up. A generic live Data alerts
 capture with omitted fouls and rebound approximation is the remaining screenshot
 to capture; do not interpret the historical images as verification of that state.
+
+Recent form was checked at 1440px desktop, 1024px tablet, and 390px/320px phone
+widths, including full-team expansion and correct player-detail links. The chart
+uses observed historical scores; these captures do not verify live provider uptime.

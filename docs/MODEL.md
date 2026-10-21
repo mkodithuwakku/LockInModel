@@ -47,6 +47,8 @@ Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `
 
 ## 2. Selecting the candidate and baseline
 
+The dashboard's **Recent form** panel is descriptive and does not change this model. Its average is the arithmetic mean of up to five latest valid scored observations through the report cutoff. Its delta compares that mean with the preceding five observations only when both complete windows exist. These values differ from the recency-weighted, prior-adjusted baseline below. Each sparkline uses its own score range, with the oldest observation on the left; its height is not a shared scale across players. Missing comparisons display a dash, including when only nine games exist.
+
 The pipeline sorts game logs chronologically, filters the selected Monday–Sunday week, and selects its last row as the candidate. There must be at least one game this week to produce a decision.
 
 The baseline first takes games within `recent_days` of the decision date, then the final `lookback_games` rows. With the checked config this means **up to 10 games within 14 days**. It does not automatically expand to 10 games when only five exist in that window. Only when the recent-days subset is entirely empty does it fall back to the final `lookback_games` rows of available observations. The decision helper bounds those observations to 3,650 days through the reference date; the provider may supply a shorter history.

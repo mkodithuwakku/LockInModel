@@ -10,11 +10,15 @@ One local SQLite database retains live game history for every league. A daily Ma
 
 ## Screenshots and demo
 
-The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. These browser captures show historical/sample data, not current NBA recommendations.
+The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. These browser captures show historical/sample data, not current NBA recommendations.
 
-![The Scouting Desk in Test Week on Thursday night, showing the scoreboard, roster decisions, a banked score, and weekly court diagram](docs/screenshots/test-week-night.png)
+![Compact team insights beside the roster, with five-game averages and changes from the previous five games](docs/screenshots/team-insights-desktop.png)
 
-*Test Week reveals one night's results at a time. Scores can be banked for starters and retained as the week advances. Expand “Tonight’s box scores” for the nightly breakdown.*
+*The five highest recent averages appear first; expand to see the full team or select a player for details. On [mobile](docs/screenshots/team-insights-mobile.png), the panel sits above the roster. Sparse history shows its actual sample size; unavailable values remain dashes. Form is an observed average, separate from the model's weighted baseline.*
+
+![Earlier Test Week capture showing the scoreboard, roster decisions, and a banked score](docs/screenshots/test-week-night.png)
+
+*Test Week reveals one night's results at a time. Scores can be banked for starters and retained as the week advances. Expand “Tonight’s box scores” for the nightly breakdown. This older capture includes the retired decorative court; the current sidebar appears above.*
 
 ![Player detail showing the latest fantasy score, baseline, remaining games, explanation, and recent performance chart](docs/screenshots/player-detail.png)
 
@@ -22,7 +26,7 @@ The interface uses a compact fantasy lineup layout: a dark navy background, colo
 
 [View the mobile roster](docs/screenshots/mobile-roster.png) and [phone player details](docs/screenshots/mobile-player-detail.png). At 740px and below, the dashboard uses fixed bottom navigation, a swipeable team selector, and compact roster rows with lineup slots, team labels, weekly games, and recommendation indicators. About seven complete rows fit in the tested 390px roster viewport after scrolling past the header. Profiles open in a bottom sheet. The same URL adapts automatically; no app installation or separate mobile site is needed. Keyboard focus indicators, a skip link, reduced-motion styles, and safe-area spacing support navigation.
 
-*Mobile screenshots show the hosted interface with generic sample teams and historical performances, not current recommendations. Desktop screenshots above show the local Test Week workflow. These captures predate the database/publication changes and do not demonstrate current scoring notices or freshness behavior; see [screenshot scope](docs/screenshots/README.md).*
+*The older mobile roster/player captures show generic historical sample teams. The new team-insights captures use an isolated local Test Week. None demonstrate current NBA recommendations or live scoring notices; see [screenshot scope](docs/screenshots/README.md).*
 
 To try the workflow, follow [setup](#running-locally), select **Test Week**, reveal games, open a player, and bank an eligible score. Progress saves locally. The hosted dashboard publishes live snapshots; Test Week and roster editing remain local.
 
@@ -39,6 +43,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 ## Key features
 
 - **Multi-team analysis:** separate league scoring, starters/bench filters, player histories, and saved archives for older Sleeper seasons.
+- **Compact team insights:** ranked five-game form, per-player sparklines, change versus the previous five games, and expandable full-team coverage on desktop and phones.
 - **Lock/wait explanations:** compare the latest eligible score with a weighted baseline and verified remaining opportunities; missing inputs produce explicit review states.
 - **On the Rise:** compare five recent games with an earlier baseline, discount fragile improvement signals, and estimate fit against compatible roster players.
 - **Offline Test Week:** reveal nights, bank one score per starter, edit practice rosters, and resume progress without changing live teams.
@@ -107,7 +112,7 @@ flowchart TD
 
 | Files | Responsibility |
 | --- | --- |
-| [app.py](app.py), [web/](web/) | HTTP boundary, jobs, interface state, rendering, and user actions |
+| [app.py](app.py), [web/](web/) | HTTP boundary, jobs, interface state, rendering, and user actions; [insights.js](web/insights.js) derives observed team form |
 | [engine.py](engine.py), [providers.py](providers.py), [schedule.py](schedule.py) | Shared orchestration, live/replay policies, and cached weekly schedule |
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |
 | [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
@@ -219,10 +224,10 @@ python main.py --live
 python -m pytest -q
 python -m black --check *.py tests
 # Requires Node 20+ (only for these additional frontend policy tests)
-node --test tests/pages.test.cjs
+node --test tests/*.test.cjs
 ```
 
-Use a date from the newly captured manifest if its selected week differs. Tests block socket connections and cover scoring boundaries, missing inputs, future-data exclusion, import failure, cooldowns, API mutations, practice revisions, and email deduplication. Database/publication tests cover correction upserts, failure retention, due slots, retries, delayed deployment confirmation, and the export boundary using a temporary local Git remote. Node tests cover hosted report policies. Real-fixture tests skip until capture has run. CI does not include an automated browser suite; simulated wake timing does not constitute a physical sleep/wake test.
+Use a date from the newly captured manifest if its selected week differs. Tests block socket connections and cover scoring boundaries, missing inputs, future-data exclusion, import failure, cooldowns, API mutations, practice revisions, and email deduplication. Database/publication tests cover correction upserts, failure retention, due slots, retries, delayed deployment confirmation, and the export boundary using a temporary local Git remote. Node tests cover hosted report policies and team-form windows, sparse/invalid inputs, zero/negative FP, and cutoff handling. Real-fixture tests skip until capture has run. CI does not include an automated browser suite; simulated wake timing does not constitute a physical sleep/wake test.
 
 For Sleeper, use **Sleeper connection** with a username and season start year; no password is requested. UI changes and reports share `config.local.yaml`. For optional email, copy the variable names from [.env.example](.env.example) into a local `.env`, set `EMAIL_USER` and `EMAIL_APP_PASSWORD`, and configure `notify.to_email`/`notify.from_email` in local YAML. `python main.py --live --send --daily` requests daily email delivery. See [Operations](docs/OPERATIONS.md).
 
