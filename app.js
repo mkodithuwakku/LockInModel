@@ -17,6 +17,7 @@ let state = {
   view: "team",
   filter: "all",
   search: "",
+  availableLimit: 30,
   mode: "live",
   request: 0,
   archived: false,
@@ -247,7 +248,7 @@ function render() {
   $(".sheet-instruction").textContent =
     state.view === "alerts"
       ? "Check your inputs before making a call"
-      : "Select a player for the full read ↗";
+      : state.view === "rise" ? "Search all available players" : "Select a player for the full read ↗";
   $("#edition-date").textContent = new Date(state.data.date + "T12:00:00")
     .toLocaleDateString("en-US", {
       month: "short",
@@ -335,7 +336,7 @@ function render() {
   $("#league-scope").textContent =
     state.mode === "test"
       ? "Practice candidates: only this sample roster is excluded. Historical league ownership is unknown."
-      : `${t.league_name} · ${t.team_name} · ${t.ownership_complete ? "All league rosters, reserves and taxi players excluded" : "League ownership unknown"}. ${t.synced_at ? "Ownership snapshot: " + new Date(t.synced_at).toLocaleString() : ""}. Switch teams to compare a different league.`;
+      : `${t.ownership_complete ? "All league rosters, IR and taxi excluded" : "League ownership unknown"}${t.synced_at ? " · Synced " + new Date(t.synced_at).toLocaleString() : ""}.`;
   renderTestControls(t);
   renderContent();
   renderInsights();
@@ -442,6 +443,13 @@ function renderContent() {
       '<div class="empty">No qualifying candidates in this view.<br>Completed and undrafted leagues have no live pickup analysis.' +
         (hosted ? "" : " Use Test Week to explore sample signals.") +
         "</div>";
+    const rankedNames = new Set((t.pickups || []).map(p => p.player.toLowerCase()));
+    const available = (t.available_players || []).filter(p =>
+      !rankedNames.has(p.player.toLowerCase()) && p.player.toLowerCase().includes(search));
+    if (available.length) {
+      if (!t.pickups.some(p => p.player.toLowerCase().includes(search))) $("#content").innerHTML = "";
+      $("#content").innerHTML += `<section class="available-pool" aria-label="Unrostered players"><div class="available-heading"><h2>Available players <small>${available.length}</small></h2><span>Unranked</span></div><p class="available-note">Up to 5 games · trend needs 10. Missing stats show —. NBA rosters first.</p><div class="available-list">${available.slice(0, state.availableLimit).map(p => `<article class="available-row"><div class="player-ident">${portrait(p)}<span><span class="player-name">${esc(p.player)}</span><span class="player-meta">${nbaTeamLabel(p.nba_team)} ${esc(p.positions.join(" / "))}${p.injury_status ? ` · ${esc(p.injury_status)}` : ""}</span></span></div><div class="available-stats"><span title="${p.games_recent ? `Average of ${p.games_recent} observed game(s)` : "No observed games"}">Recent FP<b>${fmt(p.recent_fp)}</b></span><span>Baseline<b>${fmt(p.baseline_fp)}</b></span><span>Trend<b>${p.lift > 0 ? "+" : ""}${fmt(p.lift)}</b></span></div></article>`).join("")}</div>${available.length > state.availableLimit ? `<button class="available-more" data-available-more>Show more players (${available.length - state.availableLimit})</button>` : ""}</section>`;
+    }
     attachImageFallback();
     return;
   }
@@ -670,6 +678,7 @@ document.addEventListener("click", (e) => {
   b = e.target.closest("[data-team]");
   if (b) {
     state.team = b.dataset.team;
+    state.availableLimit = 30;
     localStorage.setItem("lockin-team", state.team);
     render();
     return;
@@ -711,6 +720,8 @@ document.addEventListener("click", (e) => {
     showPlayer(team().results[Number(b.dataset.player)]);
     return;
   }
+  b = e.target.closest("[data-available-more]");
+  if (b) { state.availableLimit += 30; renderContent(); return; }
   b = e.target.closest("[data-pickup]");
   if (b) {
     showPlayer(team().pickups[Number(b.dataset.pickup)]);
@@ -737,6 +748,7 @@ $("#roster-editor").addEventListener("change", (e) => {
 });
 $("#search").addEventListener("input", (e) => {
   state.search = e.target.value;
+  state.availableLimit = 30;
   renderContent();
 });
 $("#show-archived").addEventListener("change", (e) => {
