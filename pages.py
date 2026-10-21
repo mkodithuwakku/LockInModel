@@ -11,6 +11,7 @@ import sys
 
 from engine import build_dashboard, roster_dashboard, today
 from storage import ROOT, load_cfg, read_json, write_json
+from lineup import unavailable_lineup
 
 REPORT_FIELDS = "mode date observation_cutoff generated_at notice refresh_status schedule_week season_start publication_id".split()
 TEAM_FIELDS = (
@@ -28,6 +29,8 @@ PICKUP_FIELDS = (
     "minutes baseline_minutes consistency projected_fp signal_score games_recent "
     "games_baseline risks replacement team_gain availability ownership_as_of scoring_complete"
 ).split()
+LINEUP_FIELDS = "date status reason total_projected_fp filled_slots eligible_players missing_inputs".split()
+LINEUP_PLAYER_FIELDS = "player player_id positions current_slot injury_status slot slot_index projected_fp projection_source sample_size last_played opponent home reason".split()
 SAVED = ROOT / "state/pages-report.json"
 
 
@@ -57,6 +60,13 @@ def public_report(report):
             ]
             item["results"].append(row)
         item["pickups"] = [select(p, PICKUP_FIELDS) for p in team.get("pickups", [])]
+        if team.get("recommended_lineup"):
+            daily = team["recommended_lineup"]
+            item["recommended_lineup"] = select(daily, LINEUP_FIELDS)
+            for field in ("slots", "bench"):
+                item["recommended_lineup"][field] = [
+                    select(p, LINEUP_PLAYER_FIELDS) for p in daily.get(field, [])
+                ]
         out["teams"].append(item)
     out["alerts"] = [
         select(alert, ["severity", "team", "message"])
@@ -73,6 +83,7 @@ def unavailable(report, message):
     report.setdefault("alerts", []).insert(0, {"severity": "error", "message": message})
     for team in report.get("teams", []):
         team["pickups"] = []
+        team["recommended_lineup"] = unavailable_lineup(report.get("date"), message)
         for row in team["results"]:
             row.update(
                 status="DATA_UNAVAILABLE",
@@ -156,10 +167,6 @@ def export_site(report, destination):
     )
     html = html.replace('href="/"', 'href="./"')
     html = html.replace('<html lang="en">', '<html lang="en" data-hosting="pages">')
-    html = html.replace(
-        '<script src="./app.js" defer></script>',
-        '<script src="./pages.js" defer></script>\n    <script src="./app.js" defer></script>',
-    )
     # Pages/browser caches can otherwise pair new HTML with an old app script.
     assets = ("app.js", "pages.js", "insights.js", "style.css", "icon.svg")
     for name in assets:

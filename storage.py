@@ -88,6 +88,13 @@ def validate_config(cfg):
         ids.add(team["id"])
         if not isinstance(team.get("name"), str) or not team["name"].strip():
             raise ValueError("Each team needs a name.")
+        slots = team.get("roster_positions")
+        if slots is not None:
+            if not isinstance(slots, list) or any(
+                not isinstance(s, str) or not s.strip() for s in slots
+            ):
+                raise ValueError("Roster positions must be a list of slot names.")
+            team["roster_positions"] = [s.strip().upper() for s in slots]
         team.setdefault("players", list(team.get("starters", [])))
         for field in ("players", "starters"):
             if not isinstance(team.get(field), list) or any(

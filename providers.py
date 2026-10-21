@@ -107,6 +107,29 @@ class LiveProvider:
                     }
                 )
 
+    def lineup_history(self):
+        """Optional prior-season local observations; never fetch another season."""
+        if hasattr(self, "_lineup_history"):
+            return self._lineup_history
+        from game_store import GameStore
+
+        year = int(self.manifest["season"].split("-")[0]) - 1
+        season = f"{year}-{str(year + 1)[-2:]}"
+        history = GameStore().read(season)
+        if history.empty:
+            directory = ROOT / "data/fixtures" / season
+            manifest = read_json(directory / "manifest.json", {})
+            path = directory / "games.parquet"
+            digest = manifest.get("files", {}).get("games.parquet")
+            if (
+                digest
+                and path.is_file()
+                and hashlib.sha256(path.read_bytes()).hexdigest() == digest
+            ):
+                history = parse_dates(pd.read_parquet(path))
+        self._lineup_history = history
+        return history
+
     def remaining_for_team(self, team, reference):
         if self.calendar is None:
             raise DataUnavailable(

@@ -1,6 +1,6 @@
 # LockIn
 
-**An NBA fantasy basketball dashboard that helps managers decide whether to keep a completed score or wait for another game.** LockIn combines league-specific scoring, recent player performance, remaining opportunities, and waiver research in one interface, with an offline practice week for exploring decisions.
+**An NBA fantasy basketball dashboard that helps managers decide whether to keep a completed score or wait for another game.** LockIn combines league-specific scoring, recent player performance, remaining opportunities, daily positional lineups, and waiver research in one interface, with an offline practice week for exploring decisions.
 
 Python · Flask · SQLite · pandas · NumPy · vanilla JavaScript · pytest · macOS launchd · GitHub Pages / Actions
 
@@ -10,11 +10,11 @@ One local SQLite database retains live game history for every league. A daily Ma
 
 ## Screenshots and demo
 
-The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. These browser captures show historical/sample data, not current NBA recommendations.
+The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. These browser captures show historical/sample data, not current NBA recommendations.
 
-![Compact team insights beside the roster, with five-game averages and changes from the previous five games](docs/screenshots/team-insights-desktop.png)
+![Recommended daily lineup and recent form beside a generic practice roster](docs/screenshots/daily-lineup-desktop.png)
 
-*The five highest recent averages appear first; expand to see the full team or select a player for details. On [mobile](docs/screenshots/team-insights-mobile.png), the panel sits above the roster. Sparse history shows its actual sample size; unavailable values remain dashes. Form is an observed average, separate from the model's weighted baseline.*
+*The daily plan shows positions, opponents, projected FP, and an expandable list of excluded players. The five highest recent averages appear first; expand to see the full team or select a player for details. On [mobile](docs/screenshots/daily-lineup-mobile.png), the panel sits above the roster. Sparse history shows its actual sample size; unavailable values remain dashes. Form is an observed average, separate from the model's weighted baseline.*
 
 ![Earlier Test Week capture showing the scoreboard, roster decisions, and a banked score](docs/screenshots/test-week-night.png)
 
@@ -26,7 +26,7 @@ The interface uses a compact fantasy lineup layout: a dark navy background, colo
 
 [View the mobile roster](docs/screenshots/mobile-roster.png) and [phone player details](docs/screenshots/mobile-player-detail.png). At 740px and below, the dashboard uses fixed bottom navigation, a swipeable team selector, and compact roster rows with lineup slots, team labels, weekly games, and recommendation indicators. About seven complete rows fit in the tested 390px roster viewport after scrolling past the header. Profiles open in a bottom sheet. The same URL adapts automatically; no app installation or separate mobile site is needed. Keyboard focus indicators, a skip link, reduced-motion styles, and safe-area spacing support navigation.
 
-*The older mobile roster/player captures show generic historical sample teams. The new team-insights captures use an isolated local Test Week. None demonstrate current NBA recommendations or live scoring notices; see [screenshot scope](docs/screenshots/README.md).*
+*The older mobile roster/player captures show generic historical sample teams. The new daily-lineup captures use an isolated local Test Week. None demonstrate current NBA recommendations or live scoring notices; see [screenshot scope](docs/screenshots/README.md).*
 
 To try the workflow, follow [setup](#running-locally), select **Test Week**, reveal games, open a player, and bank an eligible score. Progress saves locally. The hosted dashboard publishes live snapshots; Test Week and roster editing remain local.
 
@@ -43,6 +43,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 ## Key features
 
 - **Multi-team analysis:** separate league scoring, starters/bench filters, player histories, and saved archives for older Sleeper seasons.
+- **Daily recommended lineup:** exact maximum-weight assignment across each league’s PG/SG/SF/PF/C, G/F, and repeated UTIL slots, using scheduled roster players and pregame league-scored projections. Shows unfilled slots and exclusion reasons; no Sleeper changes are submitted.
 - **Compact team insights:** ranked five-game form, per-player sparklines, change versus the previous five games, and expandable full-team coverage on desktop and phones.
 - **Lock/wait explanations:** compare the latest eligible score with a weighted baseline and verified remaining opportunities; missing inputs produce explicit review states.
 - **On the Rise:** compare five recent games with an earlier baseline, discount fragile improvement signals, and estimate fit against compatible roster players.
@@ -117,13 +118,14 @@ flowchart TD
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |
 | [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
 | [simulation.py](simulation.py), [storage.py](storage.py) | Practice transitions, config validation, atomic file replacement |
+| [lineup.py](lineup.py) | Pregame projections and exact positional assignment for each league |
 | [game_store.py](game_store.py) | Permanent SQLite history, incremental daily upserts, weekly reconciliation |
 | [sleeper.py](sleeper.py), [transport.py](transport.py), [capture.py](capture.py) | League import, cached/paced requests, historical capture |
 | [pages.py](pages.py), [publication.py](publication.py), [web/pages.js](web/pages.js) | Allowlisted export, local daily publication, wake catch-up, browser expiry |
 | [main.py](main.py), [notify.py](notify.py) | Reports, delivery ledger, pickup cooldowns, SMTP |
 | [tests/](tests/), [docs/](docs/) | Regression checks and implementation guides |
 
-The main entities are **teams**, **player-game observations**, **practice runs**, and **reports**. A team contains a stable ID, roster names, a starter subset, and optional league weights and ownership metadata. Imported teams use `sleeper-<league_id>` IDs. SQLite stores observations under a composite season/game/player key and records successful refresh metadata per season. Raw box scores can be rescored for different leagues; derived bonus indicators are recomputed when scoring. The engine maps roster names to NBA identities. Configuration and reports remain separate files, without cross-file foreign-key constraints.
+The main entities are **teams**, **player-game observations**, **practice runs**, and **reports**. A team contains a stable ID, roster names, a starter subset, full imported `roster_positions` (including empty and repeated slots), and optional league weights and ownership metadata. Imported teams use `sleeper-<league_id>` IDs. SQLite stores observations under a composite season/game/player key and records successful refresh metadata per season. Raw box scores can be rescored for different leagues; derived bonus indicators are recomputed when scoring. The engine maps roster names to NBA identities. Configuration and reports remain separate files, without cross-file foreign-key constraints.
 
 | Local path | Stored data |
 | --- | --- |
@@ -194,6 +196,14 @@ For a selected player, `per_player_week_decision()` in [decide.py](decide.py) fo
 6. Return the score, baseline, opportunities, history, and explanation. The engine withholds actionable output when league scoring is incomplete. The user acts in Sleeper, or banks the score locally in Test Week.
 
 Pickup analysis is separate: it needs at least 13 observations, compares the last five games with up to 20 earlier games, checks minutes and consistency, discounts shooting/steals/blocks spikes, and prefers a compatible bench replacement. It does not optimize every roster slot or model injuries.
+
+## Deep dive: the daily lineup
+
+The engine scores history strictly **before the selected day**, then uses the configured recency-weighted baseline to project one game per eligible roster player. The projection uses current-season observations first; when none are usable, it can use the preceding season already saved in SQLite or its checksum-verified local fixture. Prior-season estimates are labeled. Missing weighted stats or history never become invented zero-point forecasts.
+
+`lineup.py` solves a maximum-weight assignment with the Hungarian algorithm. A flexible 50-FP PG/SG goes into SG when that frees PG for a 49-FP PG-only player, instead of greedily blocking that player. Every active league slot is represented, including duplicate UTIL slots and currently empty starters; players appear at most once. Zero-point vacancies allow unfillable or negative-contribution positions to remain empty. Runtime is `O(slots² × (players + slots))`, with no extra dependency or hardcoded league shape.
+
+Live candidates need a verified game that day and a pre-game schedule status. Reserve/taxi and confirmed-out players are excluded. Questionable players remain eligible and are labeled; their projections are not injury-adjusted. Unknown slots withhold the plan until supported, and missing schedules/projections produce an explicitly partial plan. This is a **daily pregame snapshot**, not weekly lock optimization: existing Sleeper lock selections and exact tipoff deadlines are not imported. Check them in Sleeper before acting. Daily plans expire at Edmonton midnight even while the rest of a report remains within its 26-hour window. [Formula and boundaries](docs/MODEL.md#11-daily-lineup-projections-and-assignment).
 
 ## Running locally
 

@@ -110,7 +110,7 @@ def sync(username, season):
         starter_slots = [
             slot
             for slot in details.get("roster_positions", [])
-            if slot not in ("BN", "IR")
+            if slot not in ("BN", "IR", "TAXI")
         ]
         slot_by_id = {
             str(pid): slot
@@ -155,6 +155,7 @@ def sync(username, season):
                 "season": str(season),
                 "league_status": details.get("status"),
                 "source": "sleeper",
+                "roster_positions": details.get("roster_positions"),
                 "players": roster_names,
                 "starters": [n for n in starters if n in roster_names],
                 "weights": weights,

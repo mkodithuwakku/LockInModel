@@ -4,7 +4,7 @@ The project-level [README](../README.md) is the portfolio overview and technical
 
 1. [Walkthrough](WALKTHROUGH.md): understand the user workflow.
 2. [Architecture](ARCHITECTURE.md): follow shared SQLite history, providers, reports, and the static export boundary.
-3. [Model](MODEL.md): inspect scoring, configurable milestones, fallbacks, equations, and assumptions.
+3. [Model](MODEL.md): inspect scoring, configurable milestones, daily lineup assignment, fallbacks, equations, and assumptions.
 4. [Configuration](CONFIGURATION.md): configure leagues, formulas, and local publication settings.
 5. [Operations](OPERATIONS.md): run, test, back up, and diagnose the app; distinguish email from website publication.
 6. [Hosting](HOSTING.md): publish from the Mac to GitHub Pages, handle catch-up/retries, and ship source changes.

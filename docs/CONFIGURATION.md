@@ -75,3 +75,17 @@ Sleeper imports preserve the ordered starter slots from `roster_positions` and `
 The optional `publication` mapping defaults to `remote: origin`, `branch: gh-pages`, `hour: 12`, `minute: 17`, and `timezone: America/Edmonton`. An optional HTTPS `url` supports a custom Pages domain; otherwise it is derived from the GitHub origin. Source branches `main`/`master` cannot be publication targets. GitHub credentials come from the existing OS Git credential helper, never from YAML or a generated website file.
 
 The macOS agent checks at minutes 02, 17, 32, and 47 and after login/wake. The ledger permits one successful publication per scheduled date. For other configured minutes, the next check after the configured time performs the run (at most 15 minutes later while awake). Failures retry after 15, 30, 60, 120, 240, then 360 minutes; subsequent failures remain capped at six hours. See [Hosting](HOSTING.md).
+
+## Daily lineup slots
+
+Sleeper sync saves `roster_positions` from the league API, including empty slots and duplicates, alongside each player's `positions`, `roster_slot`, and injury label. Each league can therefore have its own active configuration. Sync older imports once to populate this field; daily publication already syncs automatically.
+
+A local/practice team can set, for example:
+
+```yaml
+roster_positions: [PG, SG, F, C, UTIL, UTIL, BN, IR]
+```
+
+PG/SG/SF/PF/C, G/F, and UTIL are supported active slots. BN/IR/TAXI are excluded. The config validator preserves order and duplicates and normalizes names to uppercase. Unrecognized active slot names make the recommendation unavailable rather than silently changing a league's rules. Local teams without this field use one UTIL slot per starter. Imported teams without it request a resync.
+
+Daily projections reuse `decision.lookback_games`, `recent_days`, `decay`, and `prior_weight_games`, together with that league's scoring weights. No player-specific or league-specific lineup algorithm is needed. Read [daily lineup assumptions](MODEL.md#11-daily-lineup-projections-and-assignment) before treating a suggested arrangement as a legal Sleeper change.

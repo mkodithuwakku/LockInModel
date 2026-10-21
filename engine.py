@@ -10,6 +10,7 @@ from decide import per_player_week_decision
 from pickups import find_pickups
 from scoring import apply_scoring_policy, scoring_notes, effective_weights
 from transport import DataUnavailable
+from lineup import project_players, recommend_lineup, unavailable_lineup
 
 
 def today():
@@ -79,6 +80,10 @@ def build_dashboard(
     results = []
     alerts = list(getattr(provider, "alerts", []))
     decision_cache = {}
+    fallback = getattr(provider, "priors", None)
+    if mode == "live" and hasattr(provider, "lineup_history"):
+        fallback = provider.lineup_history()
+    projection_cache = {}
     for team in cfg["teams"]:
         team = apply_scoring_policy(dict(team))
         if mode == "live" and team.get("league_status", "in_season") != "in_season":
@@ -233,6 +238,39 @@ def build_dashboard(
                     "message": "Pickup analysis unavailable: " + str(exc),
                 }
             )
+        roster_ids = {str(r["player_id"]) for r in rows if r.get("player_id")}
+        projection_key = (
+            tuple(sorted((team.get("weights") or cfg["weights"]).items())),
+            tuple(sorted(roster_ids)),
+        )
+        if projection_key not in projection_cache:
+            projection_cache[projection_key] = project_players(
+                observed[observed.PLAYER_ID.astype(str).isin(roster_ids)],
+                (
+                    fallback[fallback.PLAYER_ID.astype(str).isin(roster_ids)]
+                    if fallback is not None and not fallback.empty
+                    else None
+                ),
+                team.get("weights") or cfg["weights"],
+                cfg,
+                reference,
+            )
+        daily_lineup = recommend_lineup(
+            team,
+            rows,
+            projection_cache[projection_key],
+            reference,
+            mode,
+            blocked=(
+                "Scoring inputs unavailable for this league."
+                if team.get("unsupported_scoring")
+                else (
+                    "Fresh performance data unavailable."
+                    if getattr(provider, "stats_error", None)
+                    else None
+                )
+            ),
+        )
         results.append(
             {
                 "id": team["id"],
@@ -247,6 +285,7 @@ def build_dashboard(
                 "ignored_scoring": team.get("ignored_scoring", {}),
                 "scoring_notes": notes,
                 "results": rows,
+                "recommended_lineup": daily_lineup,
                 "pickups": candidates,
             }
         )
@@ -417,6 +456,7 @@ def roster_dashboard(cfg, include_archived=False):
                 "ownership_complete": t.get("ownership_complete", False),
                 "unsupported_scoring": t.get("unsupported_scoring", {}),
                 "results": rows,
+                "recommended_lineup": unavailable_lineup(today(), note),
                 "pickups": [],
             }
         )

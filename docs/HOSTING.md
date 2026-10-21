@@ -102,3 +102,9 @@ For a local static preview without network calls:
 Use a fresh output directory each time. Open `http://127.0.0.1:8766/preview/`.
 
 References: [Apple scheduled jobs and sleep/wake behavior](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/ScheduledJobs.html), [GitHub Pages publishing sources](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site), [Pages configuration API](https://docs.github.com/en/rest/pages/pages).
+
+## Daily lineup publication
+
+Every scheduled refresh imports the league's complete slot configuration and generates its recommended pregame lineup in the same public report. The website needs no new database, backend, or Mac trigger. A projection may use labeled prior-season history already present locally; it never requests another season just to fill missing forecasts.
+
+Daily lineups expire at Edmonton midnight, even if the broader report is still within 26 hours. Before the next scheduled publication, the card says it is waiting for today's report. Open tabs check each minute and after waking/returning to the tab. The report is a pregame snapshot: intraday injuries, starts, and weekly Sleeper locks are not continuously refreshed. Reload checks published JSON only.

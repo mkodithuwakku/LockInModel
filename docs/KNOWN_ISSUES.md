@@ -2,6 +2,8 @@
 
 ## Corrected in this implementation
 
+- Daily lineups preserve full league slots (including empties), maximize eligible projected FP with exact assignment, and expire at midnight separately from the report. Predictions are baselines, not demonstrated accuracy.
+
 - Bonuses are recomputed from observations, including configurable points/rebounds/assists/steals/blocks thresholds. Boundary and stacking cases are tested.
 - Unavailable fouls and rebound splits use documented fallbacks and informational notes; they no longer block recommendations. Unknown nonzero rules still do.
 - SQLite retains shared live game history with transactional upserts, daily overlap downloads, weekly reconciliation, and failed-refresh retention.
@@ -37,9 +39,9 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 | Historical schedules | Finalized schedule and last observed team assignment, not timestamped historical schedule/transaction snapshots |
 | Practice fidelity | Whole-night clock and sample rosters/rules; no exact game deadlines, full Sleeper transaction rules, or opponent matchup simulation |
 | Historical ownership | Current import or sample roster; availability claims are not historical |
-| Injury/role context | Minutes are observed; historical injuries, upcoming absences, and lineup news are not modeled |
+| Injury/role context | Daily lineups exclude confirmed-out/reserve players from the import snapshot; questionable players have no probability adjustment. Historical injuries and future role/minute changes are not modeled |
 | Pickup projection | Hand-tuned conservative estimate, not a fitted/calibrated forecast |
-| Position fit | Shared position compatibility; no full roster-slot optimization or waiver-budget strategy |
+| Position fit | Exact daily positional assignment is implemented; weekly lock optimization, Game Pick selections, transaction legality, and waiver-budget strategy are not |
 | Local configuration | Atomic writes, but no cross-process configuration transaction lock; one editor process is intended |
 | Deployment | GitHub Pages serves a public static snapshot without a database. Updates require the Mac logged in, awake, online, and authenticated to GitHub; source pushes alone do not deploy. Catch-up cannot restore missed decision deadlines. Local Flask has no public login; Test Week and editing stay local |
 | Live storage | Upserts replace corrected observations; no historical versions are retained, and records absent from a later response are not deleted. Backups remain a local operational responsibility |

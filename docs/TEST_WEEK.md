@@ -25,3 +25,7 @@ Practice uses the sample scoring rules rather than imported live league formulas
 The clock advances whole nights, not live game minutes or exact lock deadlines. The simulator does not enforce all of Sleeper's transaction/lineup rules. It is an offline decision practice tool, not a recreation of an official fantasy matchup. Finalized schedules and the prior-season baseline have the limitations described in [Historical replay](HISTORICAL_REPLAY.md).
 
 For an arbitrary end-of-day inspection without changing your practice run, the CLI still accepts `python main.py --date 2025-12-25`.
+
+## Daily pregame preview
+
+Recommended lineup uses the practice team's explicit `roster_positions`, or one UTIL per starter when absent. It maximizes projected FP for players scheduled on the selected day using only earlier box scores, including when that day is already revealed. It does not import historical injury/ownership snapshots. Once any score is banked for a practice team, the unrestricted preview is withheld until restart; known locked players cannot be treated as freely movable.

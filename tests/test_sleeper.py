@@ -138,6 +138,7 @@ def test_import_preserves_lineup_slots_empty_slots_bench_and_team(
     monkeypatch.setattr(sleeper, "save_cfg", saved.append)
     sleeper.sync("example", "2025")
     team = saved[0]["teams"][0]
+    assert team["roster_positions"] == ["PG", "SG", "UTIL", "BN"]
     assert team["players"] == ["Tyrese Maxey", "Bam Adebayo", "Derrick White"]
     meta = team["player_meta"]
     assert meta["bam adebayo"]["roster_slot"] == "UTIL"

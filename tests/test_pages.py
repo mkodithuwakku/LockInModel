@@ -150,3 +150,25 @@ def test_successful_local_refresh_uses_shared_engine(monkeypatch, tmp_path):
     assert result["refresh_status"] == "ok"
     assert result["teams"][0]["results"][0]["decision"] == "LOCK"
     assert "PRIVATE" not in pages.SAVED.read_text()
+
+
+def test_lineup_export_is_nested_allowlist_and_failure_clears_it():
+    raw = report()
+    raw["teams"][0]["recommended_lineup"] = {
+        "date": raw["date"],
+        "status": "ready",
+        "total_projected_fp": 40,
+        "secret": "PRIVATE_LINEUP",
+        "slots": [
+            {"slot": "PG", "player": "A", "projected_fp": 40, "secret": "PRIVATE_SLOT"}
+        ],
+        "bench": [
+            {"player": "B", "reason": "No game today", "secret": "PRIVATE_BENCH"}
+        ],
+    }
+    exported = pages.public_report(raw)
+    assert "PRIVATE" not in json.dumps(exported)
+    assert exported["teams"][0]["recommended_lineup"]["slots"][0]["projected_fp"] == 40
+    failed = pages.unavailable(exported, "Refresh failed")
+    assert failed["teams"][0]["recommended_lineup"]["slots"] == []
+    assert exported["teams"][0]["recommended_lineup"]["status"] == "ready"

@@ -53,3 +53,11 @@ Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `
 > I built an NBA fantasy decision dashboard with read-only Sleeper synchronization, league-specific scoring, and explainable lock/wait and pickup heuristics. One local SQLite database retains live observations. A Mac scheduler publishes static reports to GitHub Pages with catch-up, retries, and deployment confirmation, so the website needs no database server. Separate checksum-verified fixtures support offline practice, and the engine excludes future observations from replay inputs.
 
 Discuss database upserts versus immutable replay, local availability versus static hosting, deployment confirmation versus a successful push, extensible scoring versus approximation error, and the model's independence assumption. No performance improvement has yet been established through held-out evaluation.
+
+## Recommended lineup
+
+Select a team to see **Recommended lineup** for the report day. The card shows the league's active position slots, one eligible scheduled player per slot, their projected FP, and the maximum projected total. Expand **Not selected** for exclusions or **How this is picked** for the model's assumptions. Select a player to inspect their history. The same panel sits above Recent form on phones.
+
+The optimizer can move flexible players among eligible slots and promote bench players to improve the total. Projections use only history before the day and the selected league's scoring; prior-season fallbacks are labeled. Unfilled positions and incomplete inputs remain explicit. This is a pregame plan: check existing locks and tipoffs in Sleeper. It never changes the actual roster. After midnight, wait for the next scheduled report for today's plan.
+
+Test Week previews the selected day before its outcomes, even at night. A banked practice score disables the unrestricted lineup preview until the week is restarted, so it cannot suggest moving a known locked player.

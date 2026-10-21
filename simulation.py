@@ -59,6 +59,13 @@ def report(run, provider):
     )
     for team in data["teams"]:
         banked = run["locks"].get(team["id"], {})
+        if banked:
+            from lineup import unavailable_lineup
+
+            team["recommended_lineup"] = unavailable_lineup(
+                run["date"],
+                "Practice scores are banked. Restart the week to preview an unrestricted pregame lineup.",
+            )
         for row in team["results"]:
             row["banked"] = banked.get(row["player"])
             row["can_bank"] = bool(

@@ -132,3 +132,31 @@ def test_local_report_preserves_snapshot_time_and_daily_expiry(
     assert data["teams"][0]["results"][0]["status"] == expected
     if expected == "STALE":
         assert data["teams"][0]["pickups"] == []
+
+
+def test_daily_lineup_expires_independently_from_local_report(client, monkeypatch):
+    import datetime as dt
+    import app as module
+
+    monkeypatch.setattr(module, "today", lambda: dt.date(2026, 10, 22))
+    saved = {
+        "date": "2026-10-21",
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "alerts": [],
+        "teams": [
+            {
+                "id": "test",
+                "results": [],
+                "pickups": [],
+                "recommended_lineup": {
+                    "date": "2026-10-21",
+                    "status": "ready",
+                    "slots": [{"player": "A"}],
+                },
+            }
+        ],
+    }
+    monkeypatch.setattr(module, "read_json", lambda *_: copy.deepcopy(saved))
+    data = client.get("/api/dashboard?mode=live").get_json()
+    assert data["teams"][0]["recommended_lineup"]["status"] == "unavailable"
+    assert data["teams"][0]["recommended_lineup"]["slots"] == []

@@ -81,3 +81,16 @@ test("previous fantasy week expires at Monday even within the daily window", () 
   source.schedule_week = ["2026-10-12", "2026-10-18"];
   assert.equal(prepareReport(source, new Date("2026-10-19T06:01:00Z")).stale, true);
 });
+
+test("daily lineup expires at Edmonton midnight while the report stays fresh", () => {
+  const source = fixture();
+  source.teams[0].recommended_lineup = {date: "2026-10-15", status: "ready", slots: [{player: "A"}], bench: [], total_projected_fp: 50};
+  assert.equal(prepareReport(source, new Date("2026-10-16T05:59:00Z")).teams[0].recommended_lineup.status, "ready");
+  const expired = prepareReport(source, new Date("2026-10-16T06:00:00Z"));
+  assert.equal(expired.stale, false);
+  assert.equal(expired.teams[0].recommended_lineup.status, "unavailable");
+  assert.deepEqual(expired.teams[0].recommended_lineup.slots, []);
+  assert.equal(source.teams[0].recommended_lineup.slots.length, 1);
+  source.refresh_status = "failed";
+  assert.equal(prepareReport(source, new Date("2026-10-15T19:00:00Z")).teams[0].recommended_lineup.status, "unavailable");
+});

@@ -129,3 +129,38 @@ def test_flagrants_do_not_change_model_or_pickup_scoring():
     ]
     assert all(a["severity"] == "info" for a in actual["alerts"])
     assert actual["teams"][0]["ignored_scoring"] == {"ff": -2}
+
+
+@pytest.mark.skipif(
+    not (ROOT / "data/fixtures/2025-26/manifest.json").exists(),
+    reason="Capture fixture first",
+)
+def test_daily_lineup_is_pregame_even_in_night_replay():
+    p = FixtureProvider()
+    cfg = sample_cfg()
+    cfg["teams"][0].update(
+        players=["Luka Dončić", "Julius Randle"],
+        starters=["Luka Dončić"],
+        roster_positions=["PG", "F"],
+    )
+    cfg["teams"][0]["player_meta"] = {
+        "luka doncic": {"positions": ["PG"]},
+        "julius randle": {"positions": ["PF"]},
+    }
+    date = p.manifest["default_date"]
+    a = build_dashboard(provider=p, cfg=cfg, reference=date)["teams"][0][
+        "recommended_lineup"
+    ]
+    assert a["status"] == "ready" and a["filled_slots"] == 2
+    p.games.loc[p.games.GAME_DATE >= date, "PTS"] = 999
+    b = build_dashboard(provider=p, cfg=cfg, reference=date)["teams"][0][
+        "recommended_lineup"
+    ]
+    assert a == b
+    cfg["teams"][0]["unsupported_scoring"] = {"unknown_rule": 2}
+    assert (
+        build_dashboard(provider=p, cfg=cfg, reference=date)["teams"][0][
+            "recommended_lineup"
+        ]["status"]
+        == "unavailable"
+    )
