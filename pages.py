@@ -3,6 +3,7 @@
 import argparse
 import copy
 import datetime as dt
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -159,8 +160,13 @@ def export_site(report, destination):
         '<script src="./app.js" defer></script>',
         '<script src="./pages.js" defer></script>\n    <script src="./app.js" defer></script>',
     )
+    # Pages/browser caches can otherwise pair new HTML with an old app script.
+    assets = ("app.js", "pages.js", "insights.js", "style.css", "icon.svg")
+    for name in assets:
+        version = hashlib.sha256((ROOT / "web" / name).read_bytes()).hexdigest()[:16]
+        html = html.replace(f'./{name}"', f'./{name}?v={version}"')
     (destination / "index.html").write_text(html)
-    for name in ("app.js", "pages.js", "insights.js", "style.css", "icon.svg"):
+    for name in assets:
         shutil.copyfile(ROOT / "web" / name, destination / name)
     (destination / ".nojekyll").touch()
     write_json(destination / "report.json", report)

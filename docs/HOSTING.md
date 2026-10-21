@@ -39,6 +39,8 @@ Defaults can be overridden under `publication` in local YAML: remote, branch, ho
 
 ## Shipping source changes
 
+Exported HTML includes content hashes in script, stylesheet, and icon URLs. This prevents a newly published page from reusing outdated browser/CDN assets with the same filename. Reload the browser tab after a site update; **Reload report** refreshes JSON data only.
+
 Pushing `main` runs CI; it does not publish the website. The publisher uses the code and website assets in this local checkout, without automatically pulling GitHub source. If changes were made elsewhere, pull them locally and update dependencies as needed before the next publication. Use `.venv/bin/python publication.py run --force` to publish immediately, or let the next daily slot publish them. Documentation-only changes need a source push, not a new report.
 
 The SQLite file is authoritative for live observations, while `gh-pages` is a replaceable display snapshot with Git history. No database migration or hosted database synchronization is involved in publication. Existing HTTP caches are still used for requests such as rosters and schedules; they are not an alternative authoritative game history.

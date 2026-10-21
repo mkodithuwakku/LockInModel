@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import json
 
 import pytest
@@ -75,6 +76,9 @@ def test_export_allowlist_and_subpath(tmp_path):
     assert "/assets/" not in html
     assert 'href="/"' not in html
     assert html.index("./pages.js") < html.index("./app.js")
+    for asset in ("app.js", "pages.js", "insights.js", "style.css", "icon.svg"):
+        version = hashlib.sha256((out / asset).read_bytes()).hexdigest()[:16]
+        assert f'./{asset}?v={version}"' in html
     assert {p.name for p in out.iterdir()} == {
         "index.html",
         "app.js",
