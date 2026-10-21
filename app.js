@@ -168,6 +168,7 @@ function render() {
   if (hosted && publishedSource)
     state.data = LockInPages.prepareReport(publishedSource);
   if (!state.data) return;
+  state.data.alerts = state.data.alerts.filter(a => a.severity !== "info");
   const t = team();
   $("#test-controls").hidden = state.mode !== "test";
   $("#archive-control").hidden = hosted || state.mode === "test";
@@ -339,13 +340,13 @@ function renderLineup() {
   const priorCount = slots.filter(p => p.projection_source === "prior_season").length;
   const playerRow = (p, reserve = false) => {
     const index = t.results.findIndex(r => p.player_id ? String(r.player_id) === String(p.player_id) : r.player === p.player);
-    const source = p.projection_source === "prior_season" ? "Prior season" : `${p.sample_size || 0} recent games`;
+    const source = projectionSource(p);
     const matchup = p.opponent ? `${p.home ? "vs" : "@"} ${p.opponent}` : "";
-    const context = reserve ? p.reason : [matchup, p.injury_status, p.projection_source === "prior_season" ? "Prior season" : null].filter(Boolean).join(" · ");
+    const context = reserve ? p.reason : [matchup, p.injury_status, p.projection_source && p.projection_source !== "current_season" ? projectionSource(p) : null].filter(Boolean).join(" · ");
     const label = p.player || "Unfilled";
     return `<div class="lineup-row${p.player ? "" : " lineup-vacant"}"><span class="lineup-slot">${esc(reserve ? "—" : p.slot)}</span>
       ${p.player && index >= 0 ? `<button class="lineup-name" data-player="${index}" aria-label="${esc(label)}. Open player details."><strong title="${esc(label)}">${esc(label)}</strong><small>${esc(context)}</small></button>` : `<span class="lineup-name"><strong>${esc(label)}</strong><small>${p.player ? esc(context) : "No eligible player"}</small></span>`}
-      <span class="lineup-points" title="${esc(p.player && p.projected_fp != null ? `${source}; through ${p.last_played}. League-scored baseline, not a guaranteed score.` : "No projection")}">${fmt(p.projected_fp)}</span></div>`;
+      <span class="lineup-points" title="${esc(p.player && p.projected_fp != null ? `${source}${p.last_played ? "; through " + p.last_played : ""}. League-scored estimate, not a guaranteed score.` : "No projection")}">${fmt(p.projected_fp)}</span></div>`;
   };
   target.innerHTML = `<header class="lineup-heading"><div><span class="section-label">${esc(dateLabel)}</span><h3 id="lineup-title">Recommended lineup</h3></div></header>
     ${available ? `<div class="lineup-summary"><span><strong>${fmt(daily.total_projected_fp)}</strong><small>projected FP</small></span><span class="lineup-fill">${daily.filled_slots}/${slots.length}<small>slots filled</small></span></div>
@@ -353,7 +354,7 @@ function renderLineup() {
     ${daily.status !== "ready" ? `<p class="lineup-message">${esc(daily.reason)}</p>` : ""}
     ${bench.length ? `<details class="lineup-bench"><summary>Not selected <span>${bench.length}</span></summary>${bench.map(p => playerRow(p, true)).join("")}</details>` : ""}` : `<p class="lineup-message">${esc(daily?.reason || "Awaiting a fresh report with league slots and projections.")}</p>`}
     <footer class="lineup-footnote">${state.mode === "test" ? "Pregame replay · before today's scores." : "Pregame snapshot · check existing Sleeper locks and tipoffs."}${priorCount ? ` ${priorCount} projection${priorCount === 1 ? " uses" : "s use"} prior-season history.` : ""}
-    ${available ? `<details><summary>How this is picked</summary><p>Highest projected total using this league’s positions and eligible players scheduled that day. Estimates use league-scored, recency-weighted history before the day. Out and reserve players are excluded; questionable players are included without an injury adjustment. Unfilled slots add zero. This does not change your Sleeper lineup.</p></details>` : ""}</footer>`;
+    ${available ? `<details><summary>How this is picked</summary><p>Highest projected total using this league’s positions and eligible players scheduled that day. Estimates use league-scored history before the day, with current-season Sleeper / RotoWire forecasts when current game history is unavailable. Out and reserve players are excluded; questionable players are included without an injury adjustment. Unfilled slots add zero. This does not change your Sleeper lineup.</p></details>` : ""}</footer>`;
 }
 function renderInsights() {
   const t = team();
@@ -365,15 +366,15 @@ function renderInsights() {
     t.results.some((p) => ["STALE", "DATA_UNAVAILABLE"].includes(p.status));
   $("#team-insights").innerHTML = `
     <header class="insights-heading"><div><span class="section-label">TEAM INSIGHTS</span><h3 id="insights-title">Recent form</h3></div><span class="insights-count">${count}/${players.length}<small>with history</small></span></header>
-    <p class="insights-context">${saved ? "Saved history" : "Observed games"} · through ${esc(state.data.observation_cutoff || state.data.date)}</p>
+    <p class="insights-context">${t.results.some(p => p.history_source === "prior_season") ? "Latest stored games · prior seasons included" : `${saved ? "Saved history" : "Observed games"} · through ${esc(state.data.observation_cutoff || state.data.date)}`}</p>
     <div class="insight-columns" aria-hidden="true"><span>Player</span><span>Last 5</span><span>Avg FP</span></div>
     <div id="insight-players">${shown.map((p) => {
       const change = p.delta === null ? "—" : `${p.delta > 0 ? "+" : ""}${fmt(p.delta)}`;
       const tone = p.delta > 0 ? "positive" : p.delta < 0 ? "negative" : "neutral";
-      const remaining = Number.isInteger(p.player.remaining_games_est) && p.player.remaining_games_est >= 0 && !saved ? `${p.player.remaining_games_est} left` : "Schedule —";
+      const remaining = Number.isInteger(p.player.remaining_games_est) && p.player.remaining_games_est >= 0 && !saved ? `${p.player.remaining_games_est} left` : !saved && p.player.schedule_state === "verified" ? `${p.player.week_games.length} this week` : "Schedule unknown";
       const sample = p.scores.length ? `${p.scores.length} game${p.scores.length === 1 ? "" : "s"}` : "No history";
       return `<button class="insight-player" data-player="${p.index}" aria-label="${esc(p.player.player)}: ${p.average === null ? "no observed scores" : `${fmt(p.average)} average fantasy points over ${sample}`}. Open player details.">
-        <span class="insight-name"><strong title="${esc(p.player.player)}">${esc(p.player.player)}</strong><small>${esc(p.player.roster_slot || (p.player.starter ? "START" : "BN"))} · ${sample} · ${remaining}</small></span>
+        <span class="insight-name"><strong title="${esc(p.player.player)}">${esc(p.player.player)}</strong><small>${esc(p.player.roster_slot || (p.player.starter ? "START" : "BN"))} · ${sample} · ${p.player.history_source === "prior_season" ? "Prior season" : remaining}</small></span>
         <span class="insight-trend" aria-hidden="true">${LockInInsights.sparkline(p.scores)}</span>
         <span class="insight-value"><strong>${fmt(p.average)}</strong><small class="${tone}" title="Change in average FP versus the previous five games">${change}</small></span></button>`;
     }).join("") || '<p class="insights-empty">No players on this roster.</p>'}</div>
@@ -479,6 +480,24 @@ function gameStatus(value) {
     }[value] || String(value || "Unconfirmed").replaceAll("_", " ")
   );
 }
+function projectionSource(p) {
+  return {current_season: "Recent games", prior_season: "Prior season", sleeper_rotowire: "Sleeper / RotoWire"}[p?.projection_source] || "Saved estimate";
+}
+function projectedBox(p) {
+  const s = p?.projected_stats || {};
+  return ["PTS", "REB", "AST"].filter(k => s[k] != null).map(k => `${fmt(s[k])} ${k}`).join(" · ");
+}
+function projectionDetail(p) {
+  const q = p.projection;
+  if (!q) return p.projection_note ? `<section class="projection-detail"><h3>Projection unavailable</h3><p>${esc(p.projection_note)}</p></section>` : "";
+  const saved = state.data.stale || state.data.refresh_status === "failed";
+  const stats = ["MIN", "PTS", "REB", "AST", "STL", "BLK", "TOV", "FG3M", "FGM", "FGA", "FTM", "FTA"];
+  return `<section class="projection-detail"><header><h3>Projected per game</h3><strong>${fmt(q.projected_fp)} <small>FP</small></strong></header><p>${esc(projectionSource(q))} · as of ${esc(q.as_of)}${saved ? " · saved snapshot" : ""}</p>
+    <div class="projected-stat-grid">${stats.map(k => `<div><small>${k === "FG3M" ? "3PM" : k}</small><strong>${fmt(q.projected_stats?.[k])}</strong></div>`).join("")}</div>
+    <p>Per-game estimate when active; availability is shown separately.</p>
+    ${q.last_played ? `<p>${q.sample_size} games in the recent window · last played ${esc(q.last_played)}.</p>` : `<p>Current-season forecast updated ${esc(q.source_updated_at?.slice(0,10) || q.as_of)}.</p>`}
+    ${(team()?.scoring_notes || []).length ? `<details><summary>Scoring method</summary><p>${team().scoring_notes.map(esc).join(" ")}</p></details>` : ""}</section>`;
+}
 function rosterRow(p, i, week) {
   const slot = p.roster_slot || (p.starter ? "START" : "BN");
   const injury =
@@ -502,7 +521,7 @@ function rosterRow(p, i, week) {
       return `<span class="game-day ${onDay.length ? "has-game" : ""} ${date === state.data.date ? "is-today" : ""} ${!known ? "unknown" : ""}" title="${esc(date + ": " + desc)}" aria-label="${esc(date + ": " + desc)}"><small>${["M", "T", "W", "T", "F", "S", "S"][day]}</small>${onDay.map((g) => `<b>${g.home ? "" : "@"}${esc(g.opponent)}</b>${g.fp != null ? `<em>${fmt(g.fp)} FP</em>` : ""}`).join("") || `<b>${known ? "—" : "?"}</b>`}</span>`;
     })
     .join("");
-  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div><div class="player-meta"><span class="nba-team">${esc(p.nba_team || "FA / unknown")}</span><span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.status === "UPCOMING" ? "Season starts soon" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div></div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
+  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div><div class="player-meta"><span class="nba-team">${esc(p.nba_team || "FA / unknown")}</span><span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
 }
 function showPlayer(p) {
   let h = p.history || [];
@@ -514,9 +533,9 @@ function showPlayer(p) {
   let last = h.slice(-10);
   let max = Math.max(1, ...last.map((r) => Math.abs(r.fp)));
   $("#player-detail").innerHTML =
-    `<div class="detail-hero">${portrait(p)}<div><div class="eyebrow">${esc(p.nba_team || "PLAYER PROFILE")}</div><h2>${esc(p.player)}</h2>${p.status ? badge(p) : '<span class="status lock">ON THE RISE</span>'}</div></div><div class="detail-stats"><div class="detail-stat"><small>${p.recent_fp != null ? "Recent average" : "Latest score"}</small><b>${fmt(p.recent_fp ?? p.last_game_fp)} <small style="display:inline">FP</small></b></div><div class="detail-stat"><small>Baseline</small><b>${fmt(p.baseline_fp ?? p.fp_mean_recent)}</b></div><div class="detail-stat"><small>${p.consistency != null ? "Above baseline" : p.remaining_games_est != null ? "Remaining games" : "Scheduled this week"}</small><b>${p.consistency != null ? Math.round(p.consistency * 100) + "%" : fmt(p.remaining_games_est ?? (p.schedule_state === "verified" ? p.week_games.length : null), 0)}</b></div></div><div class="detail-reason">${esc(p.note || p.reason || p.availability + ". " + (p.replacement ? "Estimated replacement: " + p.replacement + "." : "Team fit needs review."))}</div>${p.week_games?.length ? `<div class="detail-schedule"><h3>This week</h3>${p.week_games.map((g) => `<div><span>${esc(g.date.slice(5))}</span><strong>${g.home ? "vs" : "@"} ${esc(g.opponent)}</strong><span>${g.fp != null ? fmt(g.fp) + " FP" : esc(gameStatus(g.status))}</span></div>`).join("")}<p>Schedule dates shown. Tip-off times are unavailable.</p></div>` : ""}${[...(p.warnings || []), ...(p.risks || [])].map((w) => `<p class="detail-warning">${esc(w)}</p>`).join("")}${
+    `<div class="detail-hero">${portrait(p)}<div><div class="eyebrow">${esc(p.nba_team || "PLAYER PROFILE")}</div><h2>${esc(p.player)}</h2>${p.status ? badge(p) : '<span class="status lock">ON THE RISE</span>'}${p.injury_status && p.injury_status !== "Healthy" ? `<span class="injury">${esc(p.injury_status)}</span>` : ""}</div></div><div class="detail-stats"><div class="detail-stat"><small>${p.projection ? "Projected per game" : p.recent_fp != null ? "Recent average" : "Latest score"}</small><b>${fmt(p.projection?.projected_fp ?? p.recent_fp ?? p.last_game_fp)} <small style="display:inline">FP</small></b></div><div class="detail-stat"><small>${p.projection ? "Last observed game" : "Baseline"}</small><b>${p.projection ? (h.length ? fmt(p.last_game_fp ?? h[h.length - 1].fp) : "No games") : fmt(p.baseline_fp ?? p.fp_mean_recent)}</b></div><div class="detail-stat"><small>${p.consistency != null ? "Above baseline" : p.remaining_games_est != null ? "Remaining games" : "Scheduled this week"}</small><b>${p.consistency != null ? Math.round(p.consistency * 100) + "%" : fmt(p.remaining_games_est ?? (p.schedule_state === "verified" ? p.week_games.length : null), 0)}</b></div></div><div class="detail-reason">${esc(p.note || p.reason || p.availability + ". " + (p.replacement ? "Estimated replacement: " + p.replacement + "." : "Team fit needs review."))}</div>${projectionDetail(p)}${p.week_games?.length ? `<div class="detail-schedule"><h3>This week</h3>${p.week_games.map((g) => `<div><span>${esc(g.date.slice(5))}</span><strong>${g.home ? "vs" : "@"} ${esc(g.opponent)}</strong><span>${g.fp != null ? fmt(g.fp) + " FP" : esc(gameStatus(g.status))}</span></div>`).join("")}<p>Schedule dates shown. Tip-off times are unavailable.</p></div>` : ""}${[...(p.warnings || []), ...(p.risks || [])].map((w) => `<p class="detail-warning">${esc(w)}</p>`).join("")}${
       last.length
-        ? `<div class="section-label" style="margin-top:25px">RECENT FANTASY PRODUCTION</div><div class="chart">${last.map((r) => `<div class="bar-wrap" title="${esc(r.date)}: ${fmt(r.fp)} FP"><span>${fmt(r.fp, 0)}</span><div class="bar" style="height:${Math.max(2, (Math.abs(r.fp) / max) * 108)}px;${r.fp < 0 ? "background:var(--orange)" : ""}"></div></div>`).join("")}</div><p>Most recent games, oldest to newest. ${esc(state.data.observation_cutoff || state.data.date)} is the observation cutoff.</p><table class="history-table"><thead><tr><th>Date</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>FP</th></tr></thead><tbody>${h
+        ? `<div class="section-label" style="margin-top:25px">${p.history_source === "prior_season" ? "PRIOR-SEASON FANTASY PRODUCTION" : "RECENT FANTASY PRODUCTION"}</div><div class="chart">${last.map((r) => `<div class="bar-wrap" title="${esc(r.date)}: ${fmt(r.fp)} FP"><span>${fmt(r.fp, 0)}</span><div class="bar" style="height:${Math.max(2, (Math.abs(r.fp) / max) * 108)}px;${r.fp < 0 ? "background:var(--orange)" : ""}"></div></div>`).join("")}</div><p>Most recent games, oldest to newest. ${esc(state.data.observation_cutoff || state.data.date)} is the observation cutoff.</p><table class="history-table"><thead><tr><th>Date</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>FP</th></tr></thead><tbody>${h
             .slice(-10)
             .reverse()
             .map(

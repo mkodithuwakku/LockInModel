@@ -2784,3 +2784,21 @@ button.lineup-name:hover strong { color: #74dfc2; }
 }
 
 .lineup-slot-list { padding: 0 16px; color: #8faeb4; font: 10px/1.7 var(--mono); }
+
+/* Forecasts remain visible for every roster player, independently of start eligibility. */
+.roster-projected-stats { margin-top: 4px; color: #b1c9d2; font: 10px/1.5 var(--mono); }
+.projection-detail { margin: 20px 0; padding: 18px; border: 1px solid #30504e; border-radius: 10px; background: #101f29; }
+.projection-detail header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.projection-detail h3 { font: 600 25px/1.2 var(--display); }
+.projection-detail header > strong { color: #74dfc2; font: 600 27px var(--display); }
+.projection-detail header small { font: 11px var(--mono); }
+.projection-detail p { color: #a9becb; font: 12px/1.6 var(--font); margin: 8px 0; }
+.projected-stat-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 17px 0; }
+.projected-stat-grid small { display: block; color: #94b3bf; font: 10px var(--mono); }
+.projected-stat-grid strong { display: block; margin-top: 5px; font: 15px var(--mono); }
+.projection-detail summary { color: #a9d6c8; cursor: pointer; font-size: 12px; }
+@media (max-width: 740px) {
+  .roster-projected-stats { font-size: 9px; }
+  .projection-detail { padding: 14px; }
+  .projected-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
