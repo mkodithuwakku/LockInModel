@@ -19,7 +19,7 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./style.css?v=96e6d7eaca9cbed9" />
+    <link rel="stylesheet" href="./style.css?v=7b8237488b56f5ae" />
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to scouting report</a>
@@ -85,6 +85,7 @@
             >COURTSIDE / <b>DESK</b> <span id="breadcrumb">My teams</span></span
           >
           <div class="top-actions">
+            <button id="badge-guide-open" class="subtle" aria-haspopup="dialog" aria-controls="badge-guide-dialog">Badge guide</button>
             <button id="mobile-connect" class="subtle">Sync teams</button>
             <span id="freshness" class="muted">Saved data</span
             ><button id="refresh" class="subtle">
@@ -184,6 +185,14 @@
         </div>
       </main>
     </div>
+    <dialog id="badge-guide-dialog" aria-labelledby="badge-guide-title">
+      <button class="close" aria-label="Close badge guide" autofocus>×</button>
+      <div class="eyebrow">THE LITTLE DETAILS</div>
+      <h2 id="badge-guide-title">Badge guide</h2>
+      <p class="badge-guide-intro">Last night’s NBA performances. Rankings include ties; fantasy awards use your league’s scoring. Milestones and streaks go to every qualifier. Missing data means no badge.</p>
+      <div id="badge-guide-content"></div>
+      <p class="badge-guide-note">Nightly leaders are top 3 unless stated otherwise. Win/loss, home/away and age awards are first place, including ties. Badges never change scores or recommendations.</p>
+    </dialog>
     <dialog id="player-dialog">
       <button class="close" aria-label="Close player details">×</button>
       <div id="player-detail"></div>
@@ -239,8 +248,8 @@
       <div id="roster-editor"></div>
     </dialog>
     <div id="toast" role="status" hidden></div>
-    <script src="./insights.js?v=ad741401d781806d" defer></script>
+    <script src="./insights.js?v=c9dff7d632e4e77b" defer></script>
     <script src="./pages.js?v=9220a4fa59ca8f21" defer></script>
-    <script src="./app.js?v=5ba9e45e4726791b" defer></script>
+    <script src="./app.js?v=51344474368cffc3" defer></script>
   </body>
 </html>

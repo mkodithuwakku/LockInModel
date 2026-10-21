@@ -935,3 +935,11 @@ if (!hosted) {
   setInterval(recheckLocalLineup, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) recheckLocalLineup(); });
 }
+
+$("#badge-guide-open").addEventListener("click", () => {
+  const items = LockInInsights.badgeGuide();
+  $("#badge-guide-content").innerHTML = ["Nightly leaders", "Milestones", "Fantasy awards", "Streaks"].map(group =>
+    `<section class="badge-guide-group"><h3>${esc(group)}</h3><div class="badge-guide-grid">${items.filter(b => b.group === group).map(b => `<article class="badge-guide-item"><span class="badge-guide-icon" aria-hidden="true">${b.icon}</span><div><h4>${esc(b.name)}</h4><p>${esc(b.rule)}</p>${b.scope === "NBA · league scoring" ? '<small>League scoring</small>' : ''}</div></article>`).join("")}</div></section>`
+  ).join("");
+  $("#badge-guide-dialog").showModal();
+});

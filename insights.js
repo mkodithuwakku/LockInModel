@@ -90,6 +90,58 @@
     efficient: ["⚡", "Minute maximizer", "FP/min"],
     inefficient: ["🐌", "Slow night", "FP/min (lowest)"],
   };
+  Object.assign(badgeTypes, {
+    careless: ["🧈", "Butterfingers", "assists minus turnovers"],
+    hot_streak: ["🌶️", "Three-game heater", "games above season average"],
+    cold_streak: ["🧊", "Cold spell", "games below season average"],
+    win_mvp: ["🏆", "Winning effort", "FP in a win"],
+    loss_mvp: ["🥀", "In vain", "FP in a loss"],
+    win_low: ["🚌", "Along for the ride", "FP in a win (lowest, excluding zero)"],
+    home_hero: ["🏡", "Hometown hero", "FP at home"],
+    away_villain: ["🦹", "Villain", "FP away"],
+    unc: ["👴", "Best unc", "FP at age 32+"],
+    new_gen: ["🐣", "Best new gen", "FP at age 23 or younger"],
+  });
+  const milestoneTypes = [
+    ["fg3m", "made threes", [[5,"🏹"],[10,"🛰️"]]],
+    ["ast", "assists", [[10,"📬"],[15,"🧵"],[20,"🎼"]]],
+    ["reb", "rebounds", [[10,"🧲"],[15,"🧹"],[20,"🪝"]]],
+    ["blk", "blocks", [[10,"🛑"]]],
+    ["stl", "steals", [[10,"🦝"]]],
+    ["pts", "points", [[30,"🎬"],[40,"💎"],[50,"🌋"],[60,"☄️"],[70,"👑"]]],
+  ];
+  for (const [stat, label, tiers] of milestoneTypes) {
+    for (const [threshold, icon] of tiers) badgeTypes[`milestone_${stat}_${threshold}`] =
+      [icon, `${threshold}+ ${label}`, label];
+  }
+  const badgeRules = {
+    creator: "Top 3 assists minus turnovers; only games with 5+ assists count, and the margin must be positive.",
+    coffee: "10+ in any two of points, rebounds, assists, steals and blocks in one game. Triple-doubles also qualify.",
+    magician: "10+ in any three of points, rebounds, assists, steals and blocks in one game.",
+    overachiever: "Top 3 positive fantasy-point differences above a saved pregame projection. Missing forecasts are excluded.",
+    underachiever: "Top 3 shortfalls below a saved pregame fantasy-point projection. Missing forecasts are excluded.",
+    efficient: "Top 3 highest fantasy points per minute; any positive playing time qualifies.",
+    inefficient: "Top 3 lowest fantasy points per minute, including zero and negative scores; any positive playing time qualifies.",
+    careless: "The 3 lowest assists minus turnovers totals, including zero and negative margins. 2 assists − 7 turnovers = −5.",
+    hot_streak: "Each of the last 3 games strictly above the current-season FP average through last night; at least 4 season games, and played last night.",
+    cold_streak: "Each of the last 3 games strictly below the current-season FP average through last night; at least 4 season games, and played last night.",
+    win_mvp: "Highest single-game fantasy points in a confirmed win.",
+    loss_mvp: "Highest single-game fantasy points in a confirmed loss.",
+    win_low: "Lowest single-game fantasy points in a confirmed win, excluding exactly zero FP. Negative FP can qualify.",
+    home_hero: "Highest single-game fantasy points by a home player.",
+    away_villain: "Highest single-game fantasy points by an away player.",
+    unc: "Highest single-game fantasy points by a player age 32 or older on game day, using a known birth date.",
+    new_gen: "Highest single-game fantasy points by a player age 23 or younger on game day, using a known birth date.",
+  };
+  const fantasyKeys = new Set(["overachiever", "underachiever", "efficient", "inefficient", "hot_streak", "cold_streak", "win_mvp", "loss_mvp", "win_low", "home_hero", "away_villain", "unc", "new_gen"]);
+  function badgeGuide() {
+    return Object.entries(badgeTypes).map(([key, [icon, name, stat]]) => ({
+      key, icon, name,
+      group: key.startsWith("milestone_") || ["coffee", "magician"].includes(key) ? "Milestones" : ["hot_streak", "cold_streak"].includes(key) ? "Streaks" : fantasyKeys.has(key) ? "Fantasy awards" : "Nightly leaders",
+      rule: badgeRules[key] || (key.startsWith("milestone_") ? `${name} in one game. Every qualifier earns it; only the highest tier per stat is shown.` : `Top 3 most ${stat}.`),
+      scope: fantasyKeys.has(key) ? "NBA · league scoring" : "NBA-wide",
+    }));
+  }
   function previousDate(reference) {
     const day = new Date(reference + "T12:00:00Z");
     if (!Number.isFinite(day.getTime())) return null;
@@ -99,14 +151,17 @@
   function dailyBadges(player, reference) {
     const day = previousDate(reference);
     return (player.daily_badges || []).filter(b => badgeTypes[b.key] && b.date === day &&
-      Number.isInteger(b.rank) && b.rank >= 1 && b.rank <= 3 && Number.isFinite(b.value) && (b.value > 0 || b.key === "inefficient" || b.key === "efficient"))
+      Number.isInteger(b.rank) && b.rank >= 1 && b.rank <= 3 && Number.isFinite(b.value) && (b.value > 0 || fantasyKeys.has(b.key) || b.key === "careless"))
       .map(b => {
         const [icon, name, stat] = badgeTypes[b.key];
         const value = Number(b.value.toFixed(b.key === "efficient" || b.key === "inefficient" ? 2 : 1));
         const scope = b.scope === "league_nba" ? "NBA · league scoring" : "NBA-wide";
         const coverage = Number.isInteger(b.forecast_count) ? ` · ${b.forecast_count}/${b.player_count} players with saved forecasts` : "";
         const comparison = Number.isFinite(b.actual_fp) && Number.isFinite(b.projected_fp) ? ` (${Number(b.actual_fp.toFixed(1))} actual vs ${Number(b.projected_fp.toFixed(1))} projected)` : "";
-        return {...b, icon, name, label: `${name} · ${b.tied ? "Tied #" : "#"}${b.rank} ${scope} · ${value} ${stat}${comparison}${coverage} · ${b.date}`};
+        const unranked = b.key.startsWith("milestone_") || ["hot_streak", "cold_streak"].includes(b.key);
+        const rank = unranked ? "" : `${b.tied ? "Tied #" : "#"}${b.rank} `;
+        const average = Number.isFinite(b.season_average) ? ` (season average ${Number(b.season_average.toFixed(1))} FP)` : "";
+        return {...b, icon, name, label: `${name} · ${rank}${scope} · ${value} ${stat}${comparison}${coverage}${average} · ${b.date}`};
       });
   }
   function seasonContributors(team) {
@@ -119,7 +174,7 @@
       .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
     return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
   }
-  const helpers = { seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate };
+  const helpers = { seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);
