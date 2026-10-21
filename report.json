@@ -2,7 +2,7 @@
   "mode": "live",
   "date": "2026-10-20",
   "observation_cutoff": "2026-10-19",
-  "generated_at": "2026-10-21T05:26:21.966282+00:00",
+  "generated_at": "2026-10-21T05:27:08.849140+00:00",
   "notice": "Daily snapshot from your Mac, with catch-up after wake. Reload checks the published report; manage locks in Sleeper.",
   "refresh_status": "ok",
   "schedule_week": [
@@ -10,7 +10,7 @@
     "2026-10-25"
   ],
   "season_start": "2026-10-20",
-  "publication_id": "8437de14e86f49fe8890533966d7200c",
+  "publication_id": "89f90c0751b34182be587599d38ee7c6",
   "schema_version": 1,
   "sleeper": {},
   "dataset": {},
@@ -22,7 +22,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:26:06.412976+00:00",
+      "synced_at": "2026-10-21T05:27:07.177196+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -659,7 +659,7 @@
       "recommended_lineup": {
         "date": "2026-10-20",
         "status": "empty",
-        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "reason": "Today's available games have already started or finished. No remaining starts to recommend.",
         "total_projected_fp": 0,
         "filled_slots": 0,
         "eligible_players": 0,
@@ -895,7 +895,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:26:09.856394+00:00",
+      "synced_at": "2026-10-21T05:27:07.178633+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -1583,7 +1583,7 @@
       "recommended_lineup": {
         "date": "2026-10-20",
         "status": "empty",
-        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "reason": "Today's available games have already started or finished. No remaining starts to recommend.",
         "total_projected_fp": 0,
         "filled_slots": 0,
         "eligible_players": 0,
@@ -1848,7 +1848,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:26:13.272851+00:00",
+      "synced_at": "2026-10-21T05:27:07.179811+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -2741,7 +2741,7 @@
       "recommended_lineup": {
         "date": "2026-10-20",
         "status": "empty",
-        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "reason": "Today's available games have already started or finished. No remaining starts to recommend.",
         "total_projected_fp": 0,
         "filled_slots": 0,
         "eligible_players": 0,
@@ -3051,7 +3051,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:26:16.729456+00:00",
+      "synced_at": "2026-10-21T05:27:07.180890+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -3624,7 +3624,7 @@
       "recommended_lineup": {
         "date": "2026-10-20",
         "status": "empty",
-        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "reason": "Today's available games have already started or finished. No remaining starts to recommend.",
         "total_projected_fp": 0,
         "filled_slots": 0,
         "eligible_players": 0,
@@ -3852,7 +3852,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:26:20.181436+00:00",
+      "synced_at": "2026-10-21T05:27:07.182120+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -4620,7 +4620,7 @@
       "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf."
     }
   ],
-  "published_at": "2026-10-21T05:26:02.059221+00:00",
+  "published_at": "2026-10-21T05:27:06.503589+00:00",
   "portraits": [
     "1627749",
     "1628386",
