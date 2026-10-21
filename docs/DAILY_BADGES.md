@@ -14,10 +14,10 @@ fantasy-point badges use each league's own formula across the NBA player pool.
 | 🚫 | Rejection | Blocks |
 | 🏃 | Marathon man | Minutes played |
 | 🪙 | Dropping dimes | Assists |
-| 🥪 | Turnover sandwich | Turnovers |
+| 🥪 | Meatball sub | Turnovers |
 | 🧾 | Free-throw merchant | Made free throws (FTM), not attempts |
-| 💔 | Heartbreaker | Missed threes (FG3A − FG3M) |
-| 🛡️ | Two-way menace | Steals + blocks |
+| 💔 | Oh my goodness Valentine | Missed threes (FG3A − FG3M) |
+| 📈 | Stock Expert | Steals + blocks |
 | 🧠 | Clean creator | Assists minus turnovers, with at least 5 assists per game and a positive margin |
 | ☕ | Double-double | Number of games with 10+ in at least two of PTS/REB/AST/STL/BLK |
 | 🎩 | Triple-double magic | Number of games with 10+ in at least three of PTS/REB/AST/STL/BLK |
@@ -35,9 +35,9 @@ league-scored. Escape or the close button returns focus to the guide button.
 
 | Icons | Single-game milestones |
 | --- | --- |
-| 🏹 / 🛰️ | 5+ / 10+ made threes |
+| 🏹 / 💸 | 5+ / 10+ made threes |
 | 📬 / 🧵 / 🎼 | 10+ / 15+ / 20+ assists |
-| 🧲 / 🧹 / 🪝 | 10+ / 15+ / 20+ rebounds |
+| 🧲 / 🦍 / 🐄 | 10+ / 15+ / 20+ rebounds |
 | 🛑 | 10+ blocks |
 | 🦝 | 10+ steals |
 | 🎬 / 💎 / 🌋 / ☄️ / 👑 | 30+ / 40+ / 50+ / 60+ / 70+ NBA points |
@@ -56,8 +56,8 @@ They can coexist with leaderboard, double-double, and triple-double badges.
 | 🚌 | Along for the ride | Lowest single-game FP in a confirmed win, excluding exactly zero FP; negative FP is eligible. |
 | 🏡 | Hometown hero | Highest single-game FP by a home player. |
 | 🦹 | Villain | Highest single-game FP by an away player. |
-| 👴 | Best unc | Highest single-game FP by a player aged 32 or older on game day. |
-| 🐣 | Best new gen | Highest single-game FP by a player aged 23 or younger on game day. |
+| 👴 | The Unction | Highest single-game FP by a player aged 32 or older on game day. |
+| 🐣 | Young Boys FC | Highest single-game FP by a player aged 23 or younger on game day. |
 
 The win/loss, home/away, and age awards select **first place, including ties**,
 across the NBA for each league formula. The repeated request for the loss leader
@@ -153,8 +153,12 @@ practice results and predate the new categories. None establishes model accuracy
 ## Guide previews
 
 These captures show the guide with generic team labels; they demonstrate layout,
-not model accuracy. The older expanded-player image above predates this guide.
+not model accuracy. The older expanded-player image above predates this guide and uses the previous badge names/icons. The current names include Meatball sub, Oh my goodness Valentine, Stock Expert, The Unction and Young Boys FC.
 
 ![Desktop badge guide](screenshots/badge-guide-desktop.png)
 
 ![Phone badge guide](screenshots/badge-guide-mobile.png)
+
+The expanded player card keeps a small NBA logo beside its team abbreviation above the name and stats.
+
+![Expanded player card with NBA team logo and renamed badges](screenshots/player-card-team-logo-mobile.png)

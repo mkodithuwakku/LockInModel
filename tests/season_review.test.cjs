@@ -20,7 +20,7 @@ test('highlights enforce samples and pick metrics separately without mutating or
 test('new daily indicators have accessible stat labels and expire normally', () => {
   const p = {daily_badges:['shield','creator','magician','coffee'].map(key=>({key,date:'2026-10-20',rank:1,value:1}))};
   const b = dailyBadges(p,'2026-10-21');
-  assert.deepEqual(b.map(x=>x.icon),['🛡️','🧠','🎩','☕']);
+  assert.deepEqual(b.map(x=>x.icon),['📈','🧠','🎩','☕']);
   assert.match(b[1].label,/5\+ assists/);
   assert.match(b[3].label,/Double-double.*double-doubles/);
   assert.equal(dailyBadges(p,'2026-10-22').length,0);
