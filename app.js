@@ -138,6 +138,7 @@ async function load() {
   state.data = null;
   $("#summary").innerHTML = "";
   $("#team-insights").innerHTML = "";
+  $("#recommended-lineup").innerHTML = "";
   $("#content").innerHTML =
     '<div class="loading"><div class="spinner"></div>Reading saved player data…</div>';
   try {
@@ -156,6 +157,7 @@ async function load() {
     if (hosted) publishedSource = null;
     $("#summary").innerHTML = "";
     $("#team-insights").innerHTML = "";
+  $("#recommended-lineup").innerHTML = "";
     $("#content").innerHTML = hosted
       ? '<div class="empty">The published report could not be loaded. Try Reload report.</div>'
       : '<div class="empty">No current recommendations available.<br>Use Test Week to practice with saved historical data.</div>';
@@ -178,6 +180,7 @@ function render() {
   $(".content-layout").classList.toggle("without-insights", !t || state.view !== "team");
   if (!t) {
     $("#team-insights").innerHTML = "";
+  $("#recommended-lineup").innerHTML = "";
     $("#notice").textContent = state.data.notice || "Waiting for a report.";
     $("#freshness").textContent =
       "Report " + new Date(state.data.generated_at).toLocaleString();
@@ -317,7 +320,41 @@ function render() {
   renderTestControls(t);
   renderContent();
   renderInsights();
+  renderLineup();
   attachImageFallback();
+}
+function renderLineup() {
+  const t = team();
+  let daily = t?.recommended_lineup;
+  if (daily && !hosted && state.mode !== "test" && daily.date !== LockInPages.currentDate(new Date())) {
+    daily = t.recommended_lineup = {date: LockInPages.currentDate(new Date()), status: "unavailable", reason: "Awaiting a fresh report for today's lineup.", slots: [], bench: []};
+  }
+  const target = $("#recommended-lineup");
+  if (!t) { target.innerHTML = ""; return; }
+  const slots = daily?.slots || [], bench = daily?.bench || [];
+  const available = daily && daily.status !== "unavailable";
+  const day = daily?.date || state.data.date;
+  const dateLabel = /^\d{4}-\d{2}-\d{2}$/.test(day || "")
+    ? new Date(day + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"}) : "Today";
+  const priorCount = slots.filter(p => p.projection_source === "prior_season").length;
+  const playerRow = (p, reserve = false) => {
+    const index = t.results.findIndex(r => p.player_id ? String(r.player_id) === String(p.player_id) : r.player === p.player);
+    const source = p.projection_source === "prior_season" ? "Prior season" : `${p.sample_size || 0} recent games`;
+    const matchup = p.opponent ? `${p.home ? "vs" : "@"} ${p.opponent}` : "";
+    const context = reserve ? p.reason : [matchup, p.injury_status, p.projection_source === "prior_season" ? "Prior season" : null].filter(Boolean).join(" · ");
+    const label = p.player || "Unfilled";
+    return `<div class="lineup-row${p.player ? "" : " lineup-vacant"}"><span class="lineup-slot">${esc(reserve ? "—" : p.slot)}</span>
+      ${p.player && index >= 0 ? `<button class="lineup-name" data-player="${index}" aria-label="${esc(label)}. Open player details."><strong title="${esc(label)}">${esc(label)}</strong><small>${esc(context)}</small></button>` : `<span class="lineup-name"><strong>${esc(label)}</strong><small>${p.player ? esc(context) : "No eligible player"}</small></span>`}
+      <span class="lineup-points" title="${esc(p.player && p.projected_fp != null ? `${source}; through ${p.last_played}. League-scored baseline, not a guaranteed score.` : "No projection")}">${fmt(p.projected_fp)}</span></div>`;
+  };
+  target.innerHTML = `<header class="lineup-heading"><div><span class="section-label">${esc(dateLabel)}</span><h3 id="lineup-title">Recommended lineup</h3></div></header>
+    ${available ? `<div class="lineup-summary"><span><strong>${fmt(daily.total_projected_fp)}</strong><small>projected FP</small></span><span class="lineup-fill">${daily.filled_slots}/${slots.length}<small>slots filled</small></span></div>
+    <div class="lineup-columns" aria-hidden="true"><span>Slot</span><span>Player / matchup</span><span>Proj.</span></div>
+    ${slots.map(p => playerRow(p)).join("")}
+    ${daily.status !== "ready" ? `<p class="lineup-message">${esc(daily.reason)}</p>` : ""}
+    ${bench.length ? `<details class="lineup-bench"><summary>Not selected <span>${bench.length}</span></summary>${bench.map(p => playerRow(p, true)).join("")}</details>` : ""}` : `<p class="lineup-message">${esc(daily?.reason || "Awaiting a fresh report with league slots and projections.")}</p>`}
+    <footer class="lineup-footnote">${state.mode === "test" ? "Pregame replay · before today's scores." : "Pregame snapshot · check existing Sleeper locks and tipoffs."}${priorCount ? ` ${priorCount} projection${priorCount === 1 ? " uses" : "s use"} prior-season history.` : ""}
+    ${available ? `<details><summary>How this is picked</summary><p>Highest projected total using this league’s positions and eligible players scheduled that day. Estimates use league-scored, recency-weighted history before the day. Out and reserve players are excluded; questionable players are included without an injury adjustment. Unfilled slots add zero. This does not change your Sleeper lineup.</p></details>` : ""}</footer>`;
 }
 function renderInsights() {
   const t = team();
@@ -655,6 +692,7 @@ $("#refresh").addEventListener("click", async () => {
   state.data = null;
   $("#summary").innerHTML = "";
   $("#team-insights").innerHTML = "";
+  $("#recommended-lineup").innerHTML = "";
   $("#content").innerHTML =
     '<div class="loading"><div class="spinner"></div>Refreshing live data. Previous decisions are hidden.</div>';
   $("#notice").textContent =
@@ -757,7 +795,8 @@ if (hosted) {
   function recheckPublishedReport() {
     if (!state.data || !publishedSource) return;
     const next = LockInPages.prepareReport(publishedSource);
-    if (next.stale === state.data.stale) return;
+    const lineupChanged = next.teams.some((t, i) => t.recommended_lineup?.status !== state.data.teams[i]?.recommended_lineup?.status);
+    if (next.stale === state.data.stale && !lineupChanged) return;
     render();
     if (state.data.stale && $("#player-dialog").open)
       $("#player-dialog").close();
@@ -766,4 +805,14 @@ if (hosted) {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) recheckPublishedReport();
   });
+}
+
+// Local tabs also hide yesterday's plan without requesting a live refresh.
+if (!hosted) {
+  function recheckLocalLineup() {
+    const daily = team()?.recommended_lineup;
+    if (state.data && state.mode !== "test" && daily && daily.date !== LockInPages.currentDate(new Date())) renderLineup();
+  }
+  setInterval(recheckLocalLineup, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) recheckLocalLineup(); });
 }

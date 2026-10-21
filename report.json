@@ -2,7 +2,7 @@
   "mode": "live",
   "date": "2026-10-20",
   "observation_cutoff": "2026-10-19",
-  "generated_at": "2026-10-21T05:06:15.978058+00:00",
+  "generated_at": "2026-10-21T05:26:21.966282+00:00",
   "notice": "Daily snapshot from your Mac, with catch-up after wake. Reload checks the published report; manage locks in Sleeper.",
   "refresh_status": "ok",
   "schedule_week": [
@@ -10,7 +10,7 @@
     "2026-10-25"
   ],
   "season_start": "2026-10-20",
-  "publication_id": "952a68ab5b484ca7829ef67a49fd39a4",
+  "publication_id": "8437de14e86f49fe8890533966d7200c",
   "schema_version": 1,
   "sleeper": {},
   "dataset": {},
@@ -22,7 +22,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:06:15.099611+00:00",
+      "synced_at": "2026-10-21T05:26:06.412976+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -655,7 +655,238 @@
           "history": []
         }
       ],
-      "pickups": []
+      "pickups": [],
+      "recommended_lineup": {
+        "date": "2026-10-20",
+        "status": "empty",
+        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "total_projected_fp": 0,
+        "filled_slots": 0,
+        "eligible_players": 0,
+        "missing_inputs": 0,
+        "slots": [
+          {
+            "player": null,
+            "slot": "PG",
+            "slot_index": 0,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SG",
+            "slot_index": 1,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "G",
+            "slot_index": 2,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SF",
+            "slot_index": 3,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "PF",
+            "slot_index": 4,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "F",
+            "slot_index": 5,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "C",
+            "slot_index": 6,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 7,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 8,
+            "projected_fp": null
+          }
+        ],
+        "bench": [
+          {
+            "player": "Anfernee Simons",
+            "player_id": "1629014",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "PG",
+            "injury_status": "GTD",
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Cason Wallace",
+            "player_id": "1641717",
+            "positions": [
+              "PG",
+              "SF",
+              "SG"
+            ],
+            "current_slot": "SG",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Josh Giddey",
+            "player_id": "1630581",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "G",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Lauri Markkanen",
+            "player_id": "1628374",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "SF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Domantas Sabonis",
+            "player_id": "1627734",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "PF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Paolo Banchero",
+            "player_id": "1631094",
+            "positions": [
+              "PF"
+            ],
+            "current_slot": "F",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Victor Wembanyama",
+            "player_id": "1641705",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "C",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Onyeka Okongwu",
+            "player_id": "1630168",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Keyonte George",
+            "player_id": "1641718",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Fred VanVleet",
+            "player_id": "1627832",
+            "positions": [
+              "PG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Coby White",
+            "player_id": "1629632",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "IR",
+            "injury_status": "DTD",
+            "reason": "Reserve slot"
+          },
+          {
+            "player": "P.J. Washington",
+            "player_id": "1629023",
+            "positions": [
+              "C",
+              "PF",
+              "SF"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Nickeil Alexander-Walker",
+            "player_id": "1629638",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Tre Jones",
+            "player_id": "1630200",
+            "positions": [
+              "PG",
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Ayo Dosunmu",
+            "player_id": "1630245",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          }
+        ]
+      }
     },
     {
       "id": "sleeper-1417002266736513024",
@@ -664,7 +895,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:06:15.100966+00:00",
+      "synced_at": "2026-10-21T05:26:09.856394+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -1348,7 +1579,267 @@
           "history": []
         }
       ],
-      "pickups": []
+      "pickups": [],
+      "recommended_lineup": {
+        "date": "2026-10-20",
+        "status": "empty",
+        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "total_projected_fp": 0,
+        "filled_slots": 0,
+        "eligible_players": 0,
+        "missing_inputs": 0,
+        "slots": [
+          {
+            "player": null,
+            "slot": "PG",
+            "slot_index": 0,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "PG",
+            "slot_index": 1,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SG",
+            "slot_index": 2,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SG",
+            "slot_index": 3,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SF",
+            "slot_index": 4,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SF",
+            "slot_index": 5,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "PF",
+            "slot_index": 6,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "PF",
+            "slot_index": 7,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "C",
+            "slot_index": 8,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 9,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 10,
+            "projected_fp": null
+          }
+        ],
+        "bench": [
+          {
+            "player": "Devin Booker",
+            "player_id": "1626164",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "PG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Ajay Mitchell",
+            "player_id": "1642349",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "PG",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Kawhi Leonard",
+            "player_id": "202695",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "SG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Jrue Holiday",
+            "player_id": "201950",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "SG",
+            "injury_status": "DTD",
+            "reason": "No game today"
+          },
+          {
+            "player": "Miles Bridges",
+            "player_id": "1628970",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "SF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Dyson Daniels",
+            "player_id": "1630700",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "SF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Domantas Sabonis",
+            "player_id": "1627734",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "PF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Jalen Smith",
+            "player_id": "1630188",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "PF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Victor Wembanyama",
+            "player_id": "1641705",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "C",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Walker Kessler",
+            "player_id": "1631117",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Onyeka Okongwu",
+            "player_id": "1630168",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Rudy Gobert",
+            "player_id": "203497",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "John Collins",
+            "player_id": "1628381",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Trae Young",
+            "player_id": "1629027",
+            "positions": [
+              "PG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Deandre Ayton",
+            "player_id": "1629028",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Nic Claxton",
+            "player_id": "1629651",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "IR",
+            "injury_status": "Out",
+            "reason": "Reserve slot"
+          },
+          {
+            "player": "Aaron Nesmith",
+            "player_id": "1630174",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "IR",
+            "injury_status": "DTD",
+            "reason": "Reserve slot"
+          }
+        ]
+      }
     },
     {
       "id": "sleeper-1416464779651899392",
@@ -1357,7 +1848,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:06:15.102154+00:00",
+      "synced_at": "2026-10-21T05:26:13.272851+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -2246,7 +2737,312 @@
           "history": []
         }
       ],
-      "pickups": []
+      "pickups": [],
+      "recommended_lineup": {
+        "date": "2026-10-20",
+        "status": "empty",
+        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "total_projected_fp": 0,
+        "filled_slots": 0,
+        "eligible_players": 0,
+        "missing_inputs": 0,
+        "slots": [
+          {
+            "player": null,
+            "slot": "PG",
+            "slot_index": 0,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SG",
+            "slot_index": 1,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "G",
+            "slot_index": 2,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SF",
+            "slot_index": 3,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "PF",
+            "slot_index": 4,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "F",
+            "slot_index": 5,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "C",
+            "slot_index": 6,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 7,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 8,
+            "projected_fp": null
+          }
+        ],
+        "bench": [
+          {
+            "player": "Nickeil Alexander-Walker",
+            "player_id": "1629638",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "PG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Keyonte George",
+            "player_id": "1641718",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "SG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Josh Giddey",
+            "player_id": "1630581",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "G",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "P.J. Washington",
+            "player_id": "1629023",
+            "positions": [
+              "C",
+              "PF",
+              "SF"
+            ],
+            "current_slot": "SF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Scottie Barnes",
+            "player_id": "1630567",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "PF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Bam Adebayo",
+            "player_id": "1628389",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "F",
+            "injury_status": "DTD",
+            "reason": "No game today"
+          },
+          {
+            "player": "Joel Embiid",
+            "player_id": "203954",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "C",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Jalen Smith",
+            "player_id": "1630188",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Onyeka Okongwu",
+            "player_id": "1630168",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "James Harden",
+            "player_id": "201935",
+            "positions": [
+              "PG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Zach LaVine",
+            "player_id": "203897",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Jarrett Allen",
+            "player_id": "1628386",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Jayson Tatum",
+            "player_id": "1628369",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Nic Claxton",
+            "player_id": "1629651",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "IR",
+            "injury_status": "Out",
+            "reason": "Reserve slot"
+          },
+          {
+            "player": "Aaron Nesmith",
+            "player_id": "1630174",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": "DTD",
+            "reason": "No game today"
+          },
+          {
+            "player": "Tre Jones",
+            "player_id": "1630200",
+            "positions": [
+              "PG",
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Herbert Jones",
+            "player_id": "1630529",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Davion Mitchell",
+            "player_id": "1630558",
+            "positions": [
+              "PG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Scoot Henderson",
+            "player_id": "1630703",
+            "positions": [
+              "PG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Daniss Jenkins",
+            "player_id": "1642450",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "TAXI",
+            "injury_status": null,
+            "reason": "Reserve slot"
+          },
+          {
+            "player": "Ronald Holland",
+            "player_id": "1641842",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "TAXI",
+            "injury_status": null,
+            "reason": "Reserve slot"
+          },
+          {
+            "player": "AJ Dybantsa",
+            "player_id": null,
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "IR",
+            "injury_status": "Out",
+            "reason": "Reserve slot"
+          }
+        ]
+      }
     },
     {
       "id": "sleeper-1415801499308580864",
@@ -2255,7 +3051,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:06:15.103132+00:00",
+      "synced_at": "2026-10-21T05:26:16.729456+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -2824,7 +3620,230 @@
           "history": []
         }
       ],
-      "pickups": []
+      "pickups": [],
+      "recommended_lineup": {
+        "date": "2026-10-20",
+        "status": "empty",
+        "reason": "No remaining eligible starts with a positive projected contribution.",
+        "total_projected_fp": 0,
+        "filled_slots": 0,
+        "eligible_players": 0,
+        "missing_inputs": 0,
+        "slots": [
+          {
+            "player": null,
+            "slot": "PG",
+            "slot_index": 0,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SG",
+            "slot_index": 1,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "G",
+            "slot_index": 2,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SF",
+            "slot_index": 3,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "PF",
+            "slot_index": 4,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "F",
+            "slot_index": 5,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "C",
+            "slot_index": 6,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 7,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 8,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 9,
+            "projected_fp": null
+          }
+        ],
+        "bench": [
+          {
+            "player": "Nickeil Alexander-Walker",
+            "player_id": "1629638",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "PG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Dejounte Murray",
+            "player_id": "1627749",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "SG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Collin Gillespie",
+            "player_id": "1631221",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "G",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Scottie Barnes",
+            "player_id": "1630567",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "SF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Bam Adebayo",
+            "player_id": "1628389",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "PF",
+            "injury_status": "DTD",
+            "reason": "No game today"
+          },
+          {
+            "player": "Lauri Markkanen",
+            "player_id": "1628374",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "F",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Day'Ron Sharpe",
+            "player_id": "1630549",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "C",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Miles Bridges",
+            "player_id": "1628970",
+            "positions": [
+              "PF",
+              "SF"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Fred VanVleet",
+            "player_id": "1627832",
+            "positions": [
+              "PG"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Wendell Carter",
+            "player_id": "1628976",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Tim Hardaway",
+            "player_id": "203501",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Daniel Gafford",
+            "player_id": "1629655",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Isaiah Joe",
+            "player_id": "1630198",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "Game already started or finished"
+          },
+          {
+            "player": "Bennedict Mathurin",
+            "player_id": "1631097",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          }
+        ]
+      }
     },
     {
       "id": "sleeper-1415115155703926784",
@@ -2833,7 +3852,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T05:06:15.104173+00:00",
+      "synced_at": "2026-10-21T05:26:20.181436+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -3382,7 +4401,196 @@
           "history": []
         }
       ],
-      "pickups": []
+      "pickups": [],
+      "recommended_lineup": {
+        "date": "2026-10-20",
+        "status": "no_games",
+        "reason": "No available roster players have a scheduled game today.",
+        "total_projected_fp": 0,
+        "filled_slots": 0,
+        "eligible_players": 0,
+        "missing_inputs": 0,
+        "slots": [
+          {
+            "player": null,
+            "slot": "PG",
+            "slot_index": 0,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SG",
+            "slot_index": 1,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "SF",
+            "slot_index": 2,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "PF",
+            "slot_index": 3,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "C",
+            "slot_index": 4,
+            "projected_fp": null
+          },
+          {
+            "player": null,
+            "slot": "UTIL",
+            "slot_index": 5,
+            "projected_fp": null
+          }
+        ],
+        "bench": [
+          {
+            "player": "Anthony Edwards",
+            "player_id": "1630162",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "PG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Dyson Daniels",
+            "player_id": "1630700",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "SG",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Tim Hardaway",
+            "player_id": "203501",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "SF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "P.J. Washington",
+            "player_id": "1629023",
+            "positions": [
+              "C",
+              "PF",
+              "SF"
+            ],
+            "current_slot": "PF",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Onyeka Okongwu",
+            "player_id": "1630168",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "C",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Tre Johnson",
+            "player_id": "1642848",
+            "positions": [
+              "PG",
+              "SG"
+            ],
+            "current_slot": "UTIL",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Steven Adams",
+            "player_id": "203500",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Tobias Harris",
+            "player_id": "202699",
+            "positions": [
+              "PF"
+            ],
+            "current_slot": "IR",
+            "injury_status": "Out",
+            "reason": "Reserve slot"
+          },
+          {
+            "player": "Kevon Looney",
+            "player_id": "1626172",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Luguentz Dort",
+            "player_id": "1629652",
+            "positions": [
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Nick Richards",
+            "player_id": "1630208",
+            "positions": [
+              "C"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          },
+          {
+            "player": "Dominick Barlow",
+            "player_id": "1631230",
+            "positions": [
+              "C",
+              "PF"
+            ],
+            "current_slot": "IR",
+            "injury_status": "Out",
+            "reason": "Reserve slot"
+          },
+          {
+            "player": "Will Riley",
+            "player_id": "1642860",
+            "positions": [
+              "PF",
+              "SF",
+              "SG"
+            ],
+            "current_slot": "BN",
+            "injury_status": null,
+            "reason": "No game today"
+          }
+        ]
+      }
     }
   ],
   "alerts": [
@@ -3412,7 +4620,7 @@
       "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf."
     }
   ],
-  "published_at": "2026-10-21T05:06:14.422617+00:00",
+  "published_at": "2026-10-21T05:26:02.059221+00:00",
   "portraits": [
     "1627749",
     "1628386",
