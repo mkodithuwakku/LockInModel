@@ -204,7 +204,7 @@ For a selected player, `per_player_week_decision()` in [decide.py](decide.py) fo
 5. Start the lock score at `1 - p_future_beats`, then apply rarity, small-sample, remaining-opportunity, and optional conservative-mode adjustments. Clamp to `[0, 1]`; scores at least `0.5` become `LOCK`. Those adjustments make the final value a heuristic preference, not a calibrated probability.
 6. Return the score, baseline, opportunities, history, and explanation. The engine withholds actionable output when league scoring is incomplete. The user acts in Sleeper, or banks the score locally in Test Week.
 
-**On the rise** also lists unrostered players from the complete league ownership snapshot, including reserves and taxi exclusions. Search covers the entire available pool; rows load in batches of 30, with NBA-assigned players first. Unranked players show their observed mean from up to five games when available and dashes for missing analysis, without becoming pickup recommendations. The dated directory remains visible if recommendations expire.
+**On the rise** also lists unrostered players from the complete league ownership snapshot, including reserves and taxi exclusions. Search covers the entire available pool; rows load in batches of 30, with NBA-assigned players first. Unranked players show their observed mean from up to five games when available and dashes for missing analysis, without becoming pickup recommendations. Compact 40px portraits show the full headshot on desktop and mobile. The dated directory remains visible if recommendations expire.
 
 ![Available-player directory on mobile](docs/screenshots/available-players-mobile.png)
 
