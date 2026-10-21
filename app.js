@@ -24,6 +24,8 @@ let state = {
   csrf: "",
   busy: false,
   insightsExpanded: false,
+  badgeScope: "roster",
+  badgeMetric: "total",
 };
 const statuses = {
   BANKED: ["BANKED", "lock"],
@@ -367,6 +369,32 @@ function render() {
   renderLineup();
   attachImageFallback();
 }
+function seasonBadgePanel(t) {
+  const review = t.season_badges || {}, scope = state.badgeScope, metric = state.badgeMetric;
+  const guide = LockInInsights.badgeGuide();
+  const leaders = key => LockInInsights.seasonBadgeLeaders(t, key, scope);
+  const summary = [["total", "🏅", "Most badges"], ["negative", "🌪️", "Chaos leader"], ["milestones", "🏔️", "Milestone machine"], ["variety", "🗂️", "Most variety"]];
+  const name = p => Number.isInteger(p.index)
+    ? `<button class="badge-race-player" data-player="${p.index}">${esc(p.player)}</button>` : `<strong>${esc(p.player)}</strong>`;
+  const rows = leaders(metric).filter(p => p.rank <= 10);
+  const metricName = summary.find(([key]) => key === metric)?.[2] || guide.find(b => b.key === metric)?.name || "Badges";
+  return `<div class="review-section-heading"><h3 id="badge-race-title">Badge race</h3><span>${esc(review.season || t.season || "Season")} · season totals</span></div>
+    <p class="review-scope">${scope === "roster" ? "Current roster’s season awards, including games before joining." : "All observed NBA players, using this league’s scoring."} One count per badge earned per game night; ties count equally.</p>
+    <div class="badge-race-controls"><label>Players<select id="badge-race-scope"><option value="roster" ${scope === "roster" ? "selected" : ""}>My roster</option><option value="nba" ${scope === "nba" ? "selected" : ""}>NBA-wide</option></select></label><label>Leaderboard<select id="badge-race-metric"><optgroup label="Season totals">${summary.map(([key,icon,title])=>`<option value="${key}" ${metric===key ? "selected" : ""}>${icon} ${title}</option>`).join("")}</optgroup><optgroup label="Each badge">${guide.map(b=>`<option value="${b.key}" ${metric===b.key ? "selected" : ""}>${b.icon} ${esc(b.name)}</option>`).join("")}</optgroup></select></label></div>
+    ${review.status === "saved" || state.data.stale || state.data.refresh_status === "failed" ? '<p class="review-pending">Saved award totals. Waiting for a successful refresh.</p>' : ""}
+    <div class="badge-race-highlights">${summary.map(([key,icon,title])=>{
+      const all=leaders(key), first=all[0], tied=all.filter(p=>p.rank===1);
+      return `<article><span class="review-kicker">${icon} ${title}</span>${first ? `<div>${name(first)}</div><b>${first.count} <small>${key === "variety" ? "different badges" : first.count === 1 ? "award" : "awards"}</small></b>${tied.length>1 ? `<small title="${esc(tied.map(p=>p.player).join(", "))}">Tied with ${tied.length-1} ${tied.length===2 ? "player" : "players"}</small>` : ""}` : '<p>No awards yet</p>'}</article>`;
+    }).join("")}</div>
+    <div class="badge-race-heading"><h4>${esc(metricName)}</h4><span>Top 10 places · ties included</span></div>
+    <ol class="badge-race-list">${rows.map(p=>`<li><span class="badge-race-rank">${p.tied ? "T" : ""}${p.rank}</span><div>${name(p)}<small>${nbaTeamLabel(p.nba_team)} · ${p.total} total · ${p.variety} ${p.variety === 1 ? "type" : "types"}</small></div><b>${p.count}<small>${metric === "variety" ? "types" : p.count === 1 ? "award" : "awards"}</small></b></li>`).join("")}</ol>
+    ${!rows.length ? `<p class="review-pending">${review.status === "unavailable" ? "Badge history is unavailable in this report." : "No qualifying awards recorded for this selection yet."}</p>` : ""}
+    <details class="badge-race-categories"><summary>Leaders for all ${guide.length} badges</summary>${guide.map(b=>{
+      const top=leaders(b.key).filter(p=>p.rank===1);
+      return `<div><span title="${esc(b.rule)}">${b.icon} ${esc(b.name)}</span><span>${top.length ? top.map(p=>esc(p.player)).join(" · ") : "—"}</span><b>${top[0]?.count || "—"}</b></div>`;
+    }).join("")}</details>
+    <details class="badge-race-rules"><summary>Coverage & counting</summary><p>${review.tracked_days || 0} NBA game nights · ${review.player_games || 0} observed player games${review.first_date ? ` · ${esc(review.first_date)} to ${esc(review.last_date)}` : ""}. Totals cover stored observations through ${esc(review.as_of || "the last refresh")}.</p><p>Negative indicators: ${(review.negative_keys || []).map(key=>guide.find(b=>b.key===key)?.name).filter(Boolean).map(esc).join(", ") || "Not available"}. A high fantasy score in a loss is not a negative badge.</p><p>Milestones include double-/triple-doubles and stat thresholds. Only the highest stat tier earned that night counts. Variety counts distinct badge types. A qualifying streak earns a badge on every qualifying game night.</p><p>Projection comparisons need saved pregame forecasts: ${review.forecast_player_games || 0}/${review.player_games || 0} observed player games have matching snapshots. Historical awards can be rebuilt from stored results; missing pregame forecasts are never invented. Corrections replace previous awards, and changing league scoring recalculates a separate season tally.</p></details>`;
+}
 function renderSeasonReview(t) {
   const r = t.season_review || {}, players = LockInInsights.seasonContributors(t);
   const highlights = LockInInsights.seasonHighlights(players);
@@ -397,6 +425,7 @@ function renderSeasonReview(t) {
     <div class="review-section-heading"><h3>Season contributors <small>${players.length}</small></h3><span>Sorted by total fantasy points</span></div>
     <div class="review-contributors">${players.map(p => `<article class="review-contributor">${person(p)}<div class="review-player-metrics">${metric("Total FP", number(p.total_fp))}${metric("FP / game", number(p.average_fp))}${metric(`Last ${p.recent_games || "5"}`, number(p.recent_fp))}${metric("Games", p.games ? number(p.games, 0) : "—")}</div><div class="review-contribution"><span style="width:${Math.max(0, Math.min(100, p.share || 0))}%"></span></div></article>`).join("")}</div>
     <p class="review-footnote">Bars show each player’s share of positive fantasy-point totals. — means no observed data. Last 5 averages use up to five season games; prior-season projection history is excluded.</p>
+    <section id="season-badge-board" class="season-badge-board" aria-labelledby="badge-race-title">${seasonBadgePanel(t)}</section>
   </div>`;
 }
 
@@ -967,4 +996,14 @@ $("#badge-guide-open").addEventListener("click", () => {
     `<section class="badge-guide-group"><h3>${esc(group)}</h3><div class="badge-guide-grid">${items.filter(b => b.group === group).map(b => `<article class="badge-guide-item"><span class="badge-guide-icon" aria-hidden="true">${b.icon}</span><div><h4>${esc(b.name)}</h4><p>${esc(b.rule)}</p>${b.scope === "NBA · league scoring" ? '<small>League scoring</small>' : ''}</div></article>`).join("")}</div></section>`
   ).join("");
   $("#badge-guide-dialog").showModal();
+});
+
+document.addEventListener("change", e => {
+  if (!["badge-race-scope", "badge-race-metric"].includes(e.target.id)) return;
+  const id = e.target.id;
+  if (id === "badge-race-scope") state.badgeScope = e.target.value === "nba" ? "nba" : "roster";
+  else state.badgeMetric = e.target.value;
+  $("#season-badge-board").innerHTML = seasonBadgePanel(team());
+  attachImageFallback();
+  $("#" + id)?.focus({preventScroll:true});
 });
