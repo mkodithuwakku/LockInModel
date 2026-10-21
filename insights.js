@@ -28,6 +28,23 @@
     });
     return {recommended: true, rows: [...starters, ...others]};
   }
+  function gameFantasy(player, game) {
+    if (Number.isFinite(game.fp)) return {kind: "actual", label: "Final", value: game.fp,
+      description: `Actual ${game.fp.toFixed(1)} fantasy points`};
+    if (["complete", "final", "post_game"].includes(game.status))
+      return {kind: "unavailable", label: "Final", value: null, description: "Final · fantasy score unavailable"};
+    if (["postponed", "canceled", "cancelled"].includes(game.status))
+      return {kind: "unavailable", label: game.status === "postponed" ? "PPD" : "CXL", value: null, description: "Game " + game.status};
+    const projection = player.projection;
+    const validDay = /^\d{4}-\d{2}-\d{2}$/.test(game.date || "") &&
+      /^\d{4}-\d{2}-\d{2}$/.test(projection?.as_of || "") && game.date >= projection.as_of;
+    if (player.schedule_state === "verified" && ["pre_game", "in_progress"].includes(game.status) &&
+        validDay && Number.isFinite(projection?.projected_fp)) {
+      return {kind: "projection", label: "Proj", value: projection.projected_fp,
+        description: `Projected ${projection.projected_fp.toFixed(1)} fantasy points · per-game estimate when active, not opponent-adjusted · as of ${projection.as_of}`};
+    }
+    return {kind: "unavailable", label: "Proj", value: null, description: "Projection unavailable for this game"};
+  }
   function teamForm(players, cutoff) {
     const mean = (rows) => rows.reduce((sum, row) => sum + row.fp, 0) / rows.length;
     return players.map((player, index) => {
@@ -79,7 +96,7 @@
         return {...b, icon, name, label: `${name} · ${b.tied ? "Tied #" : "#"}${b.rank} NBA-wide · ${value} ${stat} · ${b.date}`};
       });
   }
-  const helpers = { rosterSheet, teamForm, sparkline, dailyBadges, previousDate };
+  const helpers = { gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate };
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);
