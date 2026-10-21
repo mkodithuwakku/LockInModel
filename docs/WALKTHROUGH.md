@@ -67,3 +67,5 @@ Test Week previews the selected day before its outcomes, even at night. A banked
 Every roster row shows projected FP plus PTS/REB/AST, even when that player is on the bench, injured, or has no game today. Open the row for projected minutes, points, rebounds, assists, steals, blocks, turnovers, threes, and shooting makes/attempts. The source and snapshot date sit beside the estimate. These are per-game expectations when active; the daily lineup separately enforces availability and positions.
 
 Scoring method in player details explains the approved foul/rebound adjustments and any estimated bonus frequencies. Those choices no longer appear as data errors. Data alerts now reflects real failures or unsupported rules. Prior-season charts use actual saved performances and are labeled; a rookie forecast does not imply fabricated NBA game history.
+
+NBA team abbreviations in roster cards include a small decorative team logo (14px, or 12px on phones). Logos load from the NBA CDN; unknown/free-agent teams and failed images retain text only.

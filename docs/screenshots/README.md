@@ -3,7 +3,8 @@
 ## Current roster-first layout
 
 - `roster-first-desktop.png`: generic five-player sample, full-width roster with
-  Recommended lineup and Recent form following below.
+  Recommended lineup and Recent form following below. NBA logos sit beside
+  the team abbreviations in each player card.
 - `roster-first-mobile.png`: 390px sample roster displayed before either insight
   panel; both panels follow beneath the full sheet.
 
