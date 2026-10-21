@@ -14,6 +14,9 @@ weights:
   TD: 2
   PTS40: 2
   PTS50: 2
+  # Optional milestone bonuses; Sleeper imports supply their own league weights.
+  AST15: 0
+  REB20: 0
 decision:
   lookback_games: 10
   recent_days: 14
@@ -78,3 +81,11 @@ notify:
   to_email: ''
   from_email: ''
 timezone: America/Edmonton
+
+# The local publisher uploads only generated files to this separate branch.
+publication:
+  remote: origin
+  branch: gh-pages
+  hour: 12
+  minute: 17
+  timezone: America/Edmonton

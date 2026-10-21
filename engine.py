@@ -8,7 +8,7 @@ from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
 from decide import per_player_week_decision
 from pickups import find_pickups
-from scoring import apply_scoring_policy
+from scoring import apply_scoring_policy, scoring_notes, effective_weights
 from transport import DataUnavailable
 
 
@@ -86,6 +86,16 @@ def build_dashboard(
             continue
         weights = team.get("weights") or cfg["weights"]
         rows = []
+        notes = scoring_notes(team, observed, weights)
+        weights, _ = effective_weights(observed, weights)
+        if notes:
+            alerts.append(
+                {
+                    "severity": "info",
+                    "team": team["name"],
+                    "message": "Scoring estimate: " + " ".join(notes),
+                }
+            )
         if team.get("unsupported_scoring"):
             alerts.append(
                 {
@@ -152,7 +162,7 @@ def build_dashboard(
                         schedule_error = str(exc)
                     try:
                         prior = provider.prior(pid, weights, reference)
-                    except DataUnavailable:
+                    except (DataUnavailable, ValueError):
                         prior = None
                     calculated = per_player_week_decision(
                         name,
@@ -211,7 +221,7 @@ def build_dashboard(
         try:
             candidates = (
                 find_pickups(observed, team, cfg, reference, positions)
-                if not observed.empty
+                if not observed.empty and not getattr(provider, "stats_error", None)
                 else []
             )
         except (DataUnavailable, ValueError, KeyError) as exc:
@@ -235,6 +245,7 @@ def build_dashboard(
                 "ownership_complete": team.get("ownership_complete", False),
                 "unsupported_scoring": team.get("unsupported_scoring", {}),
                 "ignored_scoring": team.get("ignored_scoring", {}),
+                "scoring_notes": notes,
                 "results": rows,
                 "pickups": candidates,
             }

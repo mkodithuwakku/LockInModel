@@ -95,6 +95,9 @@ class LiveProvider:
                 self.games = parse_dates(bulk_player_logs(self.manifest["season"]))
             except DataUnavailable as exc:
                 self.stats_error = str(exc)
+                from game_store import GameStore
+
+                self.games = GameStore().read(self.manifest["season"])
                 self.alerts.append(
                     {
                         "severity": "error",

@@ -44,7 +44,7 @@ def test_real_fixture_replays_offline_and_hides_future():
 def test_incomplete_scoring_never_recommends_lock():
     p = FixtureProvider()
     cfg = sample_cfg()
-    cfg["teams"][0]["unsupported_scoring"] = {"tf": -2}
+    cfg["teams"][0]["unsupported_scoring"] = {"unknown_rule": -2}
     report = build_dashboard(provider=p, cfg=cfg, reference=p.manifest["default_date"])
     row = report["teams"][0]["results"][0]
     assert row["status"] == "SCORING_INCOMPLETE" and row["decision"] is None
@@ -124,6 +124,8 @@ def test_flagrants_do_not_change_model_or_pickup_scoring():
     cfg["teams"][0]["unsupported_scoring"] = {"ff": -2}
     actual = build_dashboard(provider=provider, cfg=cfg, reference=reference)
     assert actual["teams"][0]["results"] == expected["teams"][0]["results"]
-    assert actual["teams"][0]["pickups"] == expected["teams"][0]["pickups"]
-    assert actual["alerts"] == expected["alerts"]
+    assert [p["projected_fp"] for p in actual["teams"][0]["pickups"]] == [
+        p["projected_fp"] for p in expected["teams"][0]["pickups"]
+    ]
+    assert all(a["severity"] == "info" for a in actual["alerts"])
     assert actual["teams"][0]["ignored_scoring"] == {"ff": -2}

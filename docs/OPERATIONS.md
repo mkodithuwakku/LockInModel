@@ -59,7 +59,7 @@ The requested schedule is noon in America/Edmonton. The Codex automation runs th
 | SCHEDULE UNAVAILABLE | Upcoming data failed or was empty; no decision was issued |
 | SCORING GAP | Nonzero league rules require unavailable stats; displayed FP is partial |
 | DATA ISSUE | A required field is missing/invalid or the provider failed |
-| STALE DATA | Saved live report is older than six hours or from another day |
+| STALE DATA | Saved live report is older than 26 hours or has an invalid timestamp |
 | SEASON FINISHED | Imported league is completed; no active analysis is needed |
 | Player has no game/history | No eligible observation exists by the selected date |
 | Refresh reports cooldown | Wait for the persistent host cooldown; repeated refreshes will not bypass it |
@@ -86,7 +86,7 @@ The native Codex automation **LockIn noon report** is configured for noon, Ameri
 
 Before delivery, revoke the previously exposed Google app password and generate a new one using [Google's app-password instructions](https://support.google.com/accounts/answer/185833?hl=en). Google requires 2-Step Verification for app passwords; managed account policy can restrict availability. Update `EMAIL_APP_PASSWORD` in ignored `.env` locally, and verify `EMAIL_USER` and the recipient in `config.local.yaml`. Do not paste the password into chat or commit it. The delivery guard automatically accepts a different password; do not remove the guard file to reuse the exposed password.
 
-The daily command launches a fresh process and rereads `.env`. No new automation is needed after replacement. No email is sent while every league is completed or awaiting its season. When active, the report sends recommendations or explicit data-error/scoring-gap notices; remaining unsupported rules still prevent actionable lock calls; flagrant fouls are deliberately ignored. No actual SMTP delivery has been verified yet. Once the credential is replaced, a separately requested one-off test email can verify delivery without fetching NBA data.
+The daily command launches a fresh process and rereads `.env`. No new automation is needed after replacement. No email is sent while every league is completed or awaiting its season. When active, the report sends recommendations or explicit data-error/scoring-gap notices; unknown scoring rules still prevent actionable lock calls; unavailable fouls and missing rebound splits use the approved approximation policy. No actual SMTP delivery has been verified yet. Once the credential is replaced, a separately requested one-off test email can verify delivery without fetching NBA data.
 
 ## New leagues and archives
 
@@ -96,4 +96,12 @@ Teams are keyed by league ID, so re-sync updates an existing team and distinct l
 
 ## Hosted daily report
 
-The public dashboard is built by `.github/workflows/pages.yml`. The cloud workflow does not send email or run historical capture; it uses `pages.py --refresh` and the same paced providers. The existing local noon email automation is separate. See [Hosting](HOSTING.md) for setup, refresh timing, browser expiry, and recovery.
+The Mac publishes the public dashboard with `publication.py`; GitHub serves only exported files from `gh-pages`. The former cloud data-fetching workflow has been removed. The existing local noon email automation remains separate and retains its credential guard.
+
+```bash
+.venv/bin/python publication.py run --force --setup-pages
+.venv/bin/python publication.py install
+.venv/bin/python publication.py status
+```
+
+Initial setup publishes the branch and configures Pages to serve it. Installation creates `~/Library/LaunchAgents/com.lockin.publish.plist`; Codex and Flask do not need to remain open. Keep the Mac logged in and connected for updates. The agent runs after missed sleep intervals/login and retries transient failures. Inspect `logs/publication.log`, `logs/publication-error.log`, and `state/publication.json`. A manual `publication.py run --force` bypasses the daily publication guard, but does not bypass provider cooldowns or force another same-day game-data download. See [Hosting](HOSTING.md) for verification and recovery.

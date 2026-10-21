@@ -104,6 +104,7 @@ def test_failed_refresh_never_keeps_actions(monkeypatch, tmp_path):
     cfg["sleeper"] = {"username": "test"}
     monkeypatch.setattr(pages, "load_cfg", lambda: cfg)
     monkeypatch.setattr(pages, "SAVED", tmp_path / "report.json")
+    monkeypatch.setattr(pages, "ROOT", tmp_path)
     pages.write_json(pages.SAVED, report())
 
     def fail():
@@ -125,7 +126,7 @@ def test_failed_refresh_never_keeps_actions(monkeypatch, tmp_path):
     assert "PRIVATE" not in json.dumps(result)
 
 
-def test_successful_cloud_refresh_uses_shared_engine(monkeypatch, tmp_path):
+def test_successful_local_refresh_uses_shared_engine(monkeypatch, tmp_path):
     import sleeper
 
     monkeypatch.setattr(pages, "load_cfg", lambda: {"sleeper": {"username": "test"}})
@@ -138,17 +139,9 @@ def test_successful_cloud_refresh_uses_shared_engine(monkeypatch, tmp_path):
 
     monkeypatch.setattr(pages, "build_dashboard", build)
     monkeypatch.setattr(pages, "SAVED", tmp_path / "report.json")
+    monkeypatch.setattr(pages, "ROOT", tmp_path)
     result = pages.refresh_report()
     assert calls == ["sync", "live"]
     assert result["refresh_status"] == "ok"
     assert result["teams"][0]["results"][0]["decision"] == "LOCK"
     assert "PRIVATE" not in pages.SAVED.read_text()
-
-
-def test_ci_configuration_contains_no_delivery_or_sample_rosters(monkeypatch):
-    captured = []
-    monkeypatch.setattr(pages, "save_cfg", captured.append)
-    pages.initialize_config("test")
-    assert captured[0]["teams"] == []
-    assert "notify" not in captured[0]
-    assert set(captured[0]) == {"weights", "decision", "timezone", "teams", "sleeper"}

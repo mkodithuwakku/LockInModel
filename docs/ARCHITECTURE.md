@@ -11,6 +11,8 @@
 | `engine.py` | Shared dashboard/report orchestration and per-input decision reuse |
 | `providers.py` | Explicit fixture/live input policies |
 | `fetch_data.py` | NBA adapters, name matching, strict normalization, dates, bonuses |
+| `game_store.py` | SQLite player-game history, daily overlap upserts, weekly full reconciliation |
+| `publication.py` | Local static publication, deployment verification, retry ledger, macOS wake catch-up |
 | `transport.py` | Persistent response cache, request serialization/pacing, cooldown circuit |
 | `scoring.py` | Configured weighted FP calculation |
 | `decide.py` | One player's weekly result and failure states |
@@ -48,7 +50,7 @@ A filesystem lock serializes requests across processes. Requests are paced per h
 
 The live provider first loads one Sleeper regular-season schedule (six-hour cache, three-second pacing). It validates records and season dates, shares that calendar across all players, and uses the current Sleeper NBA team assignment for live scheduling. Before the first game can enter the observation cutoff, it skips NBA Stats entirely and returns UPCOMING rows. This distinguishes a drafted fantasy league from an NBA season with observed performances.
 
-Once games can be observed, live logs use one league-wide bulk request rather than fetching every player's logs. Statistics and schedule errors are independent: missing statistics preserve the calendar and roster; missing schedules preserve observed scores but never establish a zero remaining-game count. The live prior uses older observed season data. The fixture provider never requests NBA data.
+Once games can be observed, live logs use `data/lockin.sqlite3`. The first refresh fetches the season, subsequent daily refreshes query from the last saved game minus seven days, and a full refresh every seven days reconciles older corrections. Upserts key on season/game/player. A process lock serializes refreshes; a transaction commits observations and freshness together. A failed or unexpectedly empty refresh retains previous rows and does not advance freshness. Multiple league analyses reuse the same daily data. Statistics and schedule errors are independent: missing statistics preserve the calendar and roster; missing schedules preserve observed scores but never establish a zero remaining-game count. The live prior uses older observed season data. The fixture provider never requests NBA data.
 
 The Sleeper schedule feed is a public read-only endpoint used by this adapter, outside the core v1 league API. Its schema can change; invalid/empty/wrong-season responses fail closed. It currently provides dates and opponents, not tip-off times. Week views follow the model's Monday–Sunday convention; before opening night, the visible grid previews the opening week while the analysis cutoff stays unchanged.
 
@@ -78,6 +80,8 @@ Decision results include player identity, lineup slot/order, NBA team, live inju
 | Path | Contents |
 | --- | --- |
 | `config.local.yaml` | Personal teams, scoring, notification addresses, Sleeper connection |
+| `data/lockin.sqlite3` | Permanent observations and successful per-season refresh metadata |
+| `state/publication.json` | Publication completion, pending commit, retry state |
 | `data/cache/http/` | Response files, host cooldowns, request lock |
 | `data/cache/archive/` | Raw Parquet downloads and immutable source revision |
 | `data/cache/portraits/` | Cached player headshots |
@@ -93,4 +97,6 @@ Snapshot writes are atomic, but roster configuration does not yet use a cross-pr
 
 ## Static publication boundary
 
-`pages.py` initializes a minimal CI configuration from public model defaults and the `SLEEPER_USERNAME` repository secret. It imports current Sleeper teams, invokes the shared live engine, and exports an explicit field allowlist to `dist/pages`. No Flask endpoints run on GitHub Pages. The shared frontend selects its read-only adapter via the exported HTML attribute; relative URLs support repository subpaths. `web/pages.js` checks report age and Edmonton calendar date on load and while a tab remains open. See [Hosting](HOSTING.md) for persistence and failure behavior.
+`publication.py` runs on the Mac. It uses the saved local Sleeper configuration, refreshes the shared engine, and passes the result to `pages.py` for an explicit field allowlist. A fresh temporary Git repository uploads only generated website files to `gh-pages`, preserving branch history with a normal fast-forward push. GitHub Pages publishes that branch without running the model. No database, raw cache, credentials, or private configuration is uploaded. A publication ID is checked against the live `report.json` before the daily slot is marked successful.
+
+The macOS LaunchAgent performs inexpensive due checks every 15 minutes, at login, and after a missed calendar event during sleep. Filesystem locking prevents overlapping publications. Failed uploads/deployments or partial data reports retain retry state with capped backoff. A previously uploaded report can be verified on the next check without refetching data. The original report generation timestamp controls the 26-hour browser expiry. See [Hosting](HOSTING.md).

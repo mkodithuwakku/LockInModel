@@ -41,7 +41,7 @@ The schedule is a finalized historical schedule. It does not recreate postponeme
 
 A team-game opportunity does not guarantee the player participates. Injury news and historical expected minutes are not reconstructed. Current Sleeper rosters are useful for product testing but are not historical ownership snapshots. Local rosters also lack complete league ownership information.
 
-Technical and flagrant foul penalties are not present in this fixture. The user-approved policy ignores flagrant fouls entirely. Technical fouls and other unsupported rules still cause partial estimates and withheld recommendations. Model totals intentionally differ from Sleeper whenever a flagrant penalty would apply.
+Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `ignored_scoring` metadata. Personal fouls (`PF`) use actual values when available and are omitted otherwise. Offensive/defensive rebound weights use actual splits when available; otherwise the model uses total rebounds with coefficient `REB weight + (OREB weight + DREB weight) / 2`, treating an absent split weight as zero. Equal split weights are exact; unequal weights are an approximation. These approved adjustments are shown as information and do not block recommendations. Other unknown nonzero rules still withhold actionable recommendations.
 
 ## Data layout
 

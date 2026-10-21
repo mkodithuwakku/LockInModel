@@ -86,7 +86,8 @@ def test_drafted_preseason_roster_does_not_request_nonexistent_stats(monkeypatch
     assert not any(g["fp"] is not None for g in row["week_games"])
 
 
-def test_stats_failure_keeps_verified_schedule_and_other_leagues(monkeypatch):
+def test_stats_failure_keeps_verified_schedule_and_other_leagues(monkeypatch, tmp_path):
+    monkeypatch.setattr("game_store.ROOT", tmp_path)
     install_calendar(monkeypatch)
 
     def fail(*_):
@@ -110,6 +111,37 @@ def test_stats_failure_keeps_verified_schedule_and_other_leagues(monkeypatch):
         len(report["alerts"]) == 1
         and "performances unavailable" in report["alerts"][0]["message"]
     )
+
+
+def test_failed_refresh_never_recommends_pickups_from_saved_history(
+    monkeypatch, tmp_path
+):
+    install_calendar(monkeypatch)
+    monkeypatch.setattr("game_store.ROOT", tmp_path)
+    history = pd.DataFrame(
+        [
+            dict(
+                PLAYER_ID=1630178,
+                PLAYER_NAME="Tyrese Maxey",
+                GAME_DATE=pd.Timestamp("2026-10-20"),
+            )
+        ]
+    )
+    monkeypatch.setattr("game_store.GameStore.read", lambda *_: history)
+
+    def fail(*_):
+        raise DataUnavailable("Offline")
+
+    monkeypatch.setattr("providers.bulk_player_logs", fail)
+    monkeypatch.setattr(
+        "engine.find_pickups",
+        lambda *_: pytest.fail("Saved stale history cannot authorize pickups"),
+    )
+    provider = LiveProvider(dt.date(2026, 10, 22))
+    assert not provider.games.empty
+    result = build_dashboard("live", "2026-10-22", provider=provider, cfg=cfg())
+    assert result["teams"][0]["pickups"] == []
+    assert result["teams"][0]["results"][0]["decision"] is None
 
 
 def test_schedule_failure_preserves_boxscores_but_cannot_lock(monkeypatch):

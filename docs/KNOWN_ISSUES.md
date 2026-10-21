@@ -25,9 +25,9 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 
 | Area | Limitation |
 | --- | --- |
-| League scoring | Flagrant fouls are deliberately ignored; other unavailable rules, including technical fouls, still cause partial FP and no lock decision |
+| League scoring | Unavailable fouls are omitted; unavailable rebound splits are approximated using total rebounds. Generic milestone bonuses are computed. Unknown nonzero rules still block recommendations |
 | Sleeper lock state | Read-only rosters are imported, but existing lock selections are not; the app does not submit actions |
-| Live availability | NBA Stats may reject hosted runners. Rosters and independently verified Sleeper schedules remain visible; no performance recommendations are invented during an outage |
+| Live availability | NBA Stats may reject or time out on local requests. Saved history is retained but cannot supply newly missed games. Rosters and independently verified Sleeper schedules remain visible; no performance recommendations are invented during an outage |
 | Schedule feed | Public Sleeper schedule schema is not part of the core documented v1 league API. Dates/opponents are available; tip-off times are not. Changes/postponements wait for cache refresh |
 | Offseason | Completed leagues produce no active recommendations; new-season rosters must exist before meaningful live analysis |
 | Historical schedules | Finalized schedule and last observed team assignment, not timestamped historical schedule/transaction snapshots |
@@ -44,7 +44,7 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 ## Priorities after this release
 
 1. Confirm the exposed credential was revoked/replaced and review remaining legacy refs and cached copies after the cleaned-history promotion to `main`.
-2. Resolve remaining scoring gaps such as technical fouls; the approved policy already excludes flagrant fouls.
+2. Evaluate the impact of the approved foul omission and rebound approximations; unknown scoring formats still require explicit support.
 3. Verify live inputs when the next leagues and games become active.
 4. Evaluate the lock and pickup policies across multiple held-out weeks.
 5. Add richer injury/role context and precise historical roster/schedule snapshots where useful.

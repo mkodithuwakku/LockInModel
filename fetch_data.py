@@ -252,10 +252,25 @@ def estimate_remaining_games_this_week(
 
 
 def bulk_player_logs(season):
-    ep = playergamelogs.PlayerGameLogs(
-        season_nullable=season, season_type_nullable="Regular Season", get_request=False
+    from game_store import GameStore
+    from zoneinfo import ZoneInfo
+
+    def fetch(since):
+        ep = playergamelogs.PlayerGameLogs(
+            season_nullable=season,
+            season_type_nullable="Regular Season",
+            date_from_nullable=(
+                dt.date.fromisoformat(since).strftime("%m/%d/%Y") if since else ""
+            ),
+            get_request=False,
+        )
+        # The database handles daily reuse. Do not reuse yesterday's full-season
+        # HTTP response during today's refresh.
+        return endpoint_frame(ep, ttl=0)
+
+    return GameStore().refresh(
+        season, fetch, dt.datetime.now(ZoneInfo("America/Edmonton")).date()
     )
-    return parse_dates(endpoint_frame(ep, ttl=86400))
 
 
 def bulk_team_logs(season):

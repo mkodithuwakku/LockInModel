@@ -7,7 +7,7 @@ from pathlib import Path
 import tempfile
 import threading
 import yaml
-from scoring import apply_scoring_policy
+from scoring import apply_scoring_policy, supported_stat
 
 ROOT = Path(__file__).resolve().parent
 LOCK = threading.RLock()
@@ -45,27 +45,16 @@ def validate_config(cfg):
         raise ValueError("Configuration requires scoring weights.")
     import math
 
-    for key, value in cfg["weights"].items():
-        if key not in {
-            "PTS",
-            "REB",
-            "AST",
-            "STL",
-            "BLK",
-            "TOV",
-            "FG3M",
-            "FGM",
-            "FGA",
-            "FTM",
-            "FTA",
-            "DD",
-            "TD",
-            "PTS40",
-            "PTS50",
-        }:
-            raise ValueError("Unsupported scoring field: " + key)
-        if not isinstance(value, (int, float)) or not math.isfinite(value):
-            raise ValueError("Scoring weights must be finite numbers.")
+    def validate_weights(weights):
+        if not isinstance(weights, dict):
+            raise ValueError("Scoring weights must be a mapping.")
+        for key, value in weights.items():
+            if not supported_stat(key):
+                raise ValueError("Unsupported scoring field: " + key)
+            if not isinstance(value, (int, float)) or not math.isfinite(value):
+                raise ValueError("Scoring weights must be finite numbers.")
+
+    validate_weights(cfg["weights"])
     d = cfg.get("decision", {})
     for key in ("lookback_games", "recent_days"):
         if not isinstance(d.get(key), int) or not 1 <= d[key] <= 365:
@@ -91,6 +80,8 @@ def validate_config(cfg):
     ids = set()
     for i, team in enumerate(teams):
         apply_scoring_policy(team)
+        if "weights" in team:
+            validate_weights(team["weights"])
         team.setdefault("id", "local-" + str(i + 1))
         if team["id"] in ids:
             raise ValueError("Duplicate team ID.")

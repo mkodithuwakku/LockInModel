@@ -4,7 +4,7 @@
 
 Python · Flask · pandas · NumPy · vanilla JavaScript · pytest · GitHub Pages / Actions
 
-**[Open the daily dashboard](https://mkodithuwakku.github.io/LockInModel/)** — a public, read-only report refreshed around 12:17 PM America/Edmonton. Browse teams, player details, and league-specific pickup signals from any device. [Hosting and refresh details](docs/HOSTING.md).
+**[Open the daily dashboard](https://mkodithuwakku.github.io/LockInModel/)** — a public, read-only report published from the local Mac around 12:17 PM America/Edmonton, with catch-up after wake. Browse teams, player details, and league-specific pickup signals from any device. [Hosting and refresh details](docs/HOSTING.md).
 
 ## Screenshots and demo
 
@@ -51,11 +51,11 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 | Interface | HTML, CSS, vanilla JavaScript; browser fetch, dialogs, and localStorage for the selected team; no frontend build step |
 | Backend | Python and Flask, with one background worker for sync/refresh jobs |
 | Analysis | pandas and NumPy for normalization, weighted statistics, and candidate screening |
-| Persistence | PyYAML configuration, JSON snapshots/ledgers, Parquet through PyArrow; no database service |
+| Persistence | SQLite game history, PyYAML configuration, JSON snapshots/ledgers, Parquet replay fixtures; no database server |
 | Integrations | nba_api endpoint definitions, Requests, Sleeper league/player/schedule feeds, archived NBA tables, Gmail SMTP over TLS |
 | Configuration | python-dotenv, checked-in sample YAML, ignored local overrides |
 | Verification | pytest, Black, GitHub Actions configured for Python 3.11 and 3.12 |
-| Runtime | Local Flask on 127.0.0.1:8765 for interactive practice; GitHub Pages for public read-only reports, built on scheduled GitHub Actions runners |
+| Runtime | Local Flask on 127.0.0.1:8765 for interactive practice; GitHub Pages for public read-only reports, published from the Mac to a dedicated static branch |
 
 Exact direct dependency versions are in [requirements.txt](requirements.txt) and [requirements-dev.txt](requirements-dev.txt).
 
@@ -92,7 +92,7 @@ flowchart TD
 2. An explicit refresh uses the live provider. Test Week uses local fixture tables. Both call `engine.build_dashboard()` with a reference date and configuration.
 3. The engine limits statistical inputs to observed games, resolves player identities, applies league weights, and gets schedules and priors from the selected provider. Decisions are reused within a report for the same player and scoring weights.
 4. Lock analysis and pickup screening return structured results. Unsupported league scoring suppresses lock recommendations; missing schedules remain unknown rather than becoming zero remaining games.
-5. The frontend displays results, explanations, and alerts. The CLI formats the same analysis for disk and optional email. Saved live analyses older than six hours or from another day lose actionable recommendations in the dashboard.
+5. The frontend displays results, explanations, and alerts. The CLI formats the same analysis for disk and optional email. Saved live analyses expire after 26 hours (one daily interval plus a two-hour delay allowance); the original snapshot timestamp remains visible across midnight within the same fantasy week. A previous week expires at the next Monday.
 
 ## Architecture and data model
 
@@ -103,17 +103,20 @@ flowchart TD
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |
 | [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
 | [simulation.py](simulation.py), [storage.py](storage.py) | Practice transitions, config validation, atomic file replacement |
+| [game_store.py](game_store.py) | Permanent SQLite history, incremental daily upserts, weekly reconciliation |
 | [sleeper.py](sleeper.py), [transport.py](transport.py), [capture.py](capture.py) | League import, cached/paced requests, historical capture |
-| [pages.py](pages.py), [web/pages.js](web/pages.js), [Pages workflow](.github/workflows/pages.yml) | Static export, browser expiry checks, scheduled sync and deployment |
+| [pages.py](pages.py), [publication.py](publication.py), [web/pages.js](web/pages.js) | Allowlisted export, local daily publication, wake catch-up, browser expiry |
 | [main.py](main.py), [notify.py](notify.py) | Reports, delivery ledger, pickup cooldowns, SMTP |
 | [tests/](tests/), [docs/](docs/) | Regression checks and implementation guides |
 
-The main entities are **teams**, **player-game observations**, **practice runs**, and **reports**. A team contains a stable ID, roster names, a starter subset, and optional league weights and ownership metadata. Imported teams use `sleeper-<league_id>` IDs. Observations carry player/team/game IDs, dates, minutes, box scores, and derived bonuses. The engine maps roster names to NBA identities; there are no database foreign-key constraints.
+The main entities are **teams**, **player-game observations**, **practice runs**, and **reports**. A team contains a stable ID, roster names, a starter subset, and optional league weights and ownership metadata. Imported teams use `sleeper-<league_id>` IDs. Observations carry player/team/game IDs, dates, minutes, box scores, and derived bonuses. The engine maps roster names to NBA identities; SQLite identifies each observed game by season, game ID, and player ID; there are no cross-file foreign-key constraints.
 
 | Local path | Stored data |
 | --- | --- |
 | `config.local.yaml` | Authoritative personal configuration; falls back to `config.yaml` when absent |
 | `data/fixtures/2025-26/` | Game, schedule, and prior-season Parquet tables plus checksums |
+| `data/lockin.sqlite3` | Permanent live player-game history and successful refresh timestamps |
+| `state/publication.json` | Published commit, daily completion, pending deployment, and retry state |
 | `data/cache/` | Archived downloads, HTTP responses/cooldowns, optional cached portraits |
 | `state/test-week.json` | Practice configuration snapshot, date/phase, revision, banked scores |
 | `state/` | Reports, Sleeper player metadata, email attempts, pickup alert history |
@@ -140,7 +143,8 @@ The rationale below describes how each choice fits the implementation, rather th
 | Decision | Why it fits | Tradeoff | Alternative |
 | --- | --- | --- | --- |
 | One engine with live and fixture providers | Dashboard, CLI, and practice share scoring; fixture tests avoid provider availability | Historical schedule and prior policies differ from live inputs | Versioned provider contracts with timestamped historical snapshots |
-| YAML/JSON with atomic replacement | Inspectable local persistence; interrupted writes do not expose a partially written target file | Atomic writes alone do not prevent lost updates across processes | SQLite transactions and schema migrations |
+| SQLite for observations; atomic YAML/JSON for configuration and reports | Games accumulate without duplicate rows; corrected box scores update in transactions | Old corrections require reconciliation; configuration remains a separate file | A database for every entity if multi-user editing becomes necessary |
+| Local analysis with static publication | One authoritative game database; the website needs no database or runtime server | The Mac must be awake and online to publish; wake catch-up cannot restore a missed decision deadline | Hosted execution if unattended uptime becomes a requirement |
 | Vanilla JS and Flask | Small deployment surface and no frontend build pipeline | UI state, rendering, and events concentrate in one script | Split frontend modules or a component framework as complexity grows |
 | Explicit unavailable states | Provider failure cannot safely mean there are no remaining games | Required missing inputs prevent recommendations | Separately labeled fallback with evidence about its reliability |
 | Record email attempt before SMTP | An ambiguous timeout does not trigger automatic duplicate sends | Failure can suppress a report that was never delivered | Durable outbox and a delivery service supporting idempotency keys |
@@ -149,7 +153,7 @@ The rationale below describes how each choice fits the implementation, rather th
 
 **Keeping replay honest.** Morning practice and live analysis use observations through the previous day; night replay includes the selected day. Future rows are excluded from model and pickup inputs. Tests change future scores and confirm present results stay unchanged. Finalized schedules and current/sample ownership still limit realism. The lesson is to distinguish time-safe statistical inputs from a fully realistic backtest.
 
-**Normalizing different scoring rules.** Core stats must be finite and nonnegative. Optional missing fields are tracked as imputed and rejected if the league assigns a nonzero weight. Double/triple-double and 40/50-point bonuses are recomputed and can stack. Unknown nonzero Sleeper rules create scoring gaps; flagrant fouls are deliberately excluded by policy. Missing, zero, and intentionally ignored must remain different data states.
+**Normalizing different scoring rules.** Core stats must be finite and nonnegative. Missing required weighted fields are rejected. Milestone bonuses are derived from each game, including 15+ assists and 20+ rebounds; positive thresholds for points, rebounds, assists, steals, and blocks are configurable. Double/triple-double and threshold bonuses stack. Unavailable fouls are omitted, and unavailable rebound splits use a disclosed total-rebound approximation. Unknown nonzero rules still create scoring gaps. Missing, zero, and intentionally ignored must remain different data states.
 
 **Handling unreliable external requests.** `CachedHTTP` combines persistent caches, host pacing, connect/read timeouts, and cooldowns. A filesystem lock serializes requests across processes; rate limits honor `Retry-After`. Imports build all team records before replacing configuration, although the player-directory cache can update earlier. This favors coherent team snapshots over partial progress, at the cost of serialized throughput.
 
@@ -209,16 +213,16 @@ node --test tests/pages.test.cjs
 
 Use a date from the newly captured manifest if its selected week differs. Tests block socket connections and cover scoring boundaries, missing inputs, future-data exclusion, import failure, cooldowns, API mutations, practice revisions, and email deduplication. Real-fixture tests skip until capture has run. CI does not include an automated browser suite.
 
-For Sleeper, use **Sleeper connection** with a username and season start year; no password is requested. UI changes and reports share `config.local.yaml`. For optional email, copy the variable names from [.env.example](.env.example) into a local `.env`, set `EMAIL_USER` and `EMAIL_APP_PASSWORD`, and configure `notify.to_email`/`notify.from_email` in local YAML. Only `python main.py --live --send --daily` requests delivery. Scheduling is external to the app. See [Operations](docs/OPERATIONS.md) for details.
+For Sleeper, use **Sleeper connection** with a username and season start year; no password is requested. UI changes and reports share `config.local.yaml`. For optional email, copy the variable names from [.env.example](.env.example) into a local `.env`, set `EMAIL_USER` and `EMAIL_APP_PASSWORD`, and configure `notify.to_email`/`notify.from_email` in local YAML. Only `python main.py --live --send --daily` requests email delivery. Website publication uses `python publication.py run --force --setup-pages` for initial setup and `python publication.py install` to install the macOS scheduler. It publishes once per daily slot and catches up after wake/login; credentials and the database remain local. See [Operations](docs/OPERATIONS.md) for details.
 
 ## Limitations and next improvements
 
 - **Credential history:** previous project documentation records a committed email credential. The delivery guard checks a local blocked-password hash; it is not a general secret scanner. Confirm revocation and public-history cleanup before showcasing the repository. This README does not establish their current external status.
 - **Evaluation:** no measured win-rate or calibration result exists. Compare policies across held-out weeks against simple baselines before making effectiveness claims.
-- **Live/scoring fidelity:** provider availability varies; technical-foul and other unsupported rules withhold decisions. Sleeper lock selections are not imported, and ownership reflects the latest snapshot rather than guaranteed claimability.
+- **Live/scoring fidelity:** provider availability varies; unknown scoring rules still withhold decisions, while the approved foul/rebound approximations permit estimated recommendations. Sleeper lock selections are not imported, and ownership reflects the latest snapshot rather than guaranteed claimability.
 - **Historical fidelity:** replay uses finalized schedules, last observed team assignments, and sample/current rosters. It lacks timestamped injuries, transactions, exact lock deadlines, and opponent simulation.
 - **Concurrency and scale:** configuration updates have no cross-process transaction lock; job status and dashboard cache live in memory. Multiple Flask workers/users would need transactional persistence, durable jobs, and authentication. The hosted site avoids server mutations by publishing static reports.
-- **Hosted refresh:** a scheduled snapshot, not an on-demand NBA refresh. GitHub schedules may be delayed or disabled after 60 days without repository activity. API reachability from hosted runners is not guaranteed; Actions caches can be evicted. Reports expire after six hours or at Edmonton midnight. See [Hosting](docs/HOSTING.md).
+- **Hosted refresh:** a daily snapshot generated locally. An awake, logged-in, online Mac and working Git credentials are required for updates. Sleep/login catch-up and bounded retries are implemented; there is no guaranteed update deadline. Reports expire after 26 hours. See [Hosting](docs/HOSTING.md).
 - **Maintainability and presentation:** add browser regression tests, refresh the dependency/runtime baseline, make initial capture explicitly reproducible from the committed manifest, and choose a project license. Some implementation comments and older operational notes need reconciliation with current behavior.
 
 ## What this project demonstrates

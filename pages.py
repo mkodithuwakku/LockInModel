@@ -4,18 +4,17 @@ import argparse
 import copy
 import datetime as dt
 import json
-import os
 from pathlib import Path
 import shutil
 import sys
 
 from engine import build_dashboard, roster_dashboard, today
-from storage import ROOT, load_cfg, read_json, save_cfg, write_json
+from storage import ROOT, load_cfg, read_json, write_json
 
-REPORT_FIELDS = "mode date observation_cutoff generated_at notice refresh_status schedule_week season_start".split()
+REPORT_FIELDS = "mode date observation_cutoff generated_at notice refresh_status schedule_week season_start publication_id".split()
 TEAM_FIELDS = (
     "id team_name league_name source season league_status archived synced_at "
-    "ownership_complete unsupported_scoring ignored_scoring"
+    "ownership_complete unsupported_scoring ignored_scoring scoring_notes"
 ).split()
 PLAYER_FIELDS = (
     "player player_id status decision note reason starter positions nba_team week "
@@ -89,7 +88,9 @@ def refresh_report():
 
     cfg = load_cfg()
     if not cfg.get("sleeper", {}).get("username"):
-        raise ValueError("Configure SLEEPER_USERNAME before publishing live teams.")
+        raise ValueError(
+            "Connect a Sleeper account locally before publishing live teams."
+        )
     try:
         sync_current()
         report = build_dashboard("live")
@@ -114,26 +115,14 @@ def refresh_report():
         )
     if not report.get("season_start") or report["date"] >= report["season_start"]:
         report["notice"] = (
-            "Daily update · 12:17 PM Edmonton. Reload checks the published report; manage locks in Sleeper."
+            "Daily snapshot from your Mac, with catch-up after wake. Reload checks the published report; manage locks in Sleeper."
         )
+    write_json(ROOT / "state/live-dashboard.json", report)
     report["published_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     result = public_report(report)
     result["published_at"] = report["published_at"]
     write_json(SAVED, result)
     return result
-
-
-def initialize_config(username):
-    """CI uses only public model defaults and a separately supplied account name."""
-    import yaml
-
-    cfg = yaml.safe_load((ROOT / "config.yaml").read_text())
-    cfg = {k: cfg[k] for k in ("weights", "decision", "timezone")}
-    cfg["teams"] = []
-    date = today()
-    season = date.year if date.month >= 9 else date.year - 1
-    cfg["sleeper"] = {"username": username, "season": str(season - 1)}
-    save_cfg(cfg)
 
 
 def export_site(report, destination):
@@ -189,10 +178,7 @@ def main():
     )
     parser.add_argument("--output", default="dist/pages")
     args = parser.parse_args()
-    username = os.environ.get("SLEEPER_USERNAME", "").strip()
     if args.refresh:
-        if username:
-            initialize_config(username)
         report = refresh_report()
     else:
         # Local export only: same saved-data policy as the local dashboard, no requests.
@@ -204,7 +190,7 @@ def main():
                 raise ValueError("Saved dashboard could not be loaded.")
             report = response.get_json()
         report["notice"] = (
-            "Saved report preview. The hosted job refreshes daily around 12:17 PM America/Edmonton."
+            "Saved report preview. The Mac publishes daily around 12:17 PM America/Edmonton, with catch-up after wake."
         )
     export_site(report, ROOT / args.output)
 

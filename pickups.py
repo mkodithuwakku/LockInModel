@@ -4,7 +4,7 @@ import math
 import numpy as np
 import pandas as pd
 from fetch_data import canonical_name, normalize_stats_for_scoring
-from scoring import add_fantasy_points, apply_scoring_policy
+from scoring import add_fantasy_points, apply_scoring_policy, scoring_notes
 from model import rolling_baseline
 
 
@@ -157,6 +157,7 @@ def find_pickups(games, team, cfg, reference, positions=None):
             ownership_as_of=team.get("synced_at"),
             scoring_complete=not bool(team.get("unsupported_scoring")),
         )
+        item["risks"].extend(scoring_notes(team, observed, weights))
         if team.get("unsupported_scoring"):
             item["risks"].append(
                 "Estimate excludes unsupported league scoring; verify before adding."

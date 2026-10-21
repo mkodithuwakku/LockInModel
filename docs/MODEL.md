@@ -16,7 +16,7 @@ The current base scoring is:
 FP = 0.5·PTS + REB + AST + 2·STL + 2·BLK − TOV + 0.5·FG3M
 ```
 
-`FGM`, `FGA`, `FTM`, and `FTA` have zero weight in the sample configuration. The normalizer tracks absent optional stats as imputed. `add_fantasy_points()` rejects missing or imputed columns with nonzero weights and rejects non-finite weighted values; missing data is not silently scored as zero.
+`FGM`, `FGA`, `FTM`, and `FTA` have zero weight in the sample configuration. The normalizer tracks absent optional stats as imputed. `add_fantasy_points()` rejects missing required weighted columns and non-finite values. The explicit foul/rebound policy below allows approximations for those optional fields.
 
 ### Derived bonuses
 
@@ -31,7 +31,7 @@ FP = 0.5·PTS + REB + AST + 2·STL + 2·BLK − TOV + 0.5·FG3M
 
 The conditions stack: a triple-double qualifies for DD and TD, and a 50-point game qualifies for PTS40 and PTS50. Confirm that this matches the intended league rules before preserving it in a fix.
 
-The normalizer retains the derived flags and identifiers. The main pipeline scores these bonuses and makes them available to the rarity calculation.
+The normalizer retains the traditional derived flags and identifiers. Scoring recomputes indicators from base observations, including generic thresholds such as `AST15` (15+ assists) and `REB20` (20+ rebounds); a new league can add a positive PTS/REB/AST/STL/BLK threshold without changing Python code.
 
 For a synthetic game with 50 PTS, 10 REB, 10 AST, 2 STL, 1 BLK, 3 TOV, and 4 FG3M:
 
@@ -41,7 +41,7 @@ Intended bonuses = DD 1 + TD 2 + PTS40 2 + PTS50 2 = 7
 Current pipeline output = 57 FP
 ```
 
-The dataset does not supply technical or flagrant fouls. By explicit user policy, flagrant-foul scoring (`ff`) is omitted from every model decision, baseline, and pickup calculation. The original penalty is retained as `ignored_scoring` metadata, not an error. Other unsupported rules, including technical fouls (`tf`), still cause partial FP and withheld recommendations.
+Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `ignored_scoring` metadata. Personal fouls (`PF`) use actual values when available and are omitted otherwise. Offensive/defensive rebound weights use actual splits when available; otherwise the model uses total rebounds with coefficient `REB weight + (OREB weight + DREB weight) / 2`, treating an absent split weight as zero. Equal split weights are exact; unequal weights are an approximation. These approved adjustments are shown as information and do not block recommendations. Other unknown nonzero rules still withhold actionable recommendations.
 
 ## 2. Selecting the candidate and baseline
 

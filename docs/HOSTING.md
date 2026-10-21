@@ -2,78 +2,79 @@
 
 [Open LockIn](https://mkodithuwakku.github.io/LockInModel/).
 
-GitHub Pages hosts a public, read-only version of the shared dashboard. GitHub Actions runs Python to produce the report. Your computer can be off. This is a scheduled snapshot: opening the page or selecting **Reload report** retrieves the published JSON, not a new NBA API request.
+The Mac owns the game database and generates the daily report. GitHub Pages serves a public, read-only export from the `gh-pages` branch. There is no website database, remote model execution, or scheduled cloud data fetch. Once published, the site remains available with the Mac off; new reports require the Mac to be awake, logged in, and online.
 
-## What works online
+## Daily flow
 
-- Switch between current Sleeper teams; each league keeps its own scoring and ownership filters.
-- Browse starters/bench, search players, open profiles, inspect recent box scores and model explanations.
-- View league-specific On the Rise results and data alerts.
-- See a full report date/time, refresh failures, and stale-data status on desktop or mobile.
-- Rosters update after the next successful scheduled import. Undrafted leagues show a draft-pending state. Earlier seasons are excluded once the current season is available.
+1. The local scheduler checks whether the 12:17 PM America/Edmonton publication is due.
+2. `publication.py` refreshes Sleeper rosters and the shared analysis engine. Current league scoring is imported each time.
+3. `data/lockin.sqlite3` retains player-game history across refreshes. Daily downloads overlap the last saved game by seven days, and a weekly full-season download reconciles older corrections. Season/game/player keys prevent duplicate observations. Failed refreshes retain saved data.
+4. `pages.py` exports an explicit allowlist of report fields, HTML, JavaScript, CSS, icons, and available portraits. Private configuration, raw caches, database files, and credentials are excluded.
+5. A fresh temporary staging repository commits only those files and pushes to `gh-pages`. Normal fast-forward pushes preserve publication history; no force push is used.
+6. GitHub Pages builds the static branch. The publisher checks the live `report.json` for the new publication ID before recording a successful daily run.
 
-Test Week, roster editing, account editing, and archive browsing remain in the local Flask app. The hosted interface hides those controls rather than presenting nonfunctional buttons. It never submits Sleeper actions or sends email. The existing local email automation is independent.
+The former `.github/workflows/pages.yml` cloud refresh has been removed. The remaining test workflow runs on source changes, not daily report pushes. The separate noon email automation is unchanged; publication sends no email and submits no Sleeper actions.
 
-## Phone layout
+## Wake catch-up and retries
 
-The same GitHub Pages URL automatically switches to a phone layout at 740px and below. It includes bottom navigation for My teams, On the rise, and Data alerts; horizontally scrollable team cards; compact search; and dense roster rows with colored lineup slots, NBA team/injury labels, lock indicators, and a seven-day opponent/observed-FP strip. Starters, bench, and reserve/taxi players are grouped separately. Unknown schedules show question marks rather than pretending the player has an off day. Player details open in a scrollable bottom sheet. Navigation and dialogs account for device safe areas; the page reserves space for the bottom bar.
+`publication.py install` installs a macOS LaunchAgent named `com.lockin.publish`. It checks at minutes 02, 17, 32, and 47, plus login. Calendar events missed during sleep are coalesced by macOS into a run after wake. The Python command computes the latest scheduled daily slot, so waking after several days produces one current report instead of replaying each missed day. Codex and Flask do not need to remain open.
 
-No mobile server, separate deployment, or app installation is required. **Reload report** still retrieves the published snapshot; phone visits do not trigger NBA requests.
+A filesystem lock prevents overlapping publisher processes. `state/publication.json` records the successful slot, pending upload, published commit, and retry status. After success, further checks exit without network work. Failures retry after 15, 30, 60, 120, 240, then at most 360 minutes. The next check can confirm an already-uploaded report without repeating a successful data refresh. A partial/error report can be published to show the failure, but it does not mark the daily slot successful.
 
-The [mobile roster](screenshots/mobile-roster.png) and [player sheet](screenshots/mobile-player-detail.png) screenshots use generic sample teams and clearly labeled historical fixture data. Browser checks covered 320px, 390px, and 468px phone widths plus the 1440px desktop layout, including horizontal overflow, team switching, player search, pickup browsing, and profile dialogs. These are responsive browser checks, not physical iOS/Android device certification. The desktop README screenshots show the local Test Week workflow.
+No update deadline is guaranteed: macOS must run the job, Git credentials must remain usable, providers must respond, and GitHub Pages must deploy. Catch-up cannot recover a missed fantasy decision deadline. Logging out or powering off prevents execution until the user logs in again.
 
-Before opening night, the grid previews the opening week and players show UPCOMING. This is a valid report with no completed score to lock, not a failed refresh. Game times are unavailable in this schedule feed; dates/opponents are shown without invented tip-off times.
+## Setup
 
-## Schedule and publication
+Connect the desired Sleeper account in the local dashboard first. The publisher reads `config.local.yaml`; it never replaces that file with temporary cloud defaults. Git must already authenticate to the GitHub repository through the OS credential helper.
 
-`.github/workflows/pages.yml` runs at **12:17 PM America/Edmonton**. It schedules 18:17 UTC, matching noon plus 17 minutes under Alberta’s permanent UTC−6 time. Manual runs and relevant pushes to `main` also publish. GitHub can delay scheduled workflows; Public-repository schedules may be disabled after 60 days without repository activity. This is not a guaranteed deadline service.
+```bash
+.venv/bin/python publication.py run --force --setup-pages
+.venv/bin/python publication.py install
+.venv/bin/python publication.py status
+```
 
-The workflow runs offline Python and frontend-policy tests first. It then:
+The first command uploads an export and switches Pages to branch publication at `gh-pages` `/`. This requires repository administration access for the one-time Pages setting. Routine runs require push access only. The credential helper's output stays in memory and is never printed or saved in the report.
 
-1. Restores saved HTTP responses, host cooldowns, and the previous sanitized report from Actions cache.
-2. Creates a temporary configuration from checked-in model defaults and `SLEEPER_USERNAME` (a repository secret). No `.env` or email settings are uploaded.
-3. Imports this year's Sleeper NBA leagues, falling back to the previous season when none exist yet. No sample rosters are published as personal teams.
-4. Runs shared live analysis. Completed/undrafted leagues skip NBA analysis. Drafted leagues load one cached Sleeper season schedule first; NBA Stats is skipped until a regular-season game can enter the observation cutoff.
-5. Exports only allowed report fields and the four frontend assets to a fresh `dist/pages` directory.
-6. Uploads that directory to Pages and deploys it with GitHub's Pages action.
+Defaults can be overridden under `publication` in local YAML: remote, branch, hour, minute, timezone, and optional HTTPS public URL. The source branches `main` and `master` are rejected as publication destinations. See [Configuration](CONFIGURATION.md). After moving the repository or changing its virtual environment, rerun installation so absolute paths remain valid.
 
-Jobs serialize through one concurrency group. Network requests retain existing pacing, bounded timeouts, and cooldowns. There is no historical capture or automatic rapid retry. Actions cache is an optimization and can be evicted; on a cold run the same request pacing applies. A hosted NBA Stats outage still prevents fresh performance analysis; it no longer prevents displaying independently verified roster metadata and schedule data.
+## Operations and recovery
 
-## Freshness and failure behavior
+```bash
+# Run a fresh report now; retains provider cooldowns and same-day database reuse.
+.venv/bin/python publication.py run --force
 
-The browser suppresses lock/wait probabilities, decisions, and pickup recommendations when the report is older than six hours, has an invalid/future timestamp, or belongs to a different Edmonton date. It checks every minute and when a hidden tab becomes visible; open player details close when the report expires. Completed/drafting league statuses remain visible. Device clock accuracy matters to browser expiry.
+# Inspect the most recent success, pending upload, or retry reason.
+.venv/bin/python publication.py status
 
-Statistics and schedule failures produce specific alerts while preserving independent data. Missing performances suppress decisions and pickups; missing schedules suppress lock decisions while retaining observed scores. Mixed active and undrafted leagues remain visible. A roster-sync or unexpected top-level failure produces a new report with a visible failure alert and no actionable calls. Saved rosters may remain visible, but are explicitly described as potentially outdated. If no roster could be imported on a clean runner, the previous sanitized report supplies the fallback roster. Its original timestamp is retained. Player-level schedule errors are handled by the shared engine.
+# Inspect the registered macOS agent.
+launchctl print gui/$(id -u)/com.lockin.publish
+```
 
-If tests, packaging, or deployment fail, the previous deployed site remains available and will expire in the browser. The Pages workflow log records whether refresh was successful, partial, or failed. A successful deployment of an error report is not proof of successful data retrieval.
+Logs live at `logs/publication.log` and `logs/publication-error.log`. If the report uploaded but deployment was not confirmed, check the site's Pages build and public report timestamp; the agent will verify again after the retry interval. For network/API failures, wait for retries rather than repeatedly forcing requests. For changed Git credentials, restore access through the local credential helper. Never put tokens in YAML, remote URLs, or website files.
+
+To uninstall the scheduler, run `launchctl bootout gui/$(id -u)/com.lockin.publish` and remove only `~/Library/LaunchAgents/com.lockin.publish.plist`. This leaves the database, saved reports, website, and email automation intact.
+
+Back up `data/lockin.sqlite3` while no refresh is running, together with private configuration and state using your normal local backup. It is the authoritative live game store. Replay fixtures remain separately checksummed Parquet files for reproducible practice.
+
+## Freshness and display
+
+The browser and local dashboard suppress actionable results after 26 hours: one daily publication interval plus two hours of delay allowance. Midnight within the same fantasy week does not expire the report; a previous week expires when the next Monday begins. Invalid/future timestamps also suppress recommendations. The website checks every minute and when a hidden tab becomes visible. Expired player details close, while completed/drafting/upcoming statuses remain visible. The original snapshot date/time stays visible, and device clock accuracy affects browser expiry.
+
+Statistics and schedule failures preserve independent roster/schedule information without inventing a lock call. Missing performances suppress decisions and pickups. Unknown scoring rules still produce scoring gaps; omitted fouls and approximated rebound splits produce informational notes. Milestone bonuses are computed per league from observations.
+
+**Reload report** retrieves the published JSON; it does not trigger a local run. Team switching, player profiles, searches, filters, and pickup research work from the snapshot. Test Week, account connection, roster editing, and archived-league browsing remain in the local Flask app.
+
+## Phone layout and screenshots
+
+The same URL adapts at 740px and below, with bottom navigation, horizontally scrollable teams, compact roster rows, and player details in a bottom sheet. The existing [mobile roster](screenshots/mobile-roster.png) and [player sheet](screenshots/mobile-player-detail.png) captures show generic historical sample teams, not the current live scoring notes or publication status. They document the roster layout only. [Screenshot notes](screenshots/README.md) identify the remaining capture scope.
 
 ## Public data boundary
 
-The published report contains team/league display names, season, roster players, starter flags, lineup slots/order, NBA team and injury labels, weekly opponents and observed game FP, scoring coverage, observations, recommendations, and pickup results. Nested schedule fields are explicitly allowlisted. Treat these as public information. It contains no account username field, recipient addresses, email credentials, raw configuration, full league ownership list, or internal dataset paths. League-derived IDs are public identifiers, not credentials. Arbitrary newly added internal fields are excluded unless added to the export allowlist.
+The exported report contains team/league names, league-derived IDs, roster players, lineup slots, NBA teams/injury labels, opponents, observed fantasy points, scoring notes, recommendations, pickup results, and publication metadata. It contains no account username field, email addresses, credentials, full ownership lists, or internal database paths. These display fields are public.
 
-Only `dist/pages` is uploaded. `.env`, `config.local.yaml`, `state`, and raw API caches are never part of the Pages artifact. Actions caches hold public API responses and the sanitized report; they are not a secret store. Never add credentials to those paths. Headshots use locally available images when exported, otherwise NBA's image CDN, with initials if loading fails. The image CDN and optional Google Fonts are separate external requests, not NBA Stats calls.
+Only generated files are committed to the publishing branch. Existing images can be included; otherwise the site uses NBA's image CDN with an initials fallback. Google Fonts and the image CDN are independent browser requests. The database and local reports are not copied into GitHub Actions caches or the publishing branch.
 
-## Setup and recovery
-
-1. Set repository Actions secret `SLEEPER_USERNAME` to the account to publish. No Sleeper password is required.
-2. In repository **Settings → Pages**, choose **GitHub Actions** as the source.
-3. Run **Actions → Publish daily dashboard → Run workflow**, using `main`.
-4. Check the build and deploy jobs, then open the Pages link. Confirm the displayed report timestamp and any alerts.
-
-For a data failure, inspect provider status and wait for its cooldown before a manual rerun. For an inactive schedule, re-enable it in Actions. For a draft or transaction made after the daily snapshot, wait for the next scheduled import or manually run the workflow. Reloading the website alone does not trigger a run.
-
-A free GitHub Pages address needs no purchased domain. Public repositories and standard hosted Actions runners are eligible for free use subject to GitHub's usage limits. Do not select larger paid runners for this workflow.
-
-## Local verification
-
-From the project root, export saved data without network requests:
-
-```bash
-.venv/bin/python pages.py --output dist/preview
-.venv/bin/python -m http.server 8766 --bind 127.0.0.1 --directory dist
-```
-
-Open `http://127.0.0.1:8766/preview/`. The destination must be empty; use a new directory for another export. To explicitly refresh from live providers, use `pages.py --refresh` with an existing local Sleeper connection. In CI, the environment variable initializes an isolated configuration; do not set it during a local preview unless intentionally replacing the local configuration.
+## Verification
 
 ```bash
 .venv/bin/python -m pytest -q
@@ -81,8 +82,15 @@ Open `http://127.0.0.1:8766/preview/`. The destination must be empty; use a new 
 node --test tests/pages.test.cjs
 ```
 
-The Python tests check export boundaries, failed imports, successful engine routing, and nonfinite data. Node tests check expiry, historical Edmonton DST, and permanent Alberta Time. The browser uses the confirmed UTC−6 rule from November 2026 even when the device has older timezone data. Browser verification separately checks the static site at a repository subpath and the deployed public link. No test establishes future provider uptime or model accuracy.
+Tests cover scoring policies, incremental upserts, failure retention, daily due slots, wake-equivalent catch-up timing, publication deduplication, backoff, delayed deployment confirmation, and a real local Git push to a temporary bare repository to inspect the exported file boundary. The LaunchAgent property list is validated. These checks do not constitute a physical sleep/wake hardware test or establish provider uptime/model accuracy.
 
-Timezone reference: [Alberta’s new time system](https://www.alberta.ca/albertas-new-time-system-abt).
+For a local static preview without network calls:
 
-References: [Pages custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Actions schedule limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule), [Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
+```bash
+.venv/bin/python pages.py --output dist/preview
+.venv/bin/python -m http.server 8766 --bind 127.0.0.1 --directory dist
+```
+
+Use a fresh output directory each time. Open `http://127.0.0.1:8766/preview/`.
+
+References: [Apple scheduled jobs and sleep/wake behavior](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/ScheduledJobs.html), [GitHub Pages publishing sources](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site), [Pages configuration API](https://docs.github.com/en/rest/pages/pages).

@@ -119,11 +119,18 @@ def dashboard():
             and not current[t["id"]].get("archived")
             and t.get("synced_at") == current[t["id"]].get("synced_at")
         ]
-        age = (
-            dt.datetime.now(dt.timezone.utc)
-            - dt.datetime.fromisoformat(cached["generated_at"])
-        ).total_seconds()
-        if cached["date"] != str(today()) or age > 21600:
+        try:
+            age = (
+                dt.datetime.now(dt.timezone.utc)
+                - dt.datetime.fromisoformat(cached["generated_at"])
+            ).total_seconds()
+        except (ValueError, TypeError, KeyError):
+            age = float("inf")
+        week = cached.get("schedule_week", [])
+        past_week = (
+            isinstance(week, list) and len(week) == 2 and str(week[1]) < str(today())
+        )
+        if age < -300 or age > 26 * 3600 or past_week:
             cached["alerts"].insert(
                 0,
                 {
@@ -134,6 +141,13 @@ def dashboard():
             for team in cached["teams"]:
                 team["pickups"] = []
                 for row in team["results"]:
+                    if row.get("status") in {
+                        "LEAGUE_COMPLETE",
+                        "PRE_DRAFT",
+                        "DRAFTING",
+                        "UPCOMING",
+                    }:
+                        continue
                     row.update(
                         status="STALE",
                         decision=None,
@@ -144,6 +158,16 @@ def dashboard():
         analyses = {t["id"]: t for t in cached["teams"]}
         base["teams"] = [analyses.get(t["id"], t) for t in base["teams"]]
         base["alerts"] = cached["alerts"]
+        for field in (
+            "date",
+            "generated_at",
+            "observation_cutoff",
+            "schedule_week",
+            "season_start",
+            "notice",
+        ):
+            if field in cached:
+                base[field] = cached[field]
         return jsonify(base)
     from storage import CONFIG
 

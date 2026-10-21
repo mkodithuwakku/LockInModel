@@ -32,8 +32,8 @@
     const stale =
       !Number.isFinite(age) ||
       age < -300000 ||
-      age > 6 * 3600000 ||
-      report.date !== currentDate(now);
+      age > 26 * 3600000 ||
+      (Array.isArray(report.schedule_week) && report.schedule_week.length === 2 && report.schedule_week[1] < currentDate(now));
     if (stale) {
       report.alerts.unshift({
         severity: "warning",

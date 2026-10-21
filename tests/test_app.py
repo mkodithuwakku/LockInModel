@@ -87,3 +87,48 @@ def test_old_seasons_hidden_and_predraft_never_fetches_nba(client, monkeypatch):
     assert normal["teams"][0]["results"][0]["status"] == "PRE_DRAFT"
     archives = client.get("/api/dashboard?mode=live&archived=1").json
     assert {t["id"] for t in archives["teams"]} == {"new", "old"}
+
+
+@pytest.mark.parametrize(
+    "generated,expected",
+    [
+        ("2026-10-15T18:17:00+00:00", "LOCK"),
+        ("2026-10-15T14:00:00+00:00", "STALE"),
+        ("invalid", "STALE"),
+        ("2027-10-15T18:17:00+00:00", "STALE"),
+    ],
+)
+def test_local_report_preserves_snapshot_time_and_daily_expiry(
+    client, monkeypatch, generated, expected
+):
+    import datetime as dt
+    from types import SimpleNamespace
+    import app as module
+
+    class Clock(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 10, 16, 18, tzinfo=dt.timezone.utc)
+
+    monkeypatch.setattr(
+        module, "dt", SimpleNamespace(datetime=Clock, timezone=dt.timezone)
+    )
+    monkeypatch.setattr(module, "today", lambda: dt.date(2026, 10, 16))
+    saved = {
+        "date": "2026-10-15",
+        "generated_at": generated,
+        "alerts": [],
+        "teams": [
+            {
+                "id": "test",
+                "results": [{"status": "LOCK", "decision": "LOCK"}],
+                "pickups": [{"player": "Candidate"}],
+            }
+        ],
+    }
+    monkeypatch.setattr(module, "read_json", lambda *_: copy.deepcopy(saved))
+    data = client.get("/api/dashboard?mode=live").get_json()
+    assert data["generated_at"] == generated and data["date"] == saved["date"]
+    assert data["teams"][0]["results"][0]["status"] == expected
+    if expected == "STALE":
+        assert data["teams"][0]["pickups"] == []

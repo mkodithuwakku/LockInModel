@@ -163,7 +163,7 @@ def test_missing_optional_field_is_rejected_when_it_has_a_weight():
         add_fantasy_points(normalized, {"FGM": 1})
 
 
-def test_saved_flagrant_rule_migrates_without_ignoring_other_gaps():
+def test_saved_foul_rules_migrate_without_ignoring_unknown_gaps():
     from storage import validate_config
 
     cfg = load_cfg()
@@ -173,12 +173,12 @@ def test_saved_flagrant_rule_migrates_without_ignoring_other_gaps():
             "name": "Test",
             "players": [],
             "starters": [],
-            "unsupported_scoring": {"ff": -2, "tf": -1},
+            "unsupported_scoring": {"ff": -2, "tf": -1, "unknown_rule": 3},
         }
     ]
     team = validate_config(cfg)["teams"][0]
-    assert team["ignored_scoring"] == {"ff": -2}
-    assert team["unsupported_scoring"] == {"tf": -1}
+    assert team["ignored_scoring"] == {"ff": -2, "tf": -1}
+    assert team["unsupported_scoring"] == {"unknown_rule": 3}
     assert validate_config(cfg)["teams"][0] == team
 
 
@@ -189,3 +189,72 @@ def test_sleeper_suffix_variants_resolve_to_active_player():
     assert result["Tim Hardaway"] == result["Tim Hardaway Jr."] == 203501
     assert result["Wendell Carter"] == 1628976
     assert canonical_name("Gary Payton II") == canonical_name("Gary Payton")
+
+
+@pytest.mark.parametrize(
+    "assists,rebounds,expected", [(14, 19, 0), (15, 19, 3), (14, 20, 5), (16, 21, 8)]
+)
+def test_assist_rebound_milestones(assists, rebounds, expected):
+    raw = rows()
+    raw.loc[0, ["AST", "REB"]] = [assists, rebounds]
+    raw["AST15"] = 999  # Recompute from observations, never trust old derived values.
+    assert add_fantasy_points(raw, {"AST15": 3, "REB20": 5}).FP.iloc[0] == expected
+
+
+def test_custom_bonus_import_and_saved_migration():
+    from scoring import apply_scoring_policy, sleeper_bonus
+    from storage import validate_config
+
+    assert sleeper_bonus("bonus_ast_15p") == "AST15"
+    assert sleeper_bonus("bonus_reb_20p") == "REB20"
+    assert sleeper_bonus("bonus_stl_7p") == "STL7"
+    assert sleeper_bonus("bonus_unknown_5p") is None
+    team = {
+        "weights": {"PTS": 1},
+        "unsupported_scoring": {
+            "bonus_ast_15p": 3,
+            "bonus_reb_20p": 5,
+            "oreb": 0.5,
+            "dreb": 0.25,
+            "pf": -0.2,
+            "tf": -1,
+        },
+    }
+    apply_scoring_policy(team)
+    assert team["weights"] == {
+        "PTS": 1,
+        "AST15": 3,
+        "REB20": 5,
+        "OREB": 0.5,
+        "DREB": 0.25,
+        "PF": -0.2,
+    }
+    assert team["unsupported_scoring"] == {}
+    before = dict(team)
+    assert apply_scoring_policy(team) == before
+    cfg = load_cfg()
+    cfg["weights"] = {"AST15": 3, "REB20": 5, "STL7": 2}
+    validate_config(cfg)
+
+
+def test_rebound_split_and_missing_foul_policy():
+    from scoring import fantasy_points
+
+    raw = rows()
+    weights = {"REB": 1, "OREB": 0.5, "DREB": 0.25, "PF": -0.2}
+    assert add_fantasy_points(raw, weights).FP.iloc[0] == 13.75
+    raw["OREB"], raw["DREB"], raw["PF"] = 2, 8, 3
+    assert add_fantasy_points(raw, weights).FP.iloc[0] == pytest.approx(12.4)
+    assert fantasy_points(raw.iloc[0], weights) == pytest.approx(12.4)
+    assert add_fantasy_points(raw.drop(columns="DREB"), weights).FP.iloc[
+        0
+    ] == pytest.approx(13.15)
+    assert (
+        add_fantasy_points(raw.drop(columns=["OREB", "DREB"]), {"OREB": 1}).FP.iloc[0]
+        == 5
+    )
+
+
+def test_milestone_requires_its_actual_stat():
+    with pytest.raises(ValueError, match="AST"):
+        add_fantasy_points(rows().drop(columns="AST"), {"AST15": 3})

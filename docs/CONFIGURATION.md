@@ -14,16 +14,18 @@ The global `sleeper` object saves a username and season start year. The daily co
 
 ## Scoring
 
-Supported columns are PTS, REB, AST, STL, BLK, TOV, FG3M, FGM, FGA, FTM, FTA, DD, TD, PTS40, and PTS50. Weights must be finite numbers. The default sample configuration uses:
+Supported columns are PTS, REB, AST, STL, BLK, TOV, FG3M, FGM, FGA, FTM, FTA, OREB, DREB, PF, DD, TD, and milestone fields such as PTS40, PTS50, AST15, and REB20. Weights must be finite numbers. The default sample configuration uses:
 
 ```text
 0.5·PTS + REB + AST + 2·STL + 2·BLK − TOV + 0.5·FG3M
 + DD + 2·TD + 2·PTS40 + 2·PTS50
 ```
 
-Bonuses stack: a triple-double receives DD and TD; 50 points receives both point-threshold bonuses. These indicators are now retained through the full pipeline.
+Bonuses stack: a triple-double receives DD and TD; 50 points receives both point-threshold bonuses. Any positive integer threshold for PTS, REB, AST, STL, or BLK can be appended to the stat name, such as `AST15: 3`, `REB20: 5`, or `STL5: 2`. Each adds its configured weight once when the observed stat reaches that threshold. Zero disables it. The sample defaults include AST15 and REB20 at zero so existing sample scoring is unchanged.
 
-Sleeper rule names are translated explicitly, such as `to → TOV`, `tpm → FG3M`, and `bonus_pt_40p → PTS40`. The explicit scoring exception is `ff`: flagrant fouls are treated as having no effect on model points, per user instruction. Their original Sleeper weight is retained in `ignored_scoring` for traceability and does not block lock recommendations or pickup alerts. This policy applies to saved configurations and every future import. Other nonzero unsupported settings remain in `unsupported_scoring`; these still withhold recommendations and label partial FP. Technical fouls (`tf`) have not been exempted.
+Sleeper rule names are translated explicitly, including `to → TOV` and `tpm → FG3M`. Milestones matching `bonus_(pt|reb|ast|stl|blk)_<threshold>p` are imported automatically: `bonus_ast_15p → AST15` and `bonus_reb_20p → REB20`. The same migration applies when loading older saved configurations. Global and per-team weights are validated; each league retains its own formula.
+
+Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `ignored_scoring` metadata. Personal fouls (`PF`) use actual values when available and are omitted otherwise. Offensive/defensive rebound weights use actual splits when available; otherwise the model uses total rebounds with coefficient `REB weight + (OREB weight + DREB weight) / 2`, treating an absent split weight as zero. Equal split weights are exact; unequal weights are an approximation. These approved adjustments are shown as information and do not block recommendations. Other unknown nonzero rules still withhold actionable recommendations.
 
 ## Decision controls
 
@@ -65,3 +67,9 @@ The application date uses America/Edmonton. Test Week controls its own morning/n
 ## Imported player display metadata
 
 Sleeper imports preserve the ordered starter slots from `roster_positions` and `starters`, including empty positions in the source array. Bench/reserve/taxi players receive BN/IR/TAXI labels. `player_meta` stores NBA team, fantasy positions, injury status, lineup order, and source player ID. Display metadata remains available when performance data fails. It is refreshed by import; avoid manually editing synced team records. Local practice teams without slot metadata show START/BN instead of guessing a league position.
+
+## Local publication
+
+The optional `publication` mapping defaults to `remote: origin`, `branch: gh-pages`, `hour: 12`, `minute: 17`, and `timezone: America/Edmonton`. An optional HTTPS `url` supports a custom Pages domain; otherwise it is derived from the GitHub origin. Source branches `main`/`master` cannot be publication targets. GitHub credentials come from the existing OS Git credential helper, never from YAML or a generated website file.
+
+The macOS agent checks at minutes 02, 17, 32, and 47 and after login/wake. The ledger permits one successful publication per scheduled date. For other configured minutes, the next check after the configured time performs the run (at most 15 minutes later while awake). Failures retry after 15, 30, 60, 120, 240, then 360 minutes; subsequent failures remain capped at six hours. See [Hosting](HOSTING.md).

@@ -12,12 +12,15 @@ from storage import (
     organize_teams,
 )
 from fetch_data import canonical_name
-from scoring import apply_scoring_policy
+from scoring import apply_scoring_policy, sleeper_bonus
 
 BASE = "https://api.sleeper.app/v1"
 SCORING = {
     "pts": "PTS",
     "reb": "REB",
+    "oreb": "OREB",
+    "dreb": "DREB",
+    "pf": "PF",
     "ast": "AST",
     "stl": "STL",
     "blk": "BLK",
@@ -133,8 +136,9 @@ def sync(username, season):
         settings = details.get("scoring_settings")
         if not isinstance(settings, dict):
             raise DataUnavailable("League scoring rules unavailable.")
-        unsupported = {k: v for k, v in settings.items() if k not in SCORING and v != 0}
-        weights = {SCORING[k]: v for k, v in settings.items() if k in SCORING}
+        mapping = {k: SCORING.get(k) or sleeper_bonus(k) for k in settings}
+        unsupported = {k: v for k, v in settings.items() if not mapping[k] and v != 0}
+        weights = {mapping[k]: v for k, v in settings.items() if mapping[k]}
         profile = next((u for u in users if u.get("user_id") == uid), {})
         team_name = (
             (profile.get("metadata") or {}).get("team_name")

@@ -20,7 +20,7 @@ Sleeper rosters are managed in Sleeper; **Refresh live data** also checks for ne
 
 **Test Week** starts Monday morning, December 22, 2025. Reveal each night, inspect box scores and model calls, bank a score per starter, and move to the next morning. Progress persists through Sunday, December 28. The morning hides that night’s outcomes; banked scores stay fixed as later performances appear. [Full simulator guide](TEST_WEEK.md).
 
-Live analysis is an explicit refresh. It uses completed observations through the previous day for a noon report, counts remaining schedule opportunities, and labels unavailable data. Before regular-season games enter the observation cutoff, the report shows UPCOMING and previews the opening-week schedule without requesting NBA Stats. A drafted fantasy league is not proof that the NBA regular season has begun. Roster, schedule, and performance availability are handled separately. Merely opening the dashboard does not start NBA retrieval. Saved live reports become stale after six hours or a date change, at which point lock recommendations are withheld until refreshed.
+Live analysis is an explicit refresh. It uses completed observations through the previous day for a noon report, counts remaining schedule opportunities, and labels unavailable data. Before regular-season games enter the observation cutoff, the report shows UPCOMING and previews the opening-week schedule without requesting NBA Stats. A drafted fantasy league is not proof that the NBA regular season has begun. Roster, schedule, and performance availability are handled separately. Merely opening the dashboard does not start NBA retrieval. Saved live reports expire after 26 hours; their original timestamp remains visible across midnight. The Mac publishes daily and catches up after sleep/login.
 
 Completed, pre-draft, and drafting leagues display their state without NBA analysis. A newer imported season archives older teams; enable **Show archived leagues** to view them. The daily automation and live refresh discover the current season (2026 for 2026–27), falling back to the last saved season until new leagues exist. The automation runs at noon, not continuously.
 
@@ -42,7 +42,7 @@ For imported leagues, every team's roster is used to identify unrostered players
 
 The original bonus-loss bug is fixed: double-double, triple-double, 40-point, and 50-point flags survive normalization. The configured bonuses stack. Confirm league semantics if using a new scoring format.
 
-Flagrant-foul penalties are deliberately ignored by this model. Other missing rules, including technical-foul penalties, remain scoring gaps. The UI shows partial FP estimates and withholds lock decisions for those leagues. Data failures are alerts, not zero-game assumptions.
+Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `ignored_scoring` metadata. Personal fouls (`PF`) use actual values when available and are omitted otherwise. Offensive/defensive rebound weights use actual splits when available; otherwise the model uses total rebounds with coefficient `REB weight + (OREB weight + DREB weight) / 2`, treating an absent split weight as zero. Equal split weights are exact; unequal weights are an approximation. These approved adjustments are shown as information and do not block recommendations. Other unknown nonzero rules still withhold actionable recommendations.
 
 ## Interview description
 

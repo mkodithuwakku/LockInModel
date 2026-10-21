@@ -36,8 +36,8 @@ def test_import_records_full_ownership_and_scoring_gaps(tmp_path, monkeypatch):
     assert sleeper.sync("example", "2025")["count"] == 1
     t = saved[0]["teams"][0]
     assert "Derrick White" in t["owned_players"]
-    assert t["ignored_scoring"] == {"ff": -2}
-    assert t["unsupported_scoring"] == {"tf": -2} and t["weights"]["PTS"] == 0.5
+    assert t["ignored_scoring"] == {"ff": -2, "tf": -2}
+    assert t["unsupported_scoring"] == {} and t["weights"]["PTS"] == 0.5
 
 
 def test_partial_import_failure_preserves_existing_teams(tmp_path, monkeypatch):

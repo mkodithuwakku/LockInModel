@@ -20,9 +20,9 @@ test("fresh report retains recommendations without mutating original", () => {
   assert.equal(result.teams[0].results[0].decision, "LOCK");
   assert.equal(source.stale, undefined);
 });
-test("six hour expiry removes decisions, probabilities and pickups", () => {
+test("26 hour expiry removes decisions, probabilities and pickups", () => {
   const source = fixture(),
-    result = prepareReport(source, new Date("2026-10-16T00:18:00Z"));
+    result = prepareReport(source, new Date("2026-10-16T20:18:00Z"));
   const p = result.teams[0].results[0];
   assert.equal(p.status, "STALE");
   assert.equal(p.decision, null);
@@ -30,12 +30,12 @@ test("six hour expiry removes decisions, probabilities and pickups", () => {
   assert.deepEqual(result.teams[0].pickups, []);
   assert.equal(source.teams[0].results[0].decision, "LOCK");
 });
-test("Edmonton midnight expires a recent previous-day report", () => {
+test("daily report remains available across midnight", () => {
   const source = fixture();
   source.generated_at = "2026-10-16T05:45:00Z";
   assert.equal(
     prepareReport(source, new Date("2026-10-16T06:01:00Z")).stale,
-    true,
+    false,
   );
 });
 test("Edmonton date respects historical DST and permanent Alberta Time", () => {
@@ -66,4 +66,18 @@ test("expired offseason reports preserve season status", () => {
       .status,
     "LEAGUE_COMPLETE",
   );
+});
+
+test("daily snapshot stays available until the next refresh plus two hour grace", () => {
+  assert.equal(prepareReport(fixture(), new Date("2026-10-16T18:17:00Z")).stale, false);
+  assert.equal(prepareReport(fixture(), new Date("2026-10-16T20:17:00Z")).stale, false);
+  assert.equal(prepareReport(fixture(), new Date("2026-10-16T20:17:01Z")).stale, true);
+});
+
+test("previous fantasy week expires at Monday even within the daily window", () => {
+  const source = fixture();
+  source.date = "2026-10-18";
+  source.generated_at = "2026-10-18T18:17:00Z";
+  source.schedule_week = ["2026-10-12", "2026-10-18"];
+  assert.equal(prepareReport(source, new Date("2026-10-19T06:01:00Z")).stale, true);
 });

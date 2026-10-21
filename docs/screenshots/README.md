@@ -25,3 +25,9 @@ observed game data. Future replay scores remain hidden until revealed.
 When these screens change, replace affected captures and keep captions accurate.
 Keep personal account names, email addresses, and connection settings out of the
 images. Wait for loading and transient toasts to finish before capture.
+
+The existing images document the roster and practice layout. They predate the
+local SQLite/daily publisher changes and do not demonstrate the current live
+scoring-policy notes, 26-hour expiry, or wake catch-up. A generic live Data alerts
+capture with omitted fouls and rebound approximation is the remaining screenshot
+to capture; do not interpret the historical images as verification of that state.
