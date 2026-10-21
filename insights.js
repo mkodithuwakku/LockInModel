@@ -1,6 +1,33 @@
-/* Observed team form only: no projections or changes to league scoring. */
+/* Pure presentation helpers; never mutate synced rosters or recompute scoring. */
 (function (root) {
   "use strict";
+  function rosterSheet(team, useRecommendation = true) {
+    const original = (team.results || []).map((p, i) => ({p, i}));
+    const daily = team.recommended_lineup;
+    const fallback = () => ({recommended: false, rows: original});
+    if (!useRecommendation || !daily || daily.status === "unavailable" || !Array.isArray(daily.slots)) return fallback();
+    const match = (entry) => original.find(({p}) => entry.player_id && p.player_id
+      ? String(entry.player_id) === String(p.player_id) : entry.player === p.player);
+    const assigned = new Map();
+    const starters = [];
+    for (const [order, slot] of daily.slots.entries()) {
+      if (!slot.player) {
+        starters.push({i: null, p: {player: "Unfilled", vacant: true, starter: true, roster_slot: slot.slot, lineup_order: order}});
+        continue;
+      }
+      const row = match(slot);
+      // Never display a plan against a different roster snapshot.
+      if (!row || assigned.has(row.i)) return fallback();
+      assigned.set(row.i, slot);
+      starters.push({i: row.i, p: {...row.p, starter: true, roster_slot: slot.slot, lineup_order: order, lineup_fp: slot.projected_fp}});
+    }
+    const others = original.filter(({i}) => !assigned.has(i)).map(({p, i}, order) => {
+      const exclusion = (daily.bench || []).find(entry => match(entry)?.i === i);
+      return {i, p: {...p, starter: false, roster_slot: ["IR", "TAXI"].includes(p.roster_slot) ? p.roster_slot : "BN",
+        lineup_order: daily.slots.length + order, lineup_reason: exclusion?.reason || "Not selected in this snapshot"}};
+    });
+    return {recommended: true, rows: [...starters, ...others]};
+  }
   function teamForm(players, cutoff) {
     const mean = (rows) => rows.reduce((sum, row) => sum + row.fp, 0) / rows.length;
     return players.map((player, index) => {
@@ -52,7 +79,7 @@
         return {...b, icon, name, label: `${name} · ${b.tied ? "Tied #" : "#"}${b.rank} NBA-wide · ${value} ${stat} · ${b.date}`};
       });
   }
-  const helpers = { teamForm, sparkline, dailyBadges, previousDate };
+  const helpers = { rosterSheet, teamForm, sparkline, dailyBadges, previousDate };
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);

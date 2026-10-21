@@ -2851,3 +2851,29 @@ button.lineup-name:hover strong { color: #d0b483; }
 @media (max-width: 740px) {
   .nba-team-logo { width: 12px; height: 12px; }
 }
+
+/* The saved optimal lineup is the roster sheet, with one compact summary. */
+.right-rail { grid-template-columns: minmax(0, 1fr); }
+.roster-plan { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.roster-plan-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.roster-plan h3 { margin: 3px 0 0; font: 600 22px/1.1 var(--display); }
+.roster-plan .section-label { font-size: 9px; color: var(--muted); }
+.roster-plan-total { display: flex; flex-direction: column; text-align: right; gap: 3px; }
+.roster-plan-total strong { font: 600 24px/1 var(--display); color: var(--ink); }
+.roster-plan-total span, .roster-plan-method { font-size: 10px; color: var(--muted); }
+.roster-plan-method { margin-top: 9px; }
+.roster-plan-method summary { cursor: pointer; width: fit-content; }
+.roster-plan-method p { line-height: 1.6; max-width: 760px; }
+.roster-plan .lineup-message { padding: 0; margin: 8px 0; }
+.roster-vacancy { display: flex; align-items: center; gap: 12px; padding: 9px 12px; margin-bottom: 6px; border: 1px dashed #453640; border-radius: 8px; color: var(--muted); font-size: 11px; }
+.roster-vacancy small { display: block; margin-top: 3px; font-size: 9px; }
+.roster-vacancy > span:last-child { margin-left: auto; }
+.roster-bench-reason { font-size: 9px; color: var(--muted); margin-top: 3px; }
+@media (max-width: 740px) {
+  .roster-plan h3 { font-size: 20px; }
+  .roster-plan-total span { max-width: 100px; font-size: 9px; }
+  .roster-bench-reason { font-size: 8px; }
+}
+
+.roster-empty-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 18px; }
+.roster-empty-slots small { color: var(--muted); font-size: 10px; }
