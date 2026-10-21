@@ -265,7 +265,11 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
         "partial": "Best lineup among players with verified schedules and projections; some inputs are missing.",
         "ready": "Maximum projected total across eligible players and league slots.",
         "no_games": "No available roster players have a scheduled game today.",
-        "empty": "No remaining eligible starts with a positive projected contribution.",
+        "empty": (
+            "Today's available games have already started or finished. No remaining starts to recommend."
+            if started and not candidates
+            else "No remaining eligible starts with a positive projected contribution."
+        ),
     }[status]
     return {
         "date": date,

@@ -2782,3 +2782,5 @@ button.lineup-name:hover strong { color: #74dfc2; }
   .right-rail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .daily-lineup { margin-bottom: 0; }
 }
+
+.lineup-slot-list { padding: 0 16px; color: #8faeb4; font: 10px/1.7 var(--mono); }

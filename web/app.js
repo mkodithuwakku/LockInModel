@@ -349,8 +349,7 @@ function renderLineup() {
   };
   target.innerHTML = `<header class="lineup-heading"><div><span class="section-label">${esc(dateLabel)}</span><h3 id="lineup-title">Recommended lineup</h3></div></header>
     ${available ? `<div class="lineup-summary"><span><strong>${fmt(daily.total_projected_fp)}</strong><small>projected FP</small></span><span class="lineup-fill">${daily.filled_slots}/${slots.length}<small>slots filled</small></span></div>
-    <div class="lineup-columns" aria-hidden="true"><span>Slot</span><span>Player / matchup</span><span>Proj.</span></div>
-    ${slots.map(p => playerRow(p)).join("")}
+    ${daily.filled_slots ? `<div class="lineup-columns" aria-hidden="true"><span>Slot</span><span>Player / matchup</span><span>Proj.</span></div>${slots.map(p => playerRow(p)).join("")}` : `<p class="lineup-slot-list">${slots.map(p => esc(p.slot)).join(" · ")}</p>`}
     ${daily.status !== "ready" ? `<p class="lineup-message">${esc(daily.reason)}</p>` : ""}
     ${bench.length ? `<details class="lineup-bench"><summary>Not selected <span>${bench.length}</span></summary>${bench.map(p => playerRow(p, true)).join("")}</details>` : ""}` : `<p class="lineup-message">${esc(daily?.reason || "Awaiting a fresh report with league slots and projections.")}</p>`}
     <footer class="lineup-footnote">${state.mode === "test" ? "Pregame replay · before today's scores." : "Pregame snapshot · check existing Sleeper locks and tipoffs."}${priorCount ? ` ${priorCount} projection${priorCount === 1 ? " uses" : "s use"} prior-season history.` : ""}
