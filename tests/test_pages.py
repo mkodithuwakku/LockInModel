@@ -179,6 +179,9 @@ def test_lineup_export_is_allowlisted_and_failure_preserves_dated_snapshot():
     assert "PRIVATE" not in json.dumps(exported)
     assert exported["teams"][0]["recommended_lineup"]["slots"][0]["projected_fp"] == 40
     failed = pages.unavailable(exported, "Refresh failed")
-    assert failed["teams"][0]["recommended_lineup"] == exported["teams"][0]["recommended_lineup"]
+    assert (
+        failed["teams"][0]["recommended_lineup"]
+        == exported["teams"][0]["recommended_lineup"]
+    )
     assert failed["refresh_status"] == "failed"
     assert exported["teams"][0]["recommended_lineup"]["status"] == "ready"
