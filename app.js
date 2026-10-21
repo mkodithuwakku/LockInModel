@@ -11,14 +11,6 @@ const esc = (v) =>
       ],
   );
 const fmt = (v, d = 1) => (v == null ? "—" : Number(v).toFixed(d));
-const colors = [
-  "#b64729",
-  "#355b4d",
-  "#42627a",
-  "#80622d",
-  "#754757",
-  "#5f6645",
-];
 let state = {
   data: null,
   team: localStorage.getItem("lockin-team"),
@@ -64,9 +56,20 @@ function portrait(p) {
     : `/api/portrait/${encodeURIComponent(id)}`;
   return `<div class="portrait"><span class="initials">${esc(initials)}</span>${/^\d+$/.test(id) ? `<img src="${imageUrl}" alt="${esc(p.player)}" loading="lazy">` : ""}</div>`;
 }
+function teamPicture(t) {
+  const initials = t.team_name.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("");
+  let url = null;
+  try {
+    const parsed = new URL(t.team_avatar_url);
+    if (parsed.protocol === "https:" && parsed.host === "sleepercdn.com" &&
+        /^\/(uploads|avatars)\//.test(parsed.pathname) && !parsed.username && !parsed.password)
+      url = parsed.href;
+  } catch (_) { /* Local/sample teams can have no photo. */ }
+  return `<span class="team-symbol" aria-hidden="true"><span class="initials">${esc(initials)}</span>${url ? `<img src="${esc(url)}" alt="" referrerpolicy="no-referrer" decoding="async">` : ""}</span>`;
+}
 function attachImageFallback() {
-  document.querySelectorAll(".portrait img").forEach((img) => {
-    const container = img.closest(".portrait");
+  document.querySelectorAll(".portrait img, .team-symbol img").forEach((img) => {
+    const container = img.closest(".portrait, .team-symbol");
     const loaded = () => container.classList.add("is-loaded");
     const failed = () => {
       container.classList.remove("is-loaded");
@@ -204,14 +207,8 @@ function render() {
   $("#alert-count").textContent = state.data.alerts.length;
   $("#team-list").innerHTML = state.data.teams
     .map(
-      (t, i) =>
-        `<button class="team-nav ${t.id === state.team ? "active" : ""}" data-team="${esc(t.id)}" ${t.id === state.team ? 'aria-current="true"' : ""}><span class="team-symbol" style="--team-color:${colors[i % colors.length]}">${esc(
-          t.team_name
-            .split(" ")
-            .map((n) => n[0])
-            .slice(0, 2)
-            .join(""),
-        )}</span><span class="label"><strong>${esc(t.team_name)}</strong><small>${esc(t.league_name)}${t.source === "sleeper" ? " · " + esc(t.season) + (t.archived ? " · ARCHIVED" : "") : " · TEST"}</small></span></button>`,
+      (t) =>
+        `<button class="team-nav ${t.id === state.team ? "active" : ""}" data-team="${esc(t.id)}" ${t.id === state.team ? 'aria-current="true"' : ""}>${teamPicture(t)}<span class="label"><strong>${esc(t.team_name)}</strong><small>${esc(t.league_name)}${t.source === "sleeper" ? " · " + esc(t.season) + (t.archived ? " · ARCHIVED" : "") : " · TEST"}</small></span></button>`,
     )
     .join("");
   $("#page-title").textContent =
@@ -813,7 +810,7 @@ if (hosted) {
   function recheckPublishedReport() {
     if (!state.data || !publishedSource) return;
     const next = LockInPages.prepareReport(publishedSource);
-    const lineupChanged = next.teams.some((t, i) => t.recommended_lineup?.status !== state.data.teams[i]?.recommended_lineup?.status);
+    const lineupChanged = next.teams.some((t) => t.recommended_lineup?.status !== state.data.teams[i]?.recommended_lineup?.status);
     if (next.stale === state.data.stale && !lineupChanged) return;
     render();
     if (state.data.stale && $("#player-dialog").open)
