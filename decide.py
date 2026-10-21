@@ -14,6 +14,7 @@ from fetch_data import (
 from scoring import add_fantasy_points
 from model import rolling_baseline, lock_recommendation
 from transport import DataUnavailable
+from season_history import blend_seasons
 
 UNSET = object()
 
@@ -27,6 +28,7 @@ def per_player_week_decision(
     reference=None,
     remaining_games=UNSET,
     career_prior=UNSET,
+    previous_games=None,
 ):
     reference = reference or dt.date.today()
     start, end = get_week_bounds(reference)
@@ -73,6 +75,21 @@ def per_player_week_decision(
         base = (recent if not recent.empty else logs).tail(
             cfg["decision"]["lookback_games"]
         )
+        blend = blend_seasons(
+            logs, previous_games, weights, cfg["decision"]["lookback_games"], reference
+        )
+        if blend:
+            history, current_count, prior_count = blend
+            base = add_fantasy_points(history, weights)
+            # These prior games are already real rows in the window; do not
+            # count them again as a pseudo-game mean-shrinkage prior.
+            career_prior = None
+            result.update(
+                baseline_source="blended_seasons",
+                baseline_current_season_games=current_count,
+                baseline_prior_season_games=prior_count,
+                baseline_window_games=cfg["decision"]["lookback_games"],
+            )
         week = filter_week_games(logs, start, end)
         if week.empty:
             baseline = rolling_baseline(

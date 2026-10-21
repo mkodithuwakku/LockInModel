@@ -258,3 +258,90 @@ def test_rebound_split_and_missing_foul_policy():
 def test_milestone_requires_its_actual_stat():
     with pytest.raises(ValueError, match="AST"):
         add_fantasy_points(rows().drop(columns="AST"), {"AST15": 3})
+
+
+def blended_decision(current, previous, reference="2026-10-21", remaining=2):
+    from test_lineup import projection_cfg
+
+    return per_player_week_decision(
+        "Test",
+        current,
+        {"PTS": 1},
+        projection_cfg(),
+        "A",
+        reference=pd.Timestamp(reference),
+        remaining_games=remaining,
+        career_prior=999,
+        previous_games=previous,
+    )
+
+
+@pytest.mark.parametrize(
+    "reference,game_date", [("2026-10-21", "2026-10-20"), ("2027-02-17", "2027-02-16")]
+)
+def test_opening_or_injury_return_big_game_can_lock(reference, game_date):
+    from test_lineup import logs, prior_logs
+
+    prior = prior_logs()
+    strong = blended_decision(logs([50], [game_date]), prior, reference)
+    weak = blended_decision(logs([9], [game_date]), prior, reference)
+    assert strong["decision"] == "LOCK" and strong["p_lock"] > 0.8
+    assert weak["decision"] == "WAIT"
+    assert strong["fp_mean_recent"] == 23  # 9 actual prior games, no extra shrinkage
+    assert strong["sample_size"] == 10
+    assert strong["baseline_current_season_games"] == 1
+    assert strong["baseline_prior_season_games"] == 9
+    assert strong["last_game_fp"] == 50 and len(strong["history"]) == 1
+
+
+def test_lock_blend_excludes_future_and_cannot_lock_old_games():
+    from test_lineup import logs, prior_logs
+
+    current = logs([50], ["2026-10-20"])
+    prior = prior_logs()
+    before = blended_decision(current, prior)
+    polluted_current = pd.concat([current, logs([999], ["2026-10-22"])])
+    polluted_prior = pd.concat([prior, logs([999, 999], ["2026-10-19", "2027-03-01"])])
+    assert before == blended_decision(polluted_current, polluted_prior)
+    assert blended_decision(current, prior, remaining=None)["decision"] is None
+    assert blended_decision(current, prior, remaining=0)["p_lock"] == 1
+    assert (
+        blended_decision(current, prior, reference="2026-10-28")["status"] == "NO_GAME"
+    )
+    empty = blended_decision(current.iloc[:0], prior)
+    assert empty["status"] == "NO_HISTORY" and empty["decision"] is None
+
+
+def test_lock_blend_transitions_and_handles_missing_or_invalid_history():
+    from test_lineup import logs, prior_logs
+
+    current = logs([9] * 10, pd.date_range(end="2026-10-20", periods=10))
+    assert blended_decision(current, prior_logs()) == blended_decision(current, None)
+    one = current.tail(1)
+    assert blended_decision(one, prior_logs().drop(columns="PTS")) == blended_decision(
+        one, None
+    )
+    sparse = blended_decision(one, prior_logs(2))
+    assert sparse["sample_size"] == 3 and sparse["baseline_prior_season_games"] == 2
+
+
+def test_lock_rarity_uses_prior_games_and_excludes_current_performance():
+    from test_lineup import logs, prior_logs
+    from model import rolling_baseline
+    from season_history import blend_seasons
+
+    previous = prior_logs(9).assign(STL=[0, 1, 2] * 3)
+    current = logs([50], ["2026-10-20"]).assign(STL=8)
+    history, _, _ = blend_seasons(current, previous, {"PTS": 1}, 10, "2026-10-21")
+    baseline = rolling_baseline(add_fantasy_points(history, {"PTS": 1}))
+    assert baseline["rare_means"]["STL"] == 1
+    assert (
+        rarity_boost(
+            current.iloc[0],
+            baseline["rare_means"],
+            baseline["rare_stds"],
+            ["STL"],
+            1.75,
+        )
+        > 0
+    )

@@ -191,7 +191,7 @@ The rationale below describes how each choice fits the implementation, rather th
 For a selected player, `per_player_week_decision()` in [decide.py](decide.py) follows this path:
 
 1. Normalize observed logs, apply league weights, and select the latest completed game in the Monday–Sunday week. No eligible game yields `NO_GAME`; no history yields `NO_HISTORY`.
-2. Build a baseline from the configured recent window (defaults: 14 days, at most 10 games, with older history as a fallback). `rolling_baseline()` weights recent games exponentially, blends the mean with an available prior, and applies variance floors for sparse samples. The current game participates in the performance baseline but is excluded from rarity comparisons.
+2. Build a baseline from the configured recent window (defaults: 14 days, at most 10 games, with older history as a fallback). `rolling_baseline()` weights games exponentially, blends the mean with an available prior, and applies variance floors for sparse samples. Before a player has 10 current-season games, saved prior-season games fill the window instead of applying a second mean-shrinkage prior. The current game participates in the performance baseline but is excluded from rarity comparisons.
 3. Obtain a verified remaining-game count. An unavailable schedule yields `SCHEDULE_UNAVAILABLE` and `decision: null`; a verified zero is a valid model input.
 4. Estimate the chance that at least one future performance exceeds the current score:
 
@@ -199,7 +199,7 @@ For a selected player, `per_player_week_decision()` in [decide.py](decide.py) fo
    p_future_beats = 1 - Φ((current_fp - mean) / standard_deviation)^remaining_games
    ```
 
-   This assumes independent future scores from the same Normal distribution. Replay uses a prior-season game average; the live provider uses season observations older than 14 days, not additional career requests.
+   This assumes independent future scores from the same Normal distribution. For sparse current-season histories, saved previous-season games supply real observations for the baseline and rarity comparison. After that bootstrap, replay uses a prior-season game average and the live provider uses season observations older than 14 days as its shrinkage prior. No additional career requests are made.
 
 5. Start the lock score at `1 - p_future_beats`, then apply rarity, small-sample, remaining-opportunity, and optional conservative-mode adjustments. Clamp to `[0, 1]`; scores at least `0.5` become `LOCK`. Those adjustments make the final value a heuristic preference, not a calibrated probability.
 6. Return the score, baseline, opportunities, history, and explanation. The engine withholds actionable output when league scoring is incomplete. The user acts in Sleeper, or banks the score locally in Test Week.
@@ -212,7 +212,7 @@ Pickup analysis is separate: it needs at least 13 observations, compares the las
 
 ## Deep dive: the daily lineup
 
-The engine scores history strictly **before the selected day**, then uses the configured recency-weighted baseline to project one game per eligible roster player. The projection uses current-season observations first, then current-season Sleeper / RotoWire forecasts, then locally saved historical baselines. Every roster player receives a forecast independently of daily start eligibility. Sources and dates are labeled; missing inputs never become invented zero-point forecasts. Expected milestone bonuses use supplied frequencies or an explicit Poisson approximation, rather than thresholding an average stat line.
+The engine scores history strictly **before the selected day**, then uses the configured recency-weighted baseline to project one game per eligible roster player. With fewer than 10 current-season games, projections and lock baselines fill the configured game window with the latest available previous-season games. One current game plus nine prior games gradually becomes ten current games, weighted toward newer performances. This also applies to players returning from injury midseason. Once the window is filled by current-season games, the normal current-season model takes over. Without usable current observations, projections fall back to current-season Sleeper / RotoWire forecasts, then locally saved historical baselines. The [player details](docs/screenshots/season-blend-mobile.png) show the actual current/prior game counts. Every roster player receives a forecast independently of daily start eligibility. Sources and dates are labeled; missing inputs never become invented zero-point forecasts. Expected milestone bonuses use supplied frequencies or an explicit Poisson approximation, rather than thresholding an average stat line.
 
 `lineup.py` solves a maximum-weight assignment with the Hungarian algorithm. A flexible 50-FP PG/SG goes into SG when that frees PG for a 49-FP PG-only player, instead of greedily blocking that player. Every active league slot is represented, including duplicate UTIL slots and currently empty starters; players appear at most once. Zero-point vacancies allow unfillable or negative-contribution positions to remain empty. Runtime is `O(slots² × (players + slots))`, with no extra dependency or hardcoded league shape.
 

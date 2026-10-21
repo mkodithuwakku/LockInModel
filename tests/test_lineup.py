@@ -163,7 +163,10 @@ def logs(points, dates=None):
                 TOV=1,
                 FG3M=2,
             )
-            for pts, date in zip(points, dates or ["2026-10-19", "2026-10-20", DATE])
+            for pts, date in zip(
+                points,
+                dates if dates is not None else ["2026-10-19", "2026-10-20", DATE],
+            )
         ]
     )
 
@@ -198,7 +201,7 @@ def test_projection_uses_league_formula_and_never_today_or_future():
         project_players(games, fallback, {"PTS": 1}, cfg, DATE)["A"][
             "projection_source"
         ]
-        == "current_season"
+        == "blended_seasons"
     )
     assert (
         project_players(games, None, {"FTM": 1}, cfg, DATE) == {}
@@ -229,3 +232,100 @@ def test_prior_season_fallback_is_local_and_checksum_verified(tmp_path, monkeypa
     del provider._lineup_history
     path.write_bytes(b"corrupt")
     assert provider.lineup_history().empty
+
+
+def projection_cfg(size=10, decay=1):
+    return {
+        "decision": {
+            "lookback_games": size,
+            "recent_days": 14,
+            "decay": decay,
+            "prior_weight_games": 12,
+        }
+    }
+
+
+def prior_logs(count=20):
+    return logs([20] * count, pd.date_range("2026-03-01", periods=count))
+
+
+@pytest.mark.parametrize(
+    "count, expected", [(1, 18.9), (3, 16.7), (9, 10.1), (10, 9.0)]
+)
+def test_current_games_gradually_replace_prior_games(count, expected):
+    current = logs([9] * count, pd.date_range(end="2026-10-20", periods=count))
+    result = project_players(current, prior_logs(), {"PTS": 1}, projection_cfg(), DATE)[
+        "A"
+    ]
+    assert result["projected_fp"] == expected
+    assert result["projected_stats"]["PTS"] == expected
+    assert result["sample_size"] == 10
+    if count < 10:
+        assert result["projection_source"] == "blended_seasons"
+        assert result["current_season_games"] == count
+        assert result["prior_season_games"] == 10 - count
+    else:
+        assert result["projection_source"] == "current_season"
+        # Once sufficient, changing prior-season results cannot affect the estimate.
+        assert (
+            project_players(
+                current,
+                prior_logs().assign(PTS=999),
+                {"PTS": 1},
+                projection_cfg(),
+                DATE,
+            )["A"]
+            == result
+        )
+
+
+def test_blend_recency_and_milestones_use_actual_games_not_mean_thresholds():
+    current = logs([9], ["2026-10-20"]).assign(AST=14)
+    prior = prior_logs()
+    weighted = project_players(
+        current, prior, {"PTS": 1}, projection_cfg(4, 0.5), DATE
+    )["A"]
+    assert weighted["projected_fp"] == round((20 * (0.125 + 0.25 + 0.5) + 9) / 1.875, 2)
+    bonus = project_players(
+        current, prior, {"PTS": 1, "AST15": 5}, projection_cfg(), DATE
+    )["A"]
+    assert bonus["projected_stats"]["AST"] == 14.9
+    assert bonus["projected_fp"] == 23.4  # 18.9 points + 9/10 games' five-point bonus.
+
+
+def test_blend_respects_dates_missing_history_and_actual_sample_counts():
+    current = logs([9, 999], ["2026-10-20", DATE])
+    prior = pd.concat([prior_logs(), logs([999, 999], ["2026-10-19", "2026-10-22"])])
+    result = project_players(current, prior, {"PTS": 1}, projection_cfg(), DATE)["A"]
+    assert result["projected_fp"] == 18.9 and result["last_played"] == "2026-10-20"
+    sparse = project_players(
+        current, prior_logs(2), {"PTS": 1}, projection_cfg(), DATE
+    )["A"]
+    assert sparse["sample_size"] == 3 and sparse["prior_season_games"] == 2
+    assert sparse["projected_fp"] == round(49 / 3, 2)
+    for absent in (None, prior_logs().assign(PTS=-1)):
+        result = project_players(current, absent, {"PTS": 1}, projection_cfg(), DATE)[
+            "A"
+        ]
+        assert (
+            result["projected_fp"] == 9
+            and result["projection_source"] == "current_season"
+        )
+
+
+def test_blended_components_omit_unavailable_provider_splits():
+    current = logs([9], ["2026-10-20"]).assign(PF=2, OREB=3, DREB=17)
+    result = project_players(
+        current,
+        prior_logs(),
+        {"PTS": 1, "OREB": 1, "DREB": 1, "PF": -1},
+        projection_cfg(),
+        DATE,
+    )["A"]
+    assert result["projection_source"] == "blended_seasons"
+    assert result["projected_fp"] == 38.9
+    assert (
+        "PF" not in result["projected_stats"]
+        and "OREB" not in result["projected_stats"]
+    )
+    assert result["scoring_notes"]

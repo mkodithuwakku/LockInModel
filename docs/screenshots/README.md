@@ -11,6 +11,7 @@
   keeps players first, with summary counters and insights below the full roster. The preview is not
   a live league or a freshly fetched report.
 - `roster-first-mobile.png`: the same compact roster and lineup summary at 390px.
+- `season-blend-mobile.png`: player details showing a 9-FP completed game, an 11.9-FP projection, and one current-season plus nine prior-season games for both the projection and lock baseline. The configured window is 10 games. This documents provenance, not measured prediction accuracy.
 
 Earlier screenshots below predate the restrained plum palette and weekly tile forecasts,
 and most also predate the integrated lineup. Their separate lineup

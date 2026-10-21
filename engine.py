@@ -212,6 +212,11 @@ def build_dashboard(
                         reference=reference,
                         remaining_games=remaining,
                         career_prior=prior,
+                        previous_games=(
+                            fallback[fallback.PLAYER_ID.astype(str) == pid]
+                            if fallback is not None and not fallback.empty
+                            else None
+                        ),
                     )
                     if (
                         schedule_error
@@ -298,11 +303,13 @@ def build_dashboard(
             profile = profiles.get(pid)
             meta = roster_metadata(team, row["player"], sleeper_players)
             forecast = forecasts.get(str(meta.get("sleeper_id")))
-            # Current game history wins; current forecasts replace old-season baselines.
+            # Current and blended observations win; forecasts replace prior-only baselines.
             if getattr(provider, "stats_error", None):
                 profile = None
             if forecast and (
-                not profile or profile.get("projection_source") != "current_season"
+                not profile
+                or profile.get("projection_source")
+                not in {"current_season", "blended_seasons"}
             ):
                 try:
                     profile = forecast_profile(

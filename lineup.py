@@ -6,6 +6,7 @@ import pandas as pd
 
 from fetch_data import normalize_stats_for_scoring
 from model import rolling_baseline
+from season_history import blend_seasons
 from scoring import add_fantasy_points, effective_weights
 from transport import DataUnavailable
 
@@ -103,6 +104,20 @@ def project_players(games, fallback, weights, cfg, reference):
     """Use only games strictly before the target day, including in night replay."""
     reference = pd.Timestamp(reference)
     profiles = {}
+    size = cfg["decision"]["lookback_games"]
+    season_start = pd.Timestamp(
+        year=reference.year if reference.month >= 10 else reference.year - 1,
+        month=10,
+        day=1,
+    )
+    previous = {}
+    if fallback is not None and not fallback.empty:
+        previous = {
+            str(pid): h
+            for pid, h in fallback[
+                fallback.GAME_DATE < min(reference, season_start)
+            ].groupby("PLAYER_ID")
+        }
     for source, frame in (("current_season", games), ("prior_season", fallback)):
         if frame is None or frame.empty:
             continue
@@ -113,21 +128,43 @@ def project_players(games, fallback, weights, cfg, reference):
             pid = str(pid)
             if pid in profiles:
                 continue
+            profile_source = source
+            counts = {}
+            if source == "current_season":
+                blend = blend_seasons(
+                    history, previous.get(pid), weights, size, reference
+                )
+                if blend:
+                    history, current_count, prior_count = blend
+                    profile_source = "blended_seasons"
+                    counts = {
+                        "current_season_games": current_count,
+                        "prior_season_games": prior_count,
+                        "projection_window_games": size,
+                    }
             try:
                 scored = add_fantasy_points(
                     normalize_stats_for_scoring(history), weights
                 ).sort_values("GAME_DATE")
-                recent = scored[
-                    scored.GAME_DATE
-                    >= reference - pd.Timedelta(days=cfg["decision"]["recent_days"])
-                ]
+                recent = (
+                    scored
+                    if profile_source == "blended_seasons"
+                    else scored[
+                        scored.GAME_DATE
+                        >= reference - pd.Timedelta(days=cfg["decision"]["recent_days"])
+                    ]
+                )
                 window = (recent if not recent.empty else scored).tail(
                     cfg["decision"]["lookback_games"]
                 )
-                older = scored[
-                    scored.GAME_DATE
-                    < reference - pd.Timedelta(days=cfg["decision"]["recent_days"])
-                ]
+                older = (
+                    scored.iloc[:0]
+                    if profile_source == "blended_seasons"
+                    else scored[
+                        scored.GAME_DATE
+                        < reference - pd.Timedelta(days=cfg["decision"]["recent_days"])
+                    ]
+                )
                 prior = (
                     float(older.FP.mean())
                     if not recent.empty and not older.empty
@@ -170,8 +207,10 @@ def project_players(games, fallback, weights, cfg, reference):
                     "DREB",
                     "PF",
                 ):
-                    if stat not in window or stat in window.attrs.get(
-                        "imputed_stats", []
+                    if (
+                        stat not in window
+                        or stat in window.attrs.get("imputed_stats", [])
+                        or window[stat].isna().any()
                     ):
                         continue
                     value_stat = sum(
@@ -189,7 +228,8 @@ def project_players(games, fallback, weights, cfg, reference):
                         stats[stat] = round(value_stat, 2)
                 profiles[pid] = {
                     "projected_fp": round(value, 2),
-                    "projection_source": source,
+                    "projection_source": profile_source,
+                    **counts,
                     "projected_stats": stats,
                     "as_of": str(reference.date()),
                     "scoring_notes": effective_weights(

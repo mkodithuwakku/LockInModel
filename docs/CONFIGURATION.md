@@ -33,7 +33,7 @@ Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `lookback_games` | 10 | Maximum rows in the recent lock baseline |
+| `lookback_games` | 10 | Recent baseline limit and current-season game count needed to stop filling lock/projection windows with prior-season games |
 | `recent_days` | 14 | Baseline time window before limiting rows |
 | `decay` | 0.92 | Exponential recency weighting |
 | `prior_weight_games` | 12 | Mean-shrinkage pseudo-game count |
@@ -88,7 +88,7 @@ roster_positions: [PG, SG, F, C, UTIL, UTIL, BN, IR]
 
 PG/SG/SF/PF/C, G/F, and UTIL are supported active slots. BN/IR/TAXI are excluded. The config validator preserves order and duplicates and normalizes names to uppercase. Unrecognized active slot names make the recommendation unavailable rather than silently changing a league's rules. Local teams without this field use one UTIL slot per starter. Imported teams without it request a resync.
 
-Daily projections reuse `decision.lookback_games`, `recent_days`, `decay`, and `prior_weight_games`, together with that league's scoring weights. No player-specific or league-specific lineup algorithm is needed. Read [daily lineup assumptions](MODEL.md#11-daily-lineup-projections-and-assignment) before treating a suggested arrangement as a legal Sleeper change.
+Daily projections reuse `decision.lookback_games`, `recent_days`, `decay`, and `prior_weight_games`, together with that league's scoring weights. Both projections and weekly locks fill a sparse current-season window with actual prior-season games until `lookback_games` current-season appearances exist (default 10), including midseason returns. During this blend, `recent_days` does not discard the historical rows and `prior_weight_games` is not applied a second time. Missing historical games are not fabricated. No player-specific or league-specific lineup algorithm is needed. Read [daily lineup assumptions](MODEL.md#11-daily-lineup-projections-and-assignment) before treating a suggested arrangement as a legal Sleeper change.
 
 ## Forecast fallback and scoring display
 

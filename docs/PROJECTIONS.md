@@ -4,13 +4,21 @@ Every roster player has a projection independently of start eligibility. Bench, 
 
 ## Sources and precedence
 
-1. Current-season observations strictly before the target day, rescored with the league formula and weighted using the configured recency/shrinkage model.
+1. Current-season observations strictly before the target day, rescored with the league formula. While a player has fewer than `decision.lookback_games` current-season games (default 10), the latest available prior-season games fill the window. Newer games carry more weight. At 10 current-season games, projections use the normal current-season recency/shrinkage model.
 2. A validated current-season **Sleeper / RotoWire** forecast when current observations are unavailable. The live refresh requests `https://api.sleeper.com/projections/nba/<season>?season_type=regular&grouping=season` through the existing paced HTTP cache (six hours). Replay never uses this source.
 3. Saved historical observations, with explicit prior-season provenance, if a current forecast is absent. The previous season is read from SQLite or checksum-verified fixtures; older fixture priors cover players who missed that season.
 
 Unusable records remain unavailable with an explanation. They never become invented zero forecasts. Rookie identity can use Sleeper's imported player ID; it does not require an invented NBA ID.
 
 The projection carries source, as-of date, FP, stat components, and either observed sample/last-played metadata or the forecast provider update time. The public export allowlists every nested field. Forecasts are cached separately from immutable observations and never inserted as completed games.
+
+## Small current-season samples
+
+A player with one current-season game uses that game plus up to nine latest prior-season games; the second game replaces one old game, and so on. This is based on each player's observed game count, not the calendar date, so it also covers a player returning from injury midseason. With no usable prior history, only actual available games are used. No games are invented to fill the window.
+
+The blend uses the existing exponential decay (default 0.92), includes older games despite the 14-day recent filter, and does not add the same history again as a shrinkage prior. Both fantasy points and projected components use this window. Player details show the current/prior counts. These estimates also feed the exact daily lineup optimizer and upcoming weekly tiles.
+
+The same observed-history blend supports weekly lock baselines and rarity comparisons. It never turns an older performance into a lock candidate; a completed game in the current fantasy week and a verified remaining schedule are still required. The latest performance participates in the ordinary performance baseline but is excluded from rarity comparisons. Returning from injury does not imply a known minutes restriction or role adjustment; this remains a heuristic.
 
 ## Projected scoring
 

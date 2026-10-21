@@ -20,7 +20,7 @@ TEAM_FIELDS = (
 PLAYER_FIELDS = (
     "player player_id status decision note reason starter positions nba_team week "
     "last_game_date last_game_fp remaining_games_est fp_mean_recent fp_std_recent "
-    "sample_size p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state history_source"
+    "sample_size baseline_source baseline_current_season_games baseline_prior_season_games baseline_window_games p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state history_source"
 ).split()
 HISTORY_FIELDS = "date fp minutes pts reb ast stl blk tov".split()
 PICKUP_FIELDS = (
@@ -29,7 +29,7 @@ PICKUP_FIELDS = (
     "games_baseline risks replacement team_gain availability ownership_as_of scoring_complete"
 ).split()
 LINEUP_FIELDS = "date status reason total_projected_fp filled_slots eligible_players missing_inputs".split()
-LINEUP_PLAYER_FIELDS = "player player_id positions current_slot injury_status slot slot_index projected_fp projection_source sample_size last_played opponent home reason".split()
+LINEUP_PLAYER_FIELDS = "player player_id positions current_slot injury_status slot slot_index projected_fp projection_source sample_size current_season_games prior_season_games projection_window_games last_played opponent home reason".split()
 SAVED = ROOT / "state/pages-report.json"
 
 
@@ -37,7 +37,7 @@ def select(value, fields):
     return {key: copy.deepcopy(value[key]) for key in fields if key in value}
 
 
-PROJECTION_FIELDS = "projected_fp projection_source sample_size last_played as_of source_updated_at scoring_notes".split()
+PROJECTION_FIELDS = "projected_fp projection_source sample_size last_played as_of source_updated_at scoring_notes current_season_games prior_season_games projection_window_games".split()
 PROJECTION_STATS = (
     "PTS REB AST STL BLK TOV FG3M MIN FGM FGA FTM FTA OREB DREB PF".split()
 )

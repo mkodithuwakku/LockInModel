@@ -190,3 +190,48 @@ def test_explicit_missing_projection_does_not_reuse_stale_history():
         {"roster_positions": ["PG"]}, rows, {"A": {"projected_fp": 50}}, "2026-10-20"
     )
     assert result["filled_slots"] == 0 and result["status"] == "partial"
+
+
+def test_engine_keeps_blend_over_external_forecast_and_exports_mix(monkeypatch):
+    from test_schedule import calendar, cfg
+    from test_lineup import logs, prior_logs
+    from engine import build_dashboard
+    from types import SimpleNamespace
+    from pages import public_report
+
+    config = cfg()
+    config["teams"][0]["player_meta"]["tyrese maxey"]["sleeper_id"] = "rookie"
+    config["teams"][0]["weights"] = {"PTS": 1}
+    config["decision"].update(decay=1, lookback_games=10)
+    current = logs([9], ["2026-10-20"]).assign(
+        PLAYER_ID="1630178", PLAYER_NAME="Tyrese Maxey"
+    )
+    prior = prior_logs().assign(PLAYER_ID="1630178", PLAYER_NAME="Tyrese Maxey")
+    monkeypatch.setattr(
+        "projections.fetch_forecasts", lambda *_: parse_forecasts([record()], "2026")
+    )
+    provider = SimpleNamespace(
+        games=current,
+        priors=prior,
+        calendar=calendar(),
+        preseason=False,
+        manifest={"season": "2026-27"},
+        remaining_for_team=lambda *_: 2,
+        prior=lambda *_: None,
+    )
+    report = public_report(build_dashboard("live", "2026-10-21", provider, config))
+    q = report["teams"][0]["results"][0]["projection"]
+    assert q["projected_fp"] == 18.9 and q["projection_source"] == "blended_seasons"
+    assert (
+        q["current_season_games"],
+        q["prior_season_games"],
+        q["projection_window_games"],
+    ) == (1, 9, 10)
+    assert report["teams"][0]["results"][0]["history"][0]["fp"] == 9
+    assert report["teams"][0]["results"][0]["week_games"][0]["fp"] == 9
+
+    row = report["teams"][0]["results"][0]
+    assert row["baseline_source"] == "blended_seasons"
+    assert row["baseline_current_season_games"] == 1
+    assert row["baseline_prior_season_games"] == 9
+    assert row["fp_mean_recent"] == 18.9
