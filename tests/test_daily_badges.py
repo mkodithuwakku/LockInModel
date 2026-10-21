@@ -50,6 +50,8 @@ def test_all_categories_use_observations_and_misses_are_attempts_minus_makes():
         runner=38.5,
         dime=11,
         sandwich=6,
+        shield=7,
+        creator=5,
     )
     assert all(b["rank"] == 1 and b["date"] == "2025-12-25" for b in badges)
     assert previous_night_badges(frame, "2025-12-25") == {}
@@ -286,3 +288,26 @@ def test_multiple_games_compare_total_fp_to_per_game_forecast_times_games():
     badges = fantasy_night_badges(frame, "2025-12-26", {"PTS": 1}, {"a": 15})["a"]
     over = next(b for b in badges if b["key"] == "overachiever")
     assert over["value"] == 10 and over["projected_fp"] == 30
+
+
+def test_extra_badges_require_real_game_milestones_and_creator_volume():
+    frame = pd.DataFrame(
+        [
+            game("a", PTS=20, REB=10, AST=10, STL=2, BLK=3, TOV=2),
+            game("b", PTS=5, REB=5, AST=4, STL=1, BLK=1, TOV=0),
+            game("c", PTS=5, REB=5, AST=5, TOV=5, GAME_ID="one"),
+            game("c", PTS=5, REB=5, AST=5, TOV=5, GAME_ID="two"),
+        ]
+    )
+    awards = previous_night_badges(frame, "2025-12-26")
+    a = {b["key"]: b["value"] for b in awards["a"]}
+    assert a["shield"] == 5 and a["creator"] == 8 and a["magician"] == 1
+    assert not any(
+        b["key"] in {"creator", "magician"} for pid in ("b", "c") for b in awards[pid]
+    )
+    frame.attrs["imputed_stats"] = ["STL", "TOV"]
+    assert not any(
+        b["key"] in {"shield", "creator", "magician"}
+        for bs in previous_night_badges(frame, "2025-12-26").values()
+        for b in bs
+    )

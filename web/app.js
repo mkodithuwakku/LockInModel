@@ -234,19 +234,19 @@ function render() {
     )
     .join("");
   $("#page-title").textContent =
-    state.view === "rise"
+    state.view === "review" ? "Your season." : state.view === "rise"
       ? "The waiver wire."
       : state.view === "alerts"
         ? "Check the tape."
         : t.team_name;
   $("#sheet-title").innerHTML =
-    state.view === "rise"
+    state.view === "review" ? "Season review<span>.</span>" : state.view === "rise"
       ? "On the rise<span>.</span>"
       : state.view === "alerts"
         ? "Data report<span>.</span>"
         : "Roster sheet<span>.</span>";
   $(".sheet-instruction").textContent =
-    state.view === "alerts"
+    state.view === "review" ? "Every team. The players behind the numbers." : state.view === "alerts"
       ? "Check your inputs before making a call"
       : state.view === "rise" ? "Search all available players" : "Select a player for the full read ↗";
   $("#edition-date").textContent = new Date(state.data.date + "T12:00:00")
@@ -259,13 +259,13 @@ function render() {
   $("#league-label").textContent =
     t.league_name + (t.league_status ? " · " + t.league_status : "");
   $("#page-subtitle").textContent =
-    state.view === "rise"
+    state.view === "review" ? "Season production, scored for each league." : state.view === "rise"
       ? `Candidates for ${t.team_name}, scored under this league’s rules.`
       : state.view === "alerts"
         ? "A missing input should never become a confident recommendation."
         : `${t.results.length} players · ${sheetView().rows.filter(({p}) => p.starter && !p.vacant).length} ${sheetView().recommended ? "recommended starters" : state.mode === "test" ? "starters" : "synced starters"} · ${state.mode === "test" ? "Practicing with saved performances" : "Your latest saved analysis"}`;
   $("#breadcrumb").textContent =
-    state.view === "rise"
+    state.view === "review" ? "Season review" : state.view === "rise"
       ? "On the rise"
       : state.view === "alerts"
         ? "Data alerts"
@@ -329,6 +329,8 @@ function render() {
       ),
     );
   $(".tabs").hidden = state.view !== "team";
+  $(".sheet-heading .section-label").textContent = state.view === "review" ? "THE SEASON /" : "YOUR LINEUP";
+  $(".panel-toolbar").hidden = state.view === "review";
   $("#edit-roster").hidden = hosted || state.view !== "team";
   $("#edit-roster").textContent =
     t.source === "sleeper" ? "Synced roster" : "Edit roster";
@@ -343,6 +345,39 @@ function render() {
   renderLineup();
   attachImageFallback();
 }
+function renderSeasonReview(t) {
+  const r = t.season_review || {}, players = LockInInsights.seasonContributors(t);
+  const highlights = LockInInsights.seasonHighlights(players);
+  const number = (n, digits = 1) => Number.isFinite(n) ? n.toLocaleString(undefined, {maximumFractionDigits: digits}) : "—";
+  const gamesLabel = n => `${n} ${n === 1 ? "game" : "games"}`;
+  const date = d => d ? new Date(d + "T12:00:00").toLocaleDateString(undefined, {month: "short", day: "numeric"}) : "—";
+  const metric = (label, value, detail = "") => `<div class="review-metric"><span>${esc(label)}</span><strong>${esc(value)}</strong>${detail ? `<small>${esc(detail)}</small>` : ""}</div>`;
+  const person = p => `<button class="review-person" data-player="${p.index}">${portrait(p)}<span><strong>${esc(p.player)}</strong><small>${nbaTeamLabel(p.nba_team)} ${esc((p.positions || []).join(" / "))}</small></span></button>`;
+  const highlight = (label, p, value, detail, placeholder) => `<article class="review-highlight"><span class="review-kicker">${label}</span>${p ? `${person(p)}<strong class="review-highlight-value">${esc(value)}</strong><p>${esc(detail)}</p>` : `<p class="review-pending">${placeholder}</p>`}</article>`;
+  const weeks = (r.weeks || []).filter(w => Number.isFinite(w.average_fp));
+  const low = Math.min(0, ...weeks.map(w => w.average_fp)), high = Math.max(1, ...weeks.map(w => w.average_fp));
+  const y = v => 126 - (v - low) / (high - low) * 108;
+  const points = weeks.map((w, i) => [weeks.length === 1 ? 300 : 12 + i * 576 / (weeks.length - 1), y(w.average_fp)]);
+  const chart = `<svg class="review-chart" viewBox="0 0 600 144" role="img" aria-label="Weekly fantasy points per player appearance. Exact values in weekly details below."><path class="review-chart-guide" d="M0 ${y(0)}H600"/><polyline points="${points.map(p => p.join(",")).join(" ")}"/>${points.map(([x, py], i) => `<circle cx="${x}" cy="${py}" r="4"><title>${esc(date(weeks[i].date))}: ${number(weeks[i].average_fp)} FP per appearance, ${weeks[i].games} appearances</title></circle>`).join("")}</svg>`;
+  $("#content").innerHTML = `<div class="season-review">
+    <div class="review-teams" aria-label="All team season summaries">${state.data.teams.map(team => {
+      const summary = team.season_review || {};
+      return `<button class="review-team ${team.id === t.id ? "selected" : ""}" data-team="${esc(team.id)}" aria-pressed="${team.id === t.id}"><span class="review-team-heading">${teamPicture(team)}<span><strong>${esc(team.team_name)}</strong><small>${esc(summary.season || team.season || "Season")} · ${esc(team.league_name)}</small></span></span><span class="review-team-score">${number(summary.total_fp)} <small>roster FP</small></span><span class="review-team-footer"><span>${number(summary.fp_per_game)} FP / appearance</span><span>${summary.covered_players || 0}/${summary.roster_count ?? team.results.length} players</span></span></button>`;
+    }).join("")}</div>
+    <div class="review-section-heading"><h3>${esc(t.team_name)}</h3><span>${esc(r.season || t.season || "Season")} · through ${esc(date(r.as_of))}</span></div>
+    <p class="review-scope">Current roster’s observed season production, including games before joining. Not Sleeper locked scores or standings. Each team uses its own scoring formula.</p>
+    ${r.status !== "ready" ? `<div class="review-empty">${r.status === "unavailable" ? "Season statistics are unavailable in this report." : "No season games recorded for this roster yet."} Players remain listed below; the next successful refresh fills their numbers.</div>` : ""}
+    <div class="review-metrics">${metric("Roster fantasy points", number(r.total_fp), `${r.appearances || 0} player appearances`)}${metric("FP / appearance", number(r.fp_per_game), "Per player, per game")}${metric("Players with games", `${r.covered_players || 0} / ${r.roster_count ?? t.results.length}`, "Observed this season")}${metric("Top 3 contribution", r.top_three_share == null ? "—" : number(r.top_three_share) + "%", "Share of positive player FP totals")}</div>
+    <div class="review-stats">${[["PTS","Points"],["REB","Rebounds"],["AST","Assists"],["STL","Steals"],["BLK","Blocks"],["FG3M","Threes"],["TOV","Turnovers"],["FG_PCT","FG %"],["FT_PCT","FT %"]].map(([key, label]) => metric(label, number(r.stats?.[key], key.endsWith("PCT") ? 1 : 0))).join("")}</div>
+    <div class="review-section-heading"><h3>Key players</h3><span>Season leaders · small samples labeled</span></div>
+    <div class="review-highlights">${highlight("Season anchor", highlights.anchor, number(highlights.anchor?.total_fp) + " FP", `${number(highlights.anchor?.share)}% of positive roster FP · ${gamesLabel(highlights.anchor?.games)}`, "A completed game starts the season totals.")}${highlight("Per-game leader", highlights.scorer, number(highlights.scorer?.average_fp) + " FP / game", `${gamesLabel(highlights.scorer?.games)}${highlights.scorer?.games < 5 ? " · early sample" : ""}`, "No observed performances yet.")}${highlight("Form leader", highlights.mover, (highlights.mover?.change > 0 ? "+" : "") + number(highlights.mover?.change) + " FP", "Last 5 average vs previous 5", "Needs 10 season games to compare two five-game windows.")}${highlight("Biggest swings", highlights.swing, number(highlights.swing?.spread) + " FP spread", `Game-to-game standard deviation · ${gamesLabel(highlights.swing?.games)}`, "Needs 5 season games to measure variability.")}</div>
+    <section class="review-weekly" aria-labelledby="review-weekly-title"><div class="review-section-heading"><h3 id="review-weekly-title">Weekly production</h3><span>FP / player appearance</span></div>${weeks.length ? `${chart}<div class="review-chart-labels"><span>${esc(date(weeks[0].date))}</span><span>${weeks.length === 1 ? "One observed week" : esc(date(weeks.at(-1).date))}</span></div><details><summary>Weekly details · ${weeks.length} ${weeks.length === 1 ? "week" : "weeks"}</summary><div class="review-week-table"><table><thead><tr><th>Week of</th><th>Roster FP</th><th>FP / app.</th><th>Apps.</th></tr></thead><tbody>${weeks.map(w => `<tr><th>${esc(date(w.date))}</th><td>${number(w.total_fp)}</td><td>${number(w.average_fp)}</td><td>${w.games}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="review-pending">Weekly history will appear as season games are recorded.</p>`}</section>
+    <div class="review-section-heading"><h3>Season contributors <small>${players.length}</small></h3><span>Sorted by total fantasy points</span></div>
+    <div class="review-contributors">${players.map(p => `<article class="review-contributor">${person(p)}<div class="review-player-metrics">${metric("Total FP", number(p.total_fp))}${metric("FP / game", number(p.average_fp))}${metric(`Last ${p.recent_games || "5"}`, number(p.recent_fp))}${metric("Games", p.games ? number(p.games, 0) : "—")}</div><div class="review-contribution"><span style="width:${Math.max(0, Math.min(100, p.share || 0))}%"></span></div></article>`).join("")}</div>
+    <p class="review-footnote">Bars show each player’s share of positive fantasy-point totals. — means no observed data. Last 5 averages use up to five season games; prior-season projection history is excluded.</p>
+  </div>`;
+}
+
 function sheetView() {
   return LockInInsights.rosterSheet(team() || {}, state.mode !== "test");
 }
@@ -419,6 +454,7 @@ function renderContent() {
   let t = team();
   if (!t) return;
   const search = state.search.trim().toLowerCase();
+  if (state.view === "review") { renderSeasonReview(t); return; }
   if (state.view === "alerts") {
     $("#content").innerHTML =
       state.data.alerts
@@ -696,6 +732,7 @@ document.addEventListener("click", (e) => {
       load();
     } else {
       state.view = b.dataset.view;
+      if (state.view === "review" && state.mode === "test") { state.mode = "live"; load(); return; }
       render();
     }
     return;

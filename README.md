@@ -17,7 +17,7 @@ One local SQLite database retains live game history and separate pregame forecas
 
 The interface uses a compact fantasy lineup layout: charcoal surfaces with a subtle plum undertone, soft off-white text, muted purple accents, small soft-gold details, colored position slots, small portraits, NBA logos beside team abbreviations, injury labels, and a seven-day opponent strip for every player. Each upcoming game tile shows **Proj FP** using that player’s saved per-game baseline; completed games show **Final FP** when observed. Estimates are league-scored and are not opponent-adjusted. A custom interlocking LI emblem anchors the wordmark and favicon. Team selection uses each league’s custom Sleeper photo, then the owner’s profile photo, with initials if neither loads. The live roster sheet places the latest refresh’s recommended starters in their optimized position slots, followed by bench and reserves. Each card retains its forecasts, lock/wait indicators, and completed fantasy points. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. The full-width **Roster sheet** is the primary interface on every screen, immediately after compact team context and controls. Summary counters and explanatory context sit below the full roster, with no large hero or decorative header above the players. The date, projected total, and snapshot details sit inside the sheet; **Recent form** stays below it. Recent form shows individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. The earlier lineup/form captures below show the previous navy palette and historical/sample data, not current NBA recommendations.
 
-**Daily details:** tiny previous-night badges mark NBA-wide top-three performances in threes, made baskets, rebounds, missed shots, steals, blocks, minutes, assists, turnovers, made free throws, and missed threes. League-scored badges add highest/lowest fantasy points per minute and the largest positive/negative differences from saved pregame forecasts. Ties qualify; three icons stay visible beside a name, with the full breakdown on tap. These are fun annotations and never change fantasy scores or recommendations. Projection comparisons start once pregame forecasts have been archived in the existing local database; missing forecasts are not reconstructed after results. See the [badge rules and sample](docs/DAILY_BADGES.md).
+**Daily details:** tiny previous-night badges mark NBA-wide top-three performances in threes, made baskets, rebounds, missed shots, steals, blocks, minutes, assists, turnovers, made free throws, and missed threes, combined steals/blocks, low-turnover creation, and triple-doubles. League-scored badges add highest/lowest fantasy points per minute and the largest positive/negative differences from saved pregame forecasts. Ties qualify; three icons stay visible beside a name, with the full breakdown on tap. These are fun annotations and never change fantasy scores or recommendations. Projection comparisons start once pregame forecasts have been archived in the existing local database; missing forecasts are not reconstructed after results. See the [badge rules and sample](docs/DAILY_BADGES.md).
 
 ![Recommended daily lineup and recent form beside a generic practice roster](docs/screenshots/daily-lineup-desktop.png)
 
@@ -39,6 +39,10 @@ To try the workflow, follow [setup](#running-locally), select **Test Week**, rev
 
 A drafted league can be active before NBA opening night. The live provider checks the season schedule first and displays **UPCOMING** with opening-week opponents until completed games are available. A later statistics outage preserves roster and schedule data; a schedule outage preserves available box scores but withholds lock decisions.
 
+![Season review with generic team summaries, current-roster totals, and key players](docs/screenshots/season-review-desktop.png)
+
+*The separate Season review tab uses full stored season history. This early-season example has only one night of observations; longer trends remain blank. [Phone view](docs/screenshots/season-review-mobile.png).*
+
 ## Problem and scope
 
 A strong fantasy performance needs context: how unusual was it for this player, how many chances remain this week, and how does this league score the box score? Managing multiple teams also means tracking different rules and deciding whether a rising player would improve a particular roster.
@@ -52,7 +56,9 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 - **Multi-team analysis:** separate league scoring, starters/bench filters, player histories, and saved archives for older Sleeper seasons.
 - **Projections for the full roster:** per-game FP and PTS/REB/AST on every roster row, with a complete projected box score in player details. Current-season Sleeper / RotoWire forecasts cover players without usable current game history, including rookies; bench/off-day/injured players retain their baseline. [Projection sources and bonus estimates](docs/PROJECTIONS.md).
 - **Daily recommended lineup:** exact maximum-weight assignment across each league’s PG/SG/SF/PF/C, G/F, and repeated UTIL slots, using scheduled roster players and pregame league-scored projections. Shows unfilled slots and exclusion reasons; no Sleeper changes are submitted.
+- **Season review:** a separate all-team dashboard with season totals, box-score production, weekly FP per appearance, full-roster contributors, and key players. Uses each league’s formula and labels current-roster scope and small samples. [Metrics and boundaries](docs/SEASON_REVIEW.md).
 - **Compact team insights:** ranked five-game form, per-player sparklines, change versus the previous five games, and expandable full-team coverage on desktop and phones.
+- **Daily player badges:** tiny previous-night NBA-wide indicators, including league-scored projection surprises and FP/min, plus 🛡️ combined defense, 🧠 low-turnover creation, and 🎩 triple-doubles. [Rules and forecast archive](docs/DAILY_BADGES.md).
 - **Lock/wait explanations:** compare the latest eligible score with a weighted baseline and verified remaining opportunities; missing inputs produce explicit review states.
 - **On the Rise:** compare five recent games with an earlier baseline, discount fragile improvement signals, and estimate fit against compatible roster players.
 - **Offline Test Week:** reveal nights, bank one score per starter, edit practice rosters, and resume progress without changing live teams.
@@ -121,6 +127,7 @@ flowchart TD
 
 | Files | Responsibility |
 | --- | --- |
+| [season_review.py](season_review.py) | Full-season team/player production, weekly summaries, and honest sample coverage |
 | [daily_badges.py](daily_badges.py) | NBA-wide stat and league-scored badges, saved-forecast comparisons, and tie handling |
 | [app.py](app.py), [web/](web/) | HTTP boundary, jobs, interface state, rendering, and user actions; [insights.js](web/insights.js) derives observed team form |
 | [engine.py](engine.py), [providers.py](providers.py), [schedule.py](schedule.py) | Shared orchestration, live/replay policies, and cached weekly schedule |

@@ -101,3 +101,14 @@ Verified browser interactions include lineup-to-player detail links, excluded-pl
 These use an isolated in-memory configuration, not personal team names or account settings. The earlier daily-lineup and team-insights screenshots predate per-row projected stat lines; retain them only as demonstrations of their specific features. Current-season projections are estimates, not observed scores or verified prediction accuracy.
 
 - `available-players-desktop.png` and `available-players-mobile.png`: current charcoal/plum theme, generic team labels, history-independent unrostered-player directory with compact, uncropped 40px portraits, observed averages where available and empty trend placeholders. Public NBA identities only; no personal team photos or account details.
+
+
+## Season review captures
+
+- `season-review-desktop.png`: 1280px dashboard with all-team summaries, selected-team season stats, and key-player cards.
+- `season-review-mobile.png`: 390px selected-team totals and key players.
+
+Both use generic team and league labels, no team photos/account details, and real
+stored October 20, 2026 results. Small samples and missing form windows are
+intentional. Totals describe current-roster production, not Sleeper locked points.
+The roster remains the first/default view; Season review is a separate tab.

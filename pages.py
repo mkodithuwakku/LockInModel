@@ -61,6 +61,27 @@ def public_report(report):
         if team.get("archived"):
             continue
         item = select(team, TEAM_FIELDS)
+        if team.get("season_review"):
+            review = team["season_review"]
+            item["season_review"] = select(
+                review,
+                "season as_of scope status roster_count covered_players appearances total_fp fp_per_game top_three_share".split(),
+            )
+            item["season_review"]["stats"] = select(
+                review.get("stats", {}),
+                "PTS REB AST STL BLK FG3M TOV MIN FGM FGA FTM FTA FG_PCT FT_PCT".split(),
+            )
+            item["season_review"]["weeks"] = [
+                select(w, "date total_fp average_fp games".split())
+                for w in review.get("weeks", [])
+            ]
+            item["season_review"]["players"] = [
+                select(
+                    p,
+                    "player_id player games total_fp average_fp recent_fp recent_games change spread best_fp best_date last_played share".split(),
+                )
+                for p in review.get("players", [])
+            ]
         item["results"] = []
         for player in team.get("results", []):
             row = select(player, PLAYER_FIELDS)

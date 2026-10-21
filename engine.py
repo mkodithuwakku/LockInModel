@@ -12,6 +12,7 @@ from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import project_players, recommend_lineup, unavailable_lineup
 from daily_badges import previous_night_badges, fantasy_night_badges, combine_badges
+from season_review import season_review
 
 
 def today():
@@ -464,6 +465,17 @@ def build_dashboard(
                 "ignored_scoring": team.get("ignored_scoring", {}),
                 "scoring_notes": notes,
                 "results": rows,
+                "season_review": season_review(
+                    observed,
+                    rows,
+                    team.get("weights") or cfg["weights"],
+                    cutoff.date(),
+                    unavailable=bool(
+                        getattr(provider, "stats_error", None)
+                        or team.get("unsupported_scoring")
+                    ),
+                    season=team.get("season"),
+                ),
                 "recommended_lineup": daily_lineup,
                 "pickups": candidates,
                 "available_players": (
@@ -540,7 +552,7 @@ def roster_metadata(team, name, directory=None):
             "positions": p.get("fantasy_positions", []),
             "injury_status": p.get("injury_status"),
         },
-        **saved
+        **saved,
     )
 
 
@@ -637,8 +649,33 @@ def roster_dashboard(cfg, include_archived=False):
                     "starter": name in t["starters"],
                 }
             )
+        review = None
+        if t.get("league_status") == "complete" and str(t.get("season", "")).isdigit():
+            from game_store import GameStore
+
+            year = int(t["season"])
+            saved_games = GameStore().read(f"{year}-{str(year + 1)[-2:]}")
+            if not saved_games.empty:
+                identities = {
+                    canonical_name(str(r.PLAYER_NAME)): str(r.PLAYER_ID)
+                    for _, r in saved_games.iterrows()
+                }
+                for row in rows:
+                    row["player_id"] = identities.get(
+                        canonical_name(row["player"]), row["player_id"]
+                    )
+            policy = apply_scoring_policy(dict(t))
+            review = season_review(
+                saved_games,
+                rows,
+                policy.get("weights") or cfg["weights"],
+                today(),
+                unavailable=bool(policy.get("unsupported_scoring")),
+                season=t["season"],
+            )
         teams.append(
             {
+                "season_review": review,
                 "id": t["id"],
                 "team_name": t["name"],
                 "team_avatar_url": t.get("team_avatar_url"),

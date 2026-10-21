@@ -6,6 +6,7 @@
 | --- | --- |
 | `app.py` | Flask routes, same-origin protection, background refresh jobs, dashboard cache |
 | `web/` | Responsive interface, team navigation, player details, roster editing, import UI |
+| `season_review.py` | Full-season current-roster production, weekly aggregates, and descriptive player metrics; see [Season review](SEASON_REVIEW.md) |
 | `web/insights.js` | Pure observed-form calculations and sparklines from scored report history; shared by local and hosted views |
 | `storage.py` | Canonical YAML loading/validation; atomic JSON/YAML writes |
 | `simulation.py` | Persistent morning/night replay, isolated practice roster snapshot, revision checks, banked scores |
@@ -190,3 +191,21 @@ It does not modify reports, historical observations, or the lineup optimizer.
 ### Available players without history
 
 `available_players` is separate from ranked `pickups`. The cached Sleeper player directory is filtered against all league roster, reserve, and taxi IDs/names; ownership must be complete. Active basketball entries are retained even without game history, with NBA-assigned players sorted first and unsigned entries afterward. No history or external request is needed to list them. When observed games exist, each league also supplies the arithmetic mean of up to five scores; a baseline and delta require two separate five-game windows. These descriptive summaries do not qualify a player as rising. The public report allowlists identity, positions, team, injury status, ownership timestamp, and these summary values. The UI searches the full pool, omits already-ranked names, and renders 30 rows at a time. Staleness removes actionable pickups but retains the dated directory. Missing trend values stay blank rather than becoming zeros.
+
+
+## Season review
+
+The engine aggregates full cutoff-filtered observed games with `season_review.py`
+for every analyzed team. It applies the league formula, excludes other seasons,
+retains corrected player/game records once, and produces roster totals, weighted
+shooting percentages, Monday-week averages, and player contribution/form/spread.
+This occurs before public player histories are limited to 25 games. Completed
+leagues use their saved season in `GameStore`; no extra provider requests occur.
+
+`pages.py` allowlists every nested review field. The separate Season review tab
+shows all-team cards, a selected-team breakdown, sample-gated key-player cards,
+weekly details, and all roster members including missing-history placeholders.
+`web/insights.js` preserves original result indexes for player-detail links and
+selects leaders without changing roster order. Home remains roster-first. These
+are current-roster observed totals, not historical ownership or Sleeper locked
+scores; see [metric definitions and limitations](SEASON_REVIEW.md).
