@@ -93,14 +93,43 @@ def test_missing_bad_and_imputed_values_do_not_create_leaders():
 
 
 def test_engine_uses_nba_pool_not_roster_or_league_scoring(monkeypatch):
-    from providers import FixtureProvider
+    from types import SimpleNamespace
     from engine import build_dashboard
     from storage import ROOT, validate_config
     import yaml
 
-    provider = FixtureProvider()
+    provider = SimpleNamespace(
+        manifest={"week_start": "2025-12-22", "week_end": "2025-12-28"},
+        games=pd.DataFrame(
+            [
+                game(
+                    "rostered",
+                    PLAYER_NAME="Roster Player",
+                    MIN=40,
+                    PTS=10,
+                    FGM=5,
+                    FGA=10,
+                    FTM=0,
+                    FTA=0,
+                ),
+                game(
+                    "outside",
+                    PLAYER_NAME="Other Player",
+                    MIN=42,
+                    PTS=12,
+                    FGM=6,
+                    FGA=10,
+                    FTM=0,
+                    FTA=0,
+                ),
+            ]
+        ),
+        schedule=pd.DataFrame(),
+        prior=lambda *_: 20,
+        remaining=lambda *_: 1,
+    )
     cfg = validate_config(yaml.safe_load((ROOT / "config.yaml").read_text()))
-    team = dict(id="a", name="Sample A", players=["Jamal Murray"], starters=[])
+    team = dict(id="a", name="Sample A", players=["Roster Player"], starters=[])
     cfg["teams"] = [team, dict(team, id="b", name="Sample B", weights={"PTS": 10})]
     first = build_dashboard("replay", "2025-12-26", provider, cfg)
     a, b = [t["results"][0]["daily_badges"] for t in first["teams"]]
