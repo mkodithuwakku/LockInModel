@@ -184,3 +184,43 @@ def test_publication_branch_contains_only_exports_and_preserves_history(
         ).strip()
         == "2"
     )
+
+
+def test_setup_requests_first_build_after_switching_source(monkeypatch):
+    from types import SimpleNamespace
+
+    calls = []
+
+    class Session:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            pass
+
+        def put(self, url, **kwargs):
+            calls.append(("put", url, kwargs["json"]))
+            return SimpleNamespace(status_code=204)
+
+        def post(self, url, **kwargs):
+            calls.append(("post", url))
+            return SimpleNamespace(status_code=201)
+
+    monkeypatch.setattr(publication, "github_session", Session)
+    monkeypatch.setattr(
+        publication,
+        "repository",
+        lambda _: ("remote", "example/repo", "https://example.github.io/repo/"),
+    )
+    assert (
+        publication.configure_pages(publication.settings({}))
+        == "https://example.github.io/repo/"
+    )
+    assert calls == [
+        (
+            "put",
+            "https://api.github.com/repos/example/repo/pages",
+            {"build_type": "legacy", "source": {"branch": "gh-pages", "path": "/"}},
+        ),
+        ("post", "https://api.github.com/repos/example/repo/pages/builds"),
+    ]

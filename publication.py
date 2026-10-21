@@ -150,6 +150,13 @@ def configure_pages(config):
             raise RuntimeError(
                 f"Pages configuration failed (HTTP {response.status_code}). Check repository administration access."
             )
+        response = session.post(
+            f"https://api.github.com/repos/{repo}/pages/builds", timeout=30
+        )
+        if response.status_code != 201:
+            raise RuntimeError(
+                f"Initial Pages build request failed (HTTP {response.status_code}). Check Pages settings before retrying setup."
+            )
     return url
 
 
