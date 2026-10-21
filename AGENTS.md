@@ -43,3 +43,6 @@ Recommended players and positions belong in the sheet. Team counters, insights,
 explanatory copy, and decorative elements must not displace it above the fold.
 Keep the header compact; put supporting panels below the complete roster.
 Validate this hierarchy at phone and desktop widths when changing the layout.
+
+Use neutral charcoal surfaces and restrained accents. Avoid saturated plum or
+other strongly tinted backgrounds across large application surfaces.

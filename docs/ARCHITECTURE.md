@@ -150,7 +150,7 @@ The field passes through both full and unavailable roster reports and the public
 export allowlist. Browsers load it directly with no referrer; failed or absent
 pictures fall back to initials. The existing daily sync updates changed photos.
 This adds no image database or new scheduled job. The inline LI emblem and matching
-SVG favicon are local assets; the charcoal/plum palette preserves the responsive
+SVG favicon are local assets; the neutral-charcoal palette preserves the responsive
 layout and text labels for every status.
 
 
@@ -163,3 +163,14 @@ enter the ranking. The public exporter allowlists each badge's display fields.
 `web/insights.js` validates badge keys and dates; `web/app.js` renders the tiny
 roster strip and detailed labels, with midnight/wake expiry. See
 [Daily badges](DAILY_BADGES.md) for category and tie rules.
+
+## Weekly game-tile scores
+
+`LockInInsights.gameFantasy()` selects a display value from an observed game score
+or the existing league-scored per-game forecast. Finite observed scores take
+precedence, including zero and negatives. Forecasts require a verified schedule,
+an upcoming/in-progress game, a finite baseline, and a game date no earlier than
+the forecast’s as-of date. Completed games without scores and postponed/canceled
+games never receive fabricated projections. The renderer labels each tile Proj
+or Final and exposes provenance through its accessible description and tooltip.
+It does not modify reports, historical observations, or the lineup optimizer.

@@ -22,7 +22,7 @@ For external forecasts, ordinary components are linear weighted expectations. Su
 
 ## Display and availability
 
-Roster rows show projected FP and PTS/REB/AST; player details add minutes, steals, blocks, turnovers, threes, and shooting makes/attempts. Sources and dates remain visible. Current-season history-based values supersede forecast fallback once usable observations exist. During a game-log failure only independently valid external forecasts can support the daily plan; weekly lock/pickup decisions still need observed data.
+Roster rows show projected FP and PTS/REB/AST; player details add minutes, steals, blocks, turnovers, threes, and shooting makes/attempts. Sources and dates remain visible. Each upcoming or in-progress game tile in the seven-day strip displays the saved per-game FP baseline as **Proj**. The baseline is repeated across matchups; it is not an opponent-specific prediction. Completed games show observed **Final** FP when available, including zero or negative scores. Missing forecasts or final scores stay as dashes; postponed/canceled games carry their status without a forecast. Current forecasts are never backfilled into games before their as-of date. Current-season history-based values supersede forecast fallback once usable observations exist. During a game-log failure only independently valid external forecasts can support the daily plan; weekly lock/pickup decisions still need observed data.
 
 Historical charts remain observed-only. Verified older observations are shown with a prior-season label when current history is absent. A rookie may have a complete forecast and no NBA history chart. This is an honest absence of observations, not a broken forecast.
 

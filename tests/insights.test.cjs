@@ -96,3 +96,48 @@ test("no-game snapshot leaves active slots empty and all real players on bench o
   assert.equal(view.rows.filter(r=>r.p.starter&&!r.p.vacant).length,0);
   assert.equal(view.rows.filter(r=>!r.p.starter).length,4);
 });
+
+const { gameFantasy } = require("../web/insights.js");
+const forecastPlayer = () => ({schedule_state:"verified", projection:{projected_fp:55.8,as_of:"2026-10-21"}});
+test("each upcoming matchup shows the saved per-game estimate without inventing opponent adjustments", () => {
+  const p=forecastPlayer();
+  for(const date of ["2026-10-21","2026-10-24","2026-10-25"]){
+    const score=gameFantasy(p,{date,status:"pre_game",fp:null});
+    assert.equal(score.kind,"projection");
+    assert.equal(score.value,55.8);
+    assert.match(score.description,/not opponent-adjusted/);
+  }
+});
+test("observed scores, including zero and negatives, replace projected points", () => {
+  for(const fp of [0,-4.5,61.2]){
+    const score=gameFantasy(forecastPlayer(),{date:"2026-10-21",status:"complete",fp});
+    assert.equal(score.kind,"actual");
+    assert.equal(score.label,"Final");
+    assert.equal(score.value,fp);
+  }
+});
+test("missing final scores and postponed games never masquerade as projected or zero results", () => {
+  for(const status of ["complete","final","post_game","postponed","canceled","cancelled"]){
+    const score=gameFantasy(forecastPlayer(),{date:"2026-10-21",status,fp:null});
+    assert.equal(score.kind,"unavailable");
+    assert.equal(score.value,null);
+  }
+});
+test("a present-day forecast is not backfilled into historical games", () => {
+  assert.equal(gameFantasy(forecastPlayer(),{date:"2026-10-20",status:"pre_game"}).kind,"unavailable");
+});
+test("missing forecasts, invalid values, dates and unknown schedules remain unavailable", () => {
+  const game={date:"2026-10-21",status:"pre_game"};
+  for(const value of [null,undefined,NaN,Infinity,"55.8"]){
+    const p=forecastPlayer();p.projection.projected_fp=value;
+    assert.equal(gameFantasy(p,game).value,null);
+  }
+  assert.equal(gameFantasy({...forecastPlayer(),schedule_state:"unknown"},game).kind,"unavailable");
+  assert.equal(gameFantasy(forecastPlayer(),{status:"pre_game"}).kind,"unavailable");
+  assert.equal(gameFantasy(forecastPlayer(),{...game,status:"unknown"}).kind,"unavailable");
+});
+test("zero forecasts remain valid projections and in-progress games retain the saved estimate", () => {
+  const p=forecastPlayer();p.projection.projected_fp=0;
+  assert.equal(gameFantasy(p,{date:"2026-10-21",status:"in_progress"}).value,0);
+  assert.equal(gameFantasy(p,{date:"2026-10-21",status:"pre_game"}).kind,"projection");
+});

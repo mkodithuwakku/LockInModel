@@ -486,7 +486,7 @@ function renderContent() {
       .filter(([, group]) => group.length)
       .map(
         ([label, group]) =>
-          `<section class="roster-group" aria-label="${label}"><div class="roster-group-title"><h3>${label} <span>${group.filter(({p}) => !p.vacant).length}${group.some(({p}) => p.vacant) ? "/" + group.length : ""}</span></h3><span>${esc(weekLabel)} <small>· @ away</small></span></div>${group.every(({p}) => p.vacant) ? `<div class="roster-empty-slots" aria-label="Unfilled lineup slots">${group.map(({p}) => `<span class="roster-slot" data-slot="${esc(p.roster_slot)}">${esc(p.roster_slot)}</span>`).join("")}<small>No eligible starts in this snapshot</small></div>` : group.map(({ p, i }) => rosterRow(p, i, week)).join("")}</section>`,
+          `<section class="roster-group" aria-label="${label}"><div class="roster-group-title"><h3>${label} <span>${group.filter(({p}) => !p.vacant).length}${group.some(({p}) => p.vacant) ? "/" + group.length : ""}</span></h3><span>${esc(weekLabel)} <small>· FP · @ away</small></span></div>${group.every(({p}) => p.vacant) ? `<div class="roster-empty-slots" aria-label="Unfilled lineup slots">${group.map(({p}) => `<span class="roster-slot" data-slot="${esc(p.roster_slot)}">${esc(p.roster_slot)}</span>`).join("")}<small>No eligible starts in this snapshot</small></div>` : group.map(({ p, i }) => rosterRow(p, i, week)).join("")}</section>`,
       )
       .join("") ||
     `<div class="empty">${!t.results.length && t.league_status === "pre_draft" ? "<strong>Waiting for the draft.</strong><p>Your roster appears after the next sync.</p>" : "No players in this view."}</div>`;
@@ -529,7 +529,7 @@ function projectionDetail(p) {
   const stats = ["MIN", "PTS", "REB", "AST", "STL", "BLK", "TOV", "FG3M", "FGM", "FGA", "FTM", "FTA"];
   return `<section class="projection-detail"><header><h3>Projected per game</h3><strong>${fmt(q.projected_fp)} <small>FP</small></strong></header><p>${esc(projectionSource(q))} · as of ${esc(q.as_of)}${saved ? " · saved snapshot" : ""}</p>
     <div class="projected-stat-grid">${stats.map(k => `<div><small>${k === "FG3M" ? "3PM" : k}</small><strong>${fmt(q.projected_stats?.[k])}</strong></div>`).join("")}</div>
-    <p>Per-game estimate when active; availability is shown separately.</p>
+    <p>Per-game estimate when active; availability is shown separately. Weekly game tiles repeat this baseline for each matchup, without opponent adjustments.</p>
     ${q.last_played ? `<p>${q.sample_size} games in the recent window · last played ${esc(q.last_played)}.</p>` : `<p>Current-season forecast updated ${esc(q.source_updated_at?.slice(0,10) || q.as_of)}.</p>`}
     ${(team()?.scoring_notes || []).length ? `<details><summary>Scoring method</summary><p>${team().scoring_notes.map(esc).join(" ")}</p></details>` : ""}</section>`;
 }
@@ -540,24 +540,19 @@ function rosterRow(p, i, week) {
     p.injury_status && p.injury_status !== "Healthy"
       ? `<span class="injury">${esc(p.injury_status)}</span>`
       : "";
-  const games = week
-    .map((date, day) => {
-      const onDay = (p.week_games || []).filter((g) => g.date === date);
-      const known = p.schedule_state === "verified";
-      const desc = !known
-        ? "Schedule unavailable"
-        : !onDay.length
-          ? "No game scheduled"
-          : onDay
-              .map(
-                (g) =>
-                  `${g.home ? "vs" : "at"} ${g.opponent}${g.fp != null ? ` · ${fmt(g.fp)} FP` : ` · ${gameStatus(g.status)}`}`,
-              )
-              .join("; ");
-      return `<span class="game-day ${onDay.length ? "has-game" : ""} ${date === state.data.date ? "is-today" : ""} ${!known ? "unknown" : ""}" title="${esc(date + ": " + desc)}" aria-label="${esc(date + ": " + desc)}"><small>${["M", "T", "W", "T", "F", "S", "S"][day]}</small>${onDay.map((g) => `<b>${g.home ? "" : "@"}${esc(g.opponent)}</b>${g.fp != null ? `<em>${fmt(g.fp)} FP</em>` : ""}`).join("") || `<b>${known ? "—" : "?"}</b>`}</span>`;
-    })
-    .join("");
-  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.lineup_fp ?? p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}${p.lineup_reason ? `<div class="roster-bench-reason">${esc(p.lineup_reason)}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games">${games}</div></div>`;
+  const games = week.map((date, day) => {
+    const onDay = (p.week_games || []).filter(g => g.date === date);
+    const known = p.schedule_state === "verified";
+    const weekday = ["M", "T", "W", "T", "F", "S", "S"][day];
+    const entries = onDay.map(g => ({game: g, score: LockInInsights.gameFantasy(p, g)}));
+    const desc = entries.length ? entries.map(({game, score}) =>
+      `${game.home ? "vs" : "at"} ${game.opponent} · ${score.description}`).join("; ")
+      : known ? "No game scheduled" : "Schedule unavailable";
+    return `<span class="game-day ${onDay.length ? "has-game" : ""} ${date === state.data.date ? "is-today" : ""} ${!known ? "unknown" : ""}" title="${esc(date + ": " + desc)}" aria-label="${esc(date + ": " + desc)}">${entries.map(({game, score}) =>
+      `<span class="game-matchup"><small>${weekday}</small><b>${game.home ? "" : "@"}${esc(game.opponent)}</b></span><em class="game-score" data-kind="${score.kind}"><span>${score.label}</span> ${fmt(score.value)}</em>`).join("") ||
+      `<span class="game-matchup"><small>${weekday}</small><b>${known ? "—" : "?"}</b></span>`}</span>`;
+  }).join("");
+  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.lineup_fp ?? p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}${p.lineup_reason ? `<div class="roster-bench-reason">${esc(p.lineup_reason)}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${fmt(p.last_game_fp)} <small>FP</small></strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games and fantasy points">${games}</div></div>`;
 }
 function playerDailyBadges(p) {
   if (state.data?.stale || state.data?.refresh_status === "failed") return [];

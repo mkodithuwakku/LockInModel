@@ -1,18 +1,21 @@
 # README screenshots
 
-## Current recommended roster sheet
+## Current charcoal roster and weekly projections
 
 - `roster-first-desktop.png`: illustrative five-player league with three active
   slots, using stored forecasts and the optimizer’s assignment for October 21.
+  Neutral charcoal surfaces replace plum, and upcoming game tiles show projected
+  FP beside the matchup.
   Recommended starters occupy the sheet; the bench follows. The compact header
   keeps players first, with summary counters and insights below the full roster. The preview is not
   a live league or a freshly fetched report.
 - `roster-first-mobile.png`: the same compact roster and lineup summary at 390px.
 
-Earlier screenshots below predate the integrated lineup. Their separate lineup
+Earlier screenshots below predate the neutral palette and weekly tile forecasts,
+and most also predate the integrated lineup. Their separate lineup
 cards and synced-starter ordering are historical feature examples.
 
-## Current visual identity
+## Earlier visual identity
 
 - `identity-desktop.png`: generic sample roster, with the interlocking LI logo,
   charcoal/plum surfaces, copper/gold accents and full-roster forecasts.
