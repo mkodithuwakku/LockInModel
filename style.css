@@ -2820,3 +2820,19 @@ button.lineup-name:hover strong { color: #d0b483; }
   .team-symbol { width: 31px; height: 31px; border-radius: 9px; }
   .team-nav { min-height: 48px; }
 }
+
+/* Previous-night details: quiet, fixed-size icons; the row opens their full read. */
+.player-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.player-name-line .player-name { min-width: 0; flex: 0 1 auto; }
+.daily-badges { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; line-height: 1; }
+.daily-badge { font: 12px/1 "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+.daily-badges small { color: var(--muted); font: 9px var(--mono); }
+.daily-badge-details { padding: 13px 0; border-bottom: 1px solid var(--line); }
+.daily-badge-heading { font: 11px var(--mono); color: var(--muted); margin-bottom: 9px; }
+.daily-badge-heading > span { float: right; font-size: 10px; }
+.daily-badge-details > div:not(.daily-badge-heading) { display: flex; gap: 9px; align-items: center; padding: 4px 0; font-size: 12px; }
+@media (max-width: 740px) {
+  .player-name-line { gap: 4px; }
+  .daily-badges { gap: 2px; }
+  .daily-badge { font-size: 11px; }
+}

@@ -10,7 +10,7 @@
     "2026-10-25"
   ],
   "season_start": "2026-10-20",
-  "publication_id": "a5712b4fc82e486e9c13a271731e29cf",
+  "publication_id": "f5774a7f2b23433bb629c1082355032b",
   "schema_version": 1,
   "sleeper": {},
   "dataset": {},
@@ -52,6 +52,7 @@
           "injury_status": "GTD",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -405,6 +406,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -750,6 +752,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -1095,6 +1098,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -1440,6 +1444,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -1718,6 +1723,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -2062,6 +2068,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -2406,6 +2413,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -2751,6 +2759,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -3095,6 +3104,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -3440,6 +3450,7 @@
           "injury_status": "DTD",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -3786,6 +3797,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -4131,6 +4143,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -4477,6 +4490,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -4822,6 +4836,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -5483,6 +5498,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -5822,6 +5838,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -6168,6 +6185,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -6514,6 +6532,7 @@
           "injury_status": "DTD",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -6853,6 +6872,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -7192,6 +7212,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -7538,6 +7559,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -7818,6 +7840,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -8163,6 +8186,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -8508,6 +8532,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -8633,6 +8658,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -8978,6 +9004,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -9321,6 +9348,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -9666,6 +9694,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -9901,6 +9930,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -10247,6 +10277,7 @@
           "injury_status": "Out",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -10593,6 +10624,7 @@
           "injury_status": "DTD",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -11290,6 +11322,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -11635,6 +11668,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -11980,6 +12014,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -12326,6 +12361,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -12671,6 +12707,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -13016,6 +13053,7 @@
           "injury_status": "DTD",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -13360,6 +13398,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -13712,6 +13751,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -14056,6 +14096,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -14400,6 +14441,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-22",
@@ -14738,6 +14780,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -15082,6 +15125,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-22",
@@ -15415,6 +15459,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -15654,6 +15699,7 @@
           "injury_status": "Out",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -15999,6 +16045,7 @@
           "injury_status": "DTD",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -16345,6 +16392,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -16690,6 +16738,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -17034,6 +17083,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -17378,6 +17428,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -17716,6 +17767,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -18061,6 +18113,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -18405,6 +18458,7 @@
           "lineup_order": 21,
           "injury_status": "Out",
           "schedule_state": "verified",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -18891,6 +18945,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -19236,6 +19291,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -19460,6 +19516,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -19798,6 +19855,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -20143,6 +20201,7 @@
           "injury_status": "DTD",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -20488,6 +20547,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -20832,6 +20892,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -21177,6 +21238,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -21514,6 +21576,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -21858,6 +21921,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -22203,6 +22267,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -22547,6 +22612,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -22889,6 +22955,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -23234,6 +23301,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -23881,6 +23949,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -24226,6 +24295,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -24571,6 +24641,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -24917,6 +24988,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -25261,6 +25333,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -25606,6 +25679,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -25950,6 +26024,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -26289,6 +26364,7 @@
           "injury_status": "Out",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -26633,6 +26709,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -26934,6 +27011,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -27278,6 +27356,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -27623,6 +27702,7 @@
           "injury_status": "Out",
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-20",
@@ -27976,6 +28056,7 @@
           "injury_status": null,
           "schedule_state": "verified",
           "history_source": "prior_season",
+          "daily_badges": [],
           "week_games": [
             {
               "date": "2026-10-21",
@@ -28550,7 +28631,7 @@
     }
   ],
   "alerts": [],
-  "published_at": "2026-10-21T05:53:43.349332+00:00",
+  "published_at": "2026-10-21T05:53:47.611004+00:00",
   "portraits": [
     "1627749",
     "1628386",
