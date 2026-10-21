@@ -14,15 +14,17 @@ The dashboard uses a compact dark lineup layout with colored position slots, sma
 
 On phones, teams scroll horizontally and roster rows prioritize the latest score and decision; open player details for the baseline and history. A skip link and visible keyboard focus support navigation. Test Week's nightly box scores are expandable so the roster remains easier to reach.
 
-Sleeper rosters are managed in Sleeper; **Refresh live data** also checks for new leagues and updates memberships. Original local teams are separated into Test Week practice templates. In Test Week, **Edit roster** changes only that saved practice run; email always uses normal teams.
+Sleeper rosters are managed in Sleeper; the local app's **Refresh live data** also checks for new leagues and updates memberships. The hosted site's **Reload report** only reloads the published snapshot; it cannot start a Mac refresh. Original local teams are separated into Test Week practice templates. In Test Week, **Edit roster** changes only that saved practice run; email always uses normal teams.
 
 ## Replay versus live
 
 **Test Week** starts Monday morning, December 22, 2025. Reveal each night, inspect box scores and model calls, bank a score per starter, and move to the next morning. Progress persists through Sunday, December 28. The morning hides that night’s outcomes; banked scores stay fixed as later performances appear. [Full simulator guide](TEST_WEEK.md).
 
-Live analysis is an explicit refresh. It uses completed observations through the previous day for a noon report, counts remaining schedule opportunities, and labels unavailable data. Before regular-season games enter the observation cutoff, the report shows UPCOMING and previews the opening-week schedule without requesting NBA Stats. A drafted fantasy league is not proof that the NBA regular season has begun. Roster, schedule, and performance availability are handled separately. Merely opening the dashboard does not start NBA retrieval. Saved live reports expire after 26 hours; their original timestamp remains visible across midnight. The Mac publishes daily and catches up after sleep/login.
+Live analysis is an explicit refresh. It uses completed observations through the previous day, counts remaining schedule opportunities, and labels unavailable data. Before regular-season games enter the observation cutoff, the report shows UPCOMING and previews the opening-week schedule without requesting NBA Stats. A drafted fantasy league is not proof that the NBA regular season has begun. Roster, schedule, and performance availability are handled separately. Merely opening the dashboard does not start NBA retrieval. Saved live reports expire after 26 hours or when their fantasy week ends; their original timestamp remains visible across midnight within the same week.
 
-Completed, pre-draft, and drafting leagues display their state without NBA analysis. A newer imported season archives older teams; enable **Show archived leagues** to view them. The daily automation and live refresh discover the current season (2026 for 2026–27), falling back to the last saved season until new leagues exist. The automation runs at noon, not continuously.
+Completed, pre-draft, and drafting leagues display their state without NBA analysis. A newer imported season archives older teams; enable **Show archived leagues** locally to view them. Daily refreshes discover the current season (2026 for 2026–27), falling back to the last saved season until new leagues exist. The email automation targets noon; the website publisher targets 12:17 PM America/Edmonton and catches up after sleep/login. Neither is a continuous live-game feed.
+
+Live observations accumulate in one local SQLite database and are shared across leagues. The Mac generates a public report and website assets, then pushes them to GitHub Pages. The website remains readable while the Mac is off, but new reports need the Mac awake, logged in, and online. It has no separate database. See [Hosting](HOSTING.md).
 
 ## How the lock model reasons
 
@@ -40,12 +42,12 @@ For imported leagues, every team's roster is used to identify unrostered players
 
 ## Scoring and data limitations
 
-The original bonus-loss bug is fixed: double-double, triple-double, 40-point, and 50-point flags survive normalization. The configured bonuses stack. Confirm league semantics if using a new scoring format.
+Bonuses are computed from each observed box score. Double/triple-double and configured positive thresholds for points, rebounds, assists, steals, and blocks stack; 15+ assists and 20+ rebounds are supported examples. Each league retains its own weights, so new milestone rules need configuration rather than team-specific code. See [Configuration](CONFIGURATION.md) for naming and import rules.
 
 Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `ignored_scoring` metadata. Personal fouls (`PF`) use actual values when available and are omitted otherwise. Offensive/defensive rebound weights use actual splits when available; otherwise the model uses total rebounds with coefficient `REB weight + (OREB weight + DREB weight) / 2`, treating an absent split weight as zero. Equal split weights are exact; unequal weights are an approximation. These approved adjustments are shown as information and do not block recommendations. Other unknown nonzero rules still withhold actionable recommendations.
 
 ## Interview description
 
-> I built a local NBA fantasy decision dashboard with read-only Sleeper roster synchronization, statistical lock/wait recommendations, and player improvement screening. A cached historical dataset makes analysis reproducible without repeated API calls. The system explicitly separates unavailable data from valid zero values and prevents future observations from entering replay calculations.
+> I built an NBA fantasy decision dashboard with read-only Sleeper synchronization, league-specific scoring, and explainable lock/wait and pickup heuristics. One local SQLite database retains live observations. A Mac scheduler publishes static reports to GitHub Pages with catch-up, retries, and deployment confirmation, so the website needs no database server. Separate checksum-verified fixtures support offline practice, and the engine excludes future observations from replay inputs.
 
-Discuss the independence assumption, missing scoring features, request cooldowns, and the distinction between a heuristic score and measured predictive accuracy. No performance improvement has yet been established through held-out evaluation.
+Discuss database upserts versus immutable replay, local availability versus static hosting, deployment confirmation versus a successful push, extensible scoring versus approximation error, and the model's independence assumption. No performance improvement has yet been established through held-out evaluation.

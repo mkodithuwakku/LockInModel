@@ -14,7 +14,8 @@
 | `game_store.py` | SQLite player-game history, daily overlap upserts, weekly full reconciliation |
 | `publication.py` | Local static publication, deployment verification, retry ledger, macOS wake catch-up |
 | `transport.py` | Persistent response cache, request serialization/pacing, cooldown circuit |
-| `scoring.py` | Configured weighted FP calculation |
+| `scoring.py` | Validated league weights, generic milestone bonuses, foul/rebound fallback policy, FP calculation |
+| `pages.py` | Live report generation, public field allowlist, static asset export |
 | `decide.py` | One player's weekly result and failure states |
 | `model.py` | Weighted baseline, variance guards, rarity, future-score probability |
 | `pickups.py` | Separate-window improvement screening and roster fit |
@@ -56,7 +57,7 @@ The Sleeper schedule feed is a public read-only endpoint used by this adapter, o
 
 ## Data contracts
 
-Normalized game frames require valid `GAME_DATE` and finite, nonnegative PTS, REB, AST, STL, BLK, TOV, and FG3M. Other shooting fields are added as zero if absent. MIN, when present, is parsed from numeric values or minute/second strings and validated. IDs, source metadata, and DD/TD/PTS40/PTS50 are retained.
+Normalized game frames require valid `GAME_DATE` and finite, nonnegative PTS, REB, AST, STL, BLK, TOV, and FG3M. Other shooting fields are added as zero if absent and recorded as imputed so they cannot silently satisfy a required weight. MIN, when present, is parsed from numeric values or minute/second strings and validated. IDs, source metadata, and DD/TD/PTS40/PTS50 are retained. Scoring recomputes double/triple-double and configurable milestone indicators from base observations. `scoring_notes` describes intentionally omitted fouls and total-rebound approximations; these differ from unsupported nonzero rules that produce `SCORING_INCOMPLETE`.
 
 Decision results include player identity, lineup slot/order, NBA team, live injury label, status, optional decision/score, observed history, warnings, and weekly schedule information. `schedule_state` distinguishes a verified off day from unknown data; `week_games` carries date, opponent, home/away, status, and observed FP only. Replay scores never appear beyond the observation cutoff. Suffix normalization and active-player preference resolve Sleeper names such as Tim Hardaway and Wendell Carter without selecting a retired relative. Incomplete results have `decision: null`; consumers must not infer WAIT or LOCK from absent fields.
 
@@ -91,6 +92,17 @@ Decision results include player identity, lineup slot/order, NBA team, live inju
 
 All personal/generated paths are ignored by Git. A saved report is distinct from the response cache; showing old information as stale does not authorize a live fetch.
 
+### Shared game store
+
+| SQLite table | Key | Stored fields |
+| --- | --- | --- |
+| `games` | `(season, game_id, player_id)` | `game_date`, JSON observation `payload` |
+| `refreshes` | `season` | `refreshed_on`, `full_on`, UTC `fetched_at` |
+
+The store retains observations rather than a separate copy of fantasy points per league. Every league can rescore the same history with its own formula, including newly configured milestones. A refresh validates the fetched batch before writing. The game upserts and successful-refresh metadata share one SQLite transaction; a process-level file lock serializes the larger read/fetch/write operation. An already successful calendar-day refresh is reused by the CLI, dashboard, and publisher.
+
+This is an upsert history, not an immutable event log: corrected records replace their earlier payload. Full reconciliation updates returned records but does not delete stored records absent from a response. Failed refreshes preserve the database, while the provider reports the failure and withholds performance recommendations rather than presenting retained rows as a fresh download. Historical replay stays in separate checksummed Parquet files, independent of these mutable live records.
+
 ## Remaining boundaries
 
 Snapshot writes are atomic, but roster configuration does not yet use a cross-process transaction lock. One local dashboard process is the intended editing workflow. Background job state lives in memory, so restarting the server loses job-status polling; completed config/report files remain on disk.
@@ -99,4 +111,6 @@ Snapshot writes are atomic, but roster configuration does not yet use a cross-pr
 
 `publication.py` runs on the Mac. It uses the saved local Sleeper configuration, refreshes the shared engine, and passes the result to `pages.py` for an explicit field allowlist. A fresh temporary Git repository uploads only generated website files to `gh-pages`, preserving branch history with a normal fast-forward push. GitHub Pages publishes that branch without running the model. No database, raw cache, credentials, or private configuration is uploaded. A publication ID is checked against the live `report.json` before the daily slot is marked successful.
 
-The macOS LaunchAgent performs inexpensive due checks every 15 minutes, at login, and after a missed calendar event during sleep. Filesystem locking prevents overlapping publications. Failed uploads/deployments or partial data reports retain retry state with capped backoff. A previously uploaded report can be verified on the next check without refetching data. The original report generation timestamp controls the 26-hour browser expiry. See [Hosting](HOSTING.md).
+The macOS LaunchAgent performs inexpensive due checks every 15 minutes, at login, and after a missed calendar event during sleep. Filesystem locking prevents overlapping publications. Failed uploads/deployments or partial data reports retain retry state with capped backoff. A previously uploaded report can be verified on the next check without refetching data. The original report generation timestamp controls the 26-hour browser expiry; a previous fantasy week expires at the next Monday even if younger than 26 hours. See [Hosting](HOSTING.md).
+
+Source and publication have separate lifecycles. A `main` push or pull request runs `.github/workflows/tests.yml`; it does not generate a report or deploy source files. The local publisher reads the current checkout and updates only `gh-pages`. GitHub's managed Pages build deploys that static branch. Local configuration, SQLite transactions, report files, Git push, and Pages deployment are not one transaction; the publication ledger handles retry and confirmation between those stages.

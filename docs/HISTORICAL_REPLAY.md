@@ -15,6 +15,8 @@ The first fixture was captured on September 10, 2026 from an immutable revision 
 
 Exact source revision, file hashes, row counts, coverage dates, and selection parameters are in [the committed manifest](../data/fixture-manifest.json). Raw and normalized datasets are local ignored files.
 
+These immutable replay tables are separate from `data/lockin.sqlite3`, the mutable live game store. Daily refreshes append/upsert live observations and do not rewrite practice fixtures. The shared engine can apply the same league scoring functions to either provider without treating live history as a reproducible historical snapshot.
+
 ## Capturing and resuming
 
 `python capture.py` obtains the source revision from the archive's current `main` once, saves it in `data/cache/archive/commit.txt`, saves raw Parquet files, and reuses existing files on later invocations. It does not initialize from the committed fixture manifest, so a fresh checkout can select a different revision and regenerate different provenance or a different eligible-week pool. A download is parsed before becoming a completed raw file. Normalized outputs are written through temporary files. The manifest is published after validation succeeds.

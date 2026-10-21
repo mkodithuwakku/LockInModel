@@ -10,7 +10,7 @@ For each game:
 FP = Σ (stat value × configured stat weight)
 ```
 
-The current base scoring is:
+The sample configuration's base scoring is (imported leagues use their own weights):
 
 ```text
 FP = 0.5·PTS + REB + AST + 2·STL + 2·BLK − TOV + 0.5·FG3M
@@ -20,7 +20,7 @@ FP = 0.5·PTS + REB + AST + 2·STL + 2·BLK − TOV + 0.5·FG3M
 
 ### Derived bonuses
 
-`_compute_derived_flags()` implements these indicators:
+The sample configuration enables these indicators. The normalizer retains traditional flags, while `add_fantasy_points()` recomputes active bonuses from base observations rather than trusting saved flags:
 
 | Flag | Condition | Configured FP |
 | --- | --- | --- |
@@ -29,9 +29,11 @@ FP = 0.5·PTS + REB + AST + 2·STL + 2·BLK − TOV + 0.5·FG3M
 | `PTS40` | PTS ≥ 40 | 2 |
 | `PTS50` | PTS ≥ 50 | 2 |
 
-The conditions stack: a triple-double qualifies for DD and TD, and a 50-point game qualifies for PTS40 and PTS50. Confirm that this matches the intended league rules before preserving it in a fix.
+The conditions stack: a triple-double qualifies for DD and TD, and a 50-point game qualifies for PTS40 and PTS50. Each qualifying threshold contributes its configured weight once. There is no exclusive-tier bonus mode.
 
 The normalizer retains the traditional derived flags and identifiers. Scoring recomputes indicators from base observations, including generic thresholds such as `AST15` (15+ assists) and `REB20` (20+ rebounds); a new league can add a positive PTS/REB/AST/STL/BLK threshold without changing Python code.
+
+For example, `AST15: 3` adds 3 FP at 15 assists and `REB20: 5` adds 5 FP at 20 rebounds. Below-threshold observations add zero; reaching both adds 8 FP on top of the other configured terms. The sample defaults set these two weights to zero. Imported Sleeper milestones and older saved unsupported milestone entries map into the same generic formula; see [Configuration](CONFIGURATION.md).
 
 For a synthetic game with 50 PTS, 10 REB, 10 AST, 2 STL, 1 BLK, 3 TOV, and 4 FG3M:
 
@@ -161,7 +163,7 @@ These are hand-tuned preferences. The probability of a future improvement is als
 - The latest completed score is still eligible to lock under league rules.
 - Rarity and preference adjustments improve decisions rather than just confidence.
 
-There are no injury, opponent, minutes-projection, home/away, or back-to-back features. See the [replay proposal](HISTORICAL_REPLAY.md) for how to evaluate the policy without exposing future results to it.
+There are no injury, opponent, minutes-projection, home/away, or back-to-back features. See the [historical replay guide](HISTORICAL_REPLAY.md) for how to evaluate the policy without exposing future results to it.
 
 ## 10. Player improvement screening
 

@@ -20,7 +20,7 @@ The baseline engine and pickup calculations are shared with normal reports. Morn
 
 ## Practice assumptions
 
-Practice uses the original sample scoring rules, not the unsupported foul penalties from your imported leagues. It has sample rosters, no historical league-wide ownership, and no reconstructed draft or transaction history. On the Rise labels ownership as unknown; it excludes the selected practice roster, not every team from a real historical fantasy league.
+Practice uses the sample scoring rules rather than imported live league formulas. It runs the same scoring engine, including derived bonuses and the documented fallback policies, against immutable fixture tables rather than the live SQLite store. It has sample rosters, no historical league-wide ownership, and no reconstructed draft or transaction history. On the Rise labels ownership as unknown; it excludes the selected practice roster, not every team from a real historical fantasy league.
 
 The clock advances whole nights, not live game minutes or exact lock deadlines. The simulator does not enforce all of Sleeper's transaction/lineup rules. It is an offline decision practice tool, not a recreation of an official fantasy matchup. Finalized schedules and the prior-season baseline have the limitations described in [Historical replay](HISTORICAL_REPLAY.md).
 

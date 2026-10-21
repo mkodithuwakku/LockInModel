@@ -6,7 +6,7 @@
 
 Each team contains a stable `id`, `name`, complete `players` list, and `starters` subset. The UI can add, remove, or toggle local players. The older `team_roster` field is only a migration fallback; legacy starter JSON is no longer read.
 
-Imported Sleeper teams additionally contain `source`, `league_id`, `league_name`, `season`, `league_status`, `synced_at`, `weights`, `unsupported_scoring`, `owned_players`, and player-position metadata. A sync refreshes membership from Sleeper. Imported rosters cannot be manually edited in this UI, avoiding two competing sources of truth.
+Imported Sleeper teams additionally contain `source`, `league_id`, `league_name`, `season`, `league_status`, `synced_at`, `weights`, `unsupported_scoring`, `ignored_scoring`, `owned_players`, and player-position metadata. A sync refreshes membership and scoring from Sleeper. Imported rosters cannot be manually edited in this UI, avoiding two competing sources of truth.
 
 When Sleeper teams are present, original local rosters move to `test_teams` practice templates; `teams` contains the synced league entries. Older seasons carry `archived: true`. Runtime practice edits stay in `state/test-week.json`, separate from this configuration.
 
@@ -24,6 +24,8 @@ Supported columns are PTS, REB, AST, STL, BLK, TOV, FG3M, FGM, FGA, FTM, FTA, OR
 Bonuses stack: a triple-double receives DD and TD; 50 points receives both point-threshold bonuses. Any positive integer threshold for PTS, REB, AST, STL, or BLK can be appended to the stat name, such as `AST15: 3`, `REB20: 5`, or `STL5: 2`. Each adds its configured weight once when the observed stat reaches that threshold. Zero disables it. The sample defaults include AST15 and REB20 at zero so existing sample scoring is unchanged.
 
 Sleeper rule names are translated explicitly, including `to → TOV` and `tpm → FG3M`. Milestones matching `bonus_(pt|reb|ast|stl|blk)_<threshold>p` are imported automatically: `bonus_ast_15p → AST15` and `bonus_reb_20p → REB20`. The same migration applies when loading older saved configurations. Global and per-team weights are validated; each league retains its own formula.
+
+For example, adding `AST15: 3` and `REB20: 5` to a local team's existing `weights` adds 3 FP for at least 15 assists and 5 FP for at least 20 rebounds, independently of ordinary assist/rebound points. A game reaching both gains 8 bonus FP. These are illustrative weights, not global defaults. Imported league weights are refreshed from Sleeper on sync; use that league's settings as the authority. Changing weights rescales stored observations at scoring time and does not require a new database or new threshold-specific Python code.
 
 Technical and flagrant foul penalties (`tf`, `ff`) are omitted and retained in `ignored_scoring` metadata. Personal fouls (`PF`) use actual values when available and are omitted otherwise. Offensive/defensive rebound weights use actual splits when available; otherwise the model uses total rebounds with coefficient `REB weight + (OREB weight + DREB weight) / 2`, treating an absent split weight as zero. Equal split weights are exact; unequal weights are an approximation. These approved adjustments are shown as information and do not block recommendations. Other unknown nonzero rules still withhold actionable recommendations.
 

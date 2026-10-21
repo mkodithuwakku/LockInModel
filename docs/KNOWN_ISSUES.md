@@ -2,7 +2,11 @@
 
 ## Corrected in this implementation
 
-- Bonus flags now survive normalization and scoring; threshold and stacking cases are tested.
+- Bonuses are recomputed from observations, including configurable points/rebounds/assists/steals/blocks thresholds. Boundary and stacking cases are tested.
+- Unavailable fouls and rebound splits use documented fallbacks and informational notes; they no longer block recommendations. Unknown nonzero rules still do.
+- SQLite retains shared live game history with transactional upserts, daily overlap downloads, weekly reconciliation, and failed-refresh retention.
+- Daily website generation moved from GitHub Actions to a Mac LaunchAgent. Catch-up timing, retries, export isolation, and pending deployment confirmation are tested; GitHub serves the static result.
+- Reports retain their original timestamp across midnight and expire after 26 hours or at the next fantasy week, with stale actions suppressed.
 - Empty/failed schedules no longer become zero remaining games or confident LOCKs. The live calendar is fetched once per season-cache window and shared across players.
 - Drafted preseason leagues no longer request nonexistent regular-season stats; opening-week opponents and UPCOMING status remain visible.
 - NBA team labels and ordered lineup slots survive provider failures; shortened Sleeper names prefer active NBA identities.
@@ -37,7 +41,9 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 | Pickup projection | Hand-tuned conservative estimate, not a fitted/calibrated forecast |
 | Position fit | Shared position compatibility; no full roster-slot optimization or waiver-budget strategy |
 | Local configuration | Atomic writes, but no cross-process configuration transaction lock; one editor process is intended |
-| Deployment | GitHub Pages publishes public read-only reports; local Flask still has no public login or production server. Test Week and editing stay local. Schedules and upstream API availability are not guaranteed. |
+| Deployment | GitHub Pages serves a public static snapshot without a database. Updates require the Mac logged in, awake, online, and authenticated to GitHub; source pushes alone do not deploy. Catch-up cannot restore missed decision deadlines. Local Flask has no public login; Test Week and editing stay local |
+| Live storage | Upserts replace corrected observations; no historical versions are retained, and records absent from a later response are not deleted. Backups remain a local operational responsibility |
+| Verification | Catch-up logic is tested with simulated times; a physical Mac sleep/wake cycle is not verified. Existing generic screenshots predate the new scoring notices |
 | Runtime | Existing Python 3.9/LibreSSL environment retained; modern runtime and dependency upgrade remains desirable |
 | License | No project license chosen |
 

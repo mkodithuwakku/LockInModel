@@ -33,9 +33,15 @@ Connect the desired Sleeper account in the local dashboard first. The publisher 
 .venv/bin/python publication.py status
 ```
 
-The first command uploads an export and switches Pages to branch publication at `gh-pages` `/`. This requires repository administration access for the one-time Pages setting. Routine runs require push access only. The credential helper's output stays in memory and is never printed or saved in the report.
+The first command uploads an export, switches Pages to branch publication at `gh-pages` `/`, and explicitly requests the initial Pages build. This requires repository administration access for the one-time Pages setting. Routine runs require push access only; branch pushes trigger subsequent Pages builds. The credential helper's output stays in memory and is never printed or saved in the report.
 
 Defaults can be overridden under `publication` in local YAML: remote, branch, hour, minute, timezone, and optional HTTPS public URL. The source branches `main` and `master` are rejected as publication destinations. See [Configuration](CONFIGURATION.md). After moving the repository or changing its virtual environment, rerun installation so absolute paths remain valid.
+
+## Shipping source changes
+
+Pushing `main` runs CI; it does not publish the website. The publisher uses the code and website assets in this local checkout, without automatically pulling GitHub source. If changes were made elsewhere, pull them locally and update dependencies as needed before the next publication. Use `.venv/bin/python publication.py run --force` to publish immediately, or let the next daily slot publish them. Documentation-only changes need a source push, not a new report.
+
+The SQLite file is authoritative for live observations, while `gh-pages` is a replaceable display snapshot with Git history. No database migration or hosted database synchronization is involved in publication. Existing HTTP caches are still used for requests such as rosters and schedules; they are not an alternative authoritative game history.
 
 ## Operations and recovery
 
