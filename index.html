@@ -167,46 +167,8 @@
                 </div>
               </div>
             </section>
-            <aside class="right-rail">
-              <div class="week-card">
-                <div class="section-label">
-                  THE WEEK AHEAD <span>07 DAYS</span>
-                </div>
-                <h2>One week.<br />Make your call.</h2>
-                <svg
-                  class="court-diagram"
-                  viewBox="0 0 240 116"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M4 4h232v108H4zM78 4v58h84V4M4 20c20 108 212 108 232 0"
-                  />
-                  <circle cx="120" cy="62" r="23" />
-                  <path d="M104 15h32M120 15v9" />
-                  <circle cx="120" cy="29" r="5" />
-                </svg>
-                <div id="week-days" class="week-days"></div>
-                <p id="week-caption">One score. One decision.</p>
-              </div>
-              <div class="rail-heading">
-                <h3>The watchlist</h3>
-                <button id="see-risers">View all ↗</button>
-              </div>
-              <div id="radar"></div>
-              <div class="explain-card">
-                <span>A NOTE FROM THE DESK</span>
-                <h3>A box score is<br />only half the story.</h3>
-                <p>
-                  Compare the latest score with recent form and remaining
-                  opportunities. Open any player to see the reasoning.
-                </p>
-                <div class="legend">
-                  <span><i class="mint-bg"></i> Lock</span
-                  ><span><i class="purple-bg"></i> Wait</span
-                  ><span><i class="amber-bg"></i> Review</span>
-                </div>
-              </div>
+            <aside class="right-rail" aria-label="Team insights">
+              <section id="team-insights" class="team-insights" aria-labelledby="insights-title"></section>
             </aside>
           </div>
           <footer>
@@ -274,6 +236,7 @@
       <div id="roster-editor"></div>
     </dialog>
     <div id="toast" role="status" hidden></div>
+    <script src="./insights.js" defer></script>
     <script src="./pages.js" defer></script>
     <script src="./app.js" defer></script>
   </body>
