@@ -1,6 +1,8 @@
 """Read-only Sleeper NBA import. Scoring gaps and ownership are explicit."""
 
 import datetime as dt
+import re
+from urllib.parse import urlsplit
 from transport import HTTP, DataUnavailable
 from storage import (
     ROOT,
@@ -39,6 +41,44 @@ SCORING = {
 
 def get(path, ttl=900):
     return HTTP.get(BASE + path, ttl=ttl, pace=1)
+
+
+def avatar_url(value):
+    """Accept Sleeper avatar IDs or HTTPS image paths on its own CDN."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    value = value.strip()
+    if re.fullmatch(r"[A-Za-z0-9_-]+", value):
+        return "https://sleepercdn.com/avatars/thumbs/" + value
+    try:
+        url = urlsplit(value)
+        if (
+            url.scheme == "https"
+            and url.netloc == "sleepercdn.com"
+            and url.path.startswith(("/uploads/", "/avatars/"))
+            and not url.query
+            and not url.fragment
+        ):
+            return value
+    except ValueError:
+        pass
+    return None
+
+
+def team_avatar(profile, user):
+    """Prefer the league-specific team picture, then the owner's avatar."""
+    return next(
+        (
+            url
+            for value in (
+                (profile.get("metadata") or {}).get("avatar"),
+                profile.get("avatar"),
+                user.get("avatar"),
+            )
+            if (url := avatar_url(value))
+        ),
+        None,
+    )
 
 
 def sync(username, season):
@@ -150,6 +190,7 @@ def sync(username, season):
                 "id": "sleeper-" + lid,
                 "archived": False,
                 "name": team_name,
+                "team_avatar_url": team_avatar(profile, user),
                 "league_name": details["name"].strip(),
                 "league_id": lid,
                 "season": str(season),

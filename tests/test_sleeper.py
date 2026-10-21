@@ -22,7 +22,15 @@ def payload(path):
             {"owner_id": "u", "players": ["1"], "starters": ["1"]},
             {"owner_id": "v", "players": [], "reserve": ["2"]},
         ],
-        "/league/l/users": [{"user_id": "u", "metadata": {"team_name": "Test Team"}}],
+        "/league/l/users": [
+            {
+                "user_id": "u",
+                "metadata": {
+                    "team_name": "Test Team",
+                    "avatar": "https://sleepercdn.com/uploads/team.jpg",
+                },
+            }
+        ],
     }
     return copy.deepcopy(data[path])
 
@@ -35,6 +43,7 @@ def test_import_records_full_ownership_and_scoring_gaps(tmp_path, monkeypatch):
     monkeypatch.setattr(sleeper, "save_cfg", lambda c: saved.append(c))
     assert sleeper.sync("example", "2025")["count"] == 1
     t = saved[0]["teams"][0]
+    assert t["team_avatar_url"] == "https://sleepercdn.com/uploads/team.jpg"
     assert "Derrick White" in t["owned_players"]
     assert t["ignored_scoring"] == {"ff": -2, "tf": -2}
     assert t["unsupported_scoring"] == {} and t["weights"]["PTS"] == 0.5
@@ -145,3 +154,26 @@ def test_import_preserves_lineup_slots_empty_slots_bench_and_team(
     assert meta["derrick white"]["roster_slot"] == "BN"
     assert meta["tyrese maxey"]["nba_team"] == "PHI"
     assert meta["tyrese maxey"]["injury_status"] == "DTD"
+
+
+@pytest.mark.parametrize(
+    "custom,account,expected",
+    [
+        (
+            "https://sleepercdn.com/uploads/team.jpg",
+            "owner",
+            "https://sleepercdn.com/uploads/team.jpg",
+        ),
+        (None, "owner", "https://sleepercdn.com/avatars/thumbs/owner"),
+        ("javascript:alert(1)", "owner", "https://sleepercdn.com/avatars/thumbs/owner"),
+        ("https://sleepercdn.com.evil.test/uploads/team.jpg", None, None),
+        ("https://user:password@sleepercdn.com/uploads/team.jpg", None, None),
+        ("https://sleepercdn.com/uploads/team.jpg?token=secret", None, None),
+        (None, None, None),
+    ],
+)
+def test_team_picture_precedence_and_safe_sources(custom, account, expected):
+    assert (
+        sleeper.team_avatar({"metadata": {"avatar": custom}, "avatar": account}, {})
+        == expected
+    )

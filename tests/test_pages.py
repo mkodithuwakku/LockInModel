@@ -19,6 +19,7 @@ def report():
             {
                 "id": "test",
                 "team_name": "Example",
+                "team_avatar_url": "https://sleepercdn.com/uploads/team.jpg",
                 "league_name": "Example League",
                 "owned_players": ["PRIVATE_OWNERSHIP"],
                 "weights": {"PRIVATE_RULE": 1},
@@ -67,6 +68,10 @@ def test_export_allowlist_and_subpath(tmp_path):
     out = tmp_path / "site"
     pages.export_site(raw, out)
     exported = json.loads((out / "report.json").read_text())
+    assert (
+        exported["teams"][0]["team_avatar_url"]
+        == "https://sleepercdn.com/uploads/team.jpg"
+    )
     assert "PRIVATE" not in json.dumps(exported)
     assert "ARCHIVED_SECRET" not in json.dumps(exported)
     assert exported["teams"][0]["results"][0]["history"][0]["fp"] == 30
@@ -167,6 +172,10 @@ def test_lineup_export_is_nested_allowlist_and_failure_clears_it():
         ],
     }
     exported = pages.public_report(raw)
+    assert (
+        exported["teams"][0]["team_avatar_url"]
+        == "https://sleepercdn.com/uploads/team.jpg"
+    )
     assert "PRIVATE" not in json.dumps(exported)
     assert exported["teams"][0]["recommended_lineup"]["slots"][0]["projected_fp"] == 40
     failed = pages.unavailable(exported, "Refresh failed")

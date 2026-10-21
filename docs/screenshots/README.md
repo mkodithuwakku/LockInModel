@@ -1,5 +1,17 @@
 # README screenshots
 
+## Current visual identity
+
+- `identity-desktop.png`: generic sample roster, with the interlocking LI logo,
+  charcoal/plum surfaces, copper/gold accents and full-roster forecasts.
+- `identity-mobile.png`: the same generic sample at 390px. Its team has no external
+  photo, demonstrating the initials fallback. Real imported league photos are
+  verified separately and excluded from committed screenshots.
+
+All other captures below use the earlier navy/teal palette. They remain feature
+walkthroughs, not examples of the current branding.
+
+
 These captures show generic sample teams and historical performances through
 December 25, 2025. They do not show current recommendations or personal account
 settings. The desktop Test Week uses an isolated practice-state file.

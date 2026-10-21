@@ -15,7 +15,7 @@ from lineup import unavailable_lineup
 
 REPORT_FIELDS = "mode date observation_cutoff generated_at notice refresh_status schedule_week season_start publication_id".split()
 TEAM_FIELDS = (
-    "id team_name league_name source season league_status archived synced_at "
+    "id team_name team_avatar_url league_name source season league_status archived synced_at "
     "ownership_complete unsupported_scoring ignored_scoring scoring_notes"
 ).split()
 PLAYER_FIELDS = (

@@ -9,7 +9,7 @@ The Mac owns the game database and generates the daily report. GitHub Pages serv
 1. The local scheduler checks whether the 12:17 PM America/Edmonton publication is due.
 2. `publication.py` refreshes Sleeper rosters and the shared analysis engine. Current league scoring is imported each time.
 3. `data/lockin.sqlite3` retains player-game history across refreshes. Daily downloads overlap the last saved game by seven days, and a weekly full-season download reconciles older corrections. Season/game/player keys prevent duplicate observations. Failed refreshes retain saved data.
-4. `pages.py` exports an explicit allowlist of report fields, HTML, JavaScript, CSS, icons, and available portraits. Private configuration, raw caches, database files, and credentials are excluded.
+4. `pages.py` exports an explicit allowlist of report fields, HTML, JavaScript, CSS, icons, and available portraits. Team avatar URLs are explicitly included; images load directly from Sleeper’s CDN with an initials fallback. Private configuration, raw caches, database files, and credentials are excluded.
 5. A fresh temporary staging repository commits only those files and pushes to `gh-pages`. Normal fast-forward pushes preserve publication history; no force push is used.
 6. GitHub Pages builds the static branch. The publisher checks the live `report.json` for the new publication ID before recording a successful daily run.
 

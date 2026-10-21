@@ -10,12 +10,12 @@ One local SQLite database retains live game history for every league. A daily Ma
 
 ## Screenshots and demo
 
-![Full-roster forecasts with projected FP and PTS/REB/AST for every player](docs/screenshots/roster-projections-desktop.png)
+![Full-roster forecasts with projected FP and PTS/REB/AST for every player](docs/screenshots/identity-desktop.png)
 
-*Generic sample roster with real current-season Sleeper / RotoWire inputs and sample scoring. Bench, injured, and off-day players retain per-game estimates. Open a player for the [complete projected box score](docs/screenshots/player-projections-mobile.png). Approved scoring adjustments are available under Scoring method, not counted as Data alerts.*
+*Current identity, using a generic sample roster with real current-season Sleeper / RotoWire inputs and sample scoring. Bench, injured, and off-day players retain per-game estimates. See the [phone layout](docs/screenshots/identity-mobile.png) and open a player for the [complete projected box score](docs/screenshots/player-projections-mobile.png) (earlier palette). Approved scoring adjustments are available under Scoring method, not counted as Data alerts.*
 
 
-The interface uses a compact fantasy lineup layout: a dark navy background, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. The earlier lineup/form captures below show historical/sample data, not current NBA recommendations.
+The interface uses a compact fantasy lineup layout: warm charcoal and plum surfaces, ivory text, copper/gold accents, colored position slots, small portraits, NBA team and injury labels, and a seven-day opponent strip for every player. A custom interlocking LI emblem anchors the wordmark and favicon. Team selection uses each league’s custom Sleeper photo, then the owner’s profile photo, with initials if neither loads. Starters and bench are grouped separately, with lock/wait indicators and completed fantasy points alongside the schedule. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. **Recent form** replaces the decorative sidebar with individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. The earlier lineup/form captures below show the previous navy palette and historical/sample data, not current NBA recommendations.
 
 ![Recommended daily lineup and recent form beside a generic practice roster](docs/screenshots/daily-lineup-desktop.png)
 

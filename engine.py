@@ -378,6 +378,7 @@ def build_dashboard(
             {
                 "id": team["id"],
                 "team_name": team["name"],
+                "team_avatar_url": team.get("team_avatar_url"),
                 "league_name": team.get("league_name", "Local roster"),
                 "source": team.get("source", "local"),
                 "season": team.get("season"),
@@ -550,6 +551,7 @@ def roster_dashboard(cfg, include_archived=False):
             {
                 "id": t["id"],
                 "team_name": t["name"],
+                "team_avatar_url": t.get("team_avatar_url"),
                 "league_name": t.get("league_name", "Local roster"),
                 "source": t.get("source", "local"),
                 "season": t.get("season"),

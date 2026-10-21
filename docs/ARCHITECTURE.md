@@ -139,3 +139,16 @@ Every roster result now has an independent `projection` object, including bench,
 For players with no current history, verified older observations populate history charts and carry `history_source: prior_season`. These games are scored under the selected league's rules; forecast rows never enter those charts. Players with no NBA observations retain a forecast and an honest empty history state. `pages.py` allowlists the nested projection summary and stat keys separately. The UI renders source/date and projected FP plus PTS/REB/AST on every row, with a full projected box score in player details.
 
 Approved foul omissions and rebound approximations live in `scoring_notes` under Scoring method. They no longer create operational alerts or a warning count. Unknown scoring rules and actual provider failures remain alerts.
+
+
+### Team identity
+
+Sleeper import stores `team_avatar_url`, preferring the league user's
+`metadata.avatar`, then the profile/account avatar. Avatar IDs resolve to Sleeper's
+thumbnail CDN; only HTTPS `sleepercdn.com/uploads/` or `/avatars/` URLs are accepted.
+The field passes through both full and unavailable roster reports and the public
+export allowlist. Browsers load it directly with no referrer; failed or absent
+pictures fall back to initials. The existing daily sync updates changed photos.
+This adds no image database or new scheduled job. The inline LI emblem and matching
+SVG favicon are local assets; the charcoal/plum palette preserves the responsive
+layout and text labels for every status.
