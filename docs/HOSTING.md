@@ -107,7 +107,7 @@ References: [Apple scheduled jobs and sleep/wake behavior](https://developer.app
 
 Every scheduled refresh imports the league's complete slot configuration and generates its recommended pregame lineup in the same public report. The website needs no new database, backend, or Mac trigger. A projection may use labeled prior-season history already present locally; it never requests another season just to fill missing forecasts.
 
-Daily lineups expire at Edmonton midnight, even if the broader report is still within 26 hours. Before the next scheduled publication, the card says it is waiting for today's report. Open tabs check each minute and after waking/returning to the tab. The report is a pregame snapshot: intraday injuries, starts, and weekly Sleeper locks are not continuously refreshed. Reload checks published JSON only.
+The roster sheet uses the latest published lineup snapshot, with its original date. It stays visible across midnight and failed refreshes until another report replaces it. Stale-report notices and lock/pickup expiry remain separate. After changing roster membership, refresh and publish from the Mac to rebuild the sheet. The report is a pregame snapshot: intraday injuries, starts, and weekly Sleeper locks are not continuously refreshed. Reload checks published JSON only.
 
 ## Roster projection coverage
 

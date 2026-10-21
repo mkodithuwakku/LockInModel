@@ -4,7 +4,7 @@
 
 - Full-roster projected box scores are visible independently of start eligibility. Validated current-season Sleeper forecasts cover missing current history, including rookies. Approved scoring choices no longer inflate Data alerts.
 
-- Daily lineups preserve full league slots (including empties), maximize eligible projected FP with exact assignment, and expire at midnight separately from the report. Predictions are baselines, not demonstrated accuracy.
+- Daily lineups preserve full league slots (including empties), maximize eligible projected FP with exact assignment, and remain as dated snapshots until the next refresh. Predictions are baselines, not demonstrated accuracy.
 
 - Bonuses are recomputed from observations, including configurable points/rebounds/assists/steals/blocks thresholds. Boundary and stacking cases are tested.
 - Unavailable fouls and rebound splits use documented fallbacks and informational notes; they no longer block recommendations. Unknown nonzero rules still do.

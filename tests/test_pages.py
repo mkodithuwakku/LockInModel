@@ -157,7 +157,7 @@ def test_successful_local_refresh_uses_shared_engine(monkeypatch, tmp_path):
     assert "PRIVATE" not in pages.SAVED.read_text()
 
 
-def test_lineup_export_is_nested_allowlist_and_failure_clears_it():
+def test_lineup_export_is_allowlisted_and_failure_preserves_dated_snapshot():
     raw = report()
     raw["teams"][0]["recommended_lineup"] = {
         "date": raw["date"],
@@ -179,5 +179,6 @@ def test_lineup_export_is_nested_allowlist_and_failure_clears_it():
     assert "PRIVATE" not in json.dumps(exported)
     assert exported["teams"][0]["recommended_lineup"]["slots"][0]["projected_fp"] == 40
     failed = pages.unavailable(exported, "Refresh failed")
-    assert failed["teams"][0]["recommended_lineup"]["slots"] == []
+    assert failed["teams"][0]["recommended_lineup"] == exported["teams"][0]["recommended_lineup"]
+    assert failed["refresh_status"] == "failed"
     assert exported["teams"][0]["recommended_lineup"]["status"] == "ready"

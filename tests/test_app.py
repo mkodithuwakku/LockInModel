@@ -134,7 +134,7 @@ def test_local_report_preserves_snapshot_time_and_daily_expiry(
         assert data["teams"][0]["pickups"] == []
 
 
-def test_daily_lineup_expires_independently_from_local_report(client, monkeypatch):
+def test_daily_lineup_preserves_the_dated_local_snapshot(client, monkeypatch):
     import datetime as dt
     import app as module
 
@@ -158,5 +158,6 @@ def test_daily_lineup_expires_independently_from_local_report(client, monkeypatc
     }
     monkeypatch.setattr(module, "read_json", lambda *_: copy.deepcopy(saved))
     data = client.get("/api/dashboard?mode=live").get_json()
-    assert data["teams"][0]["recommended_lineup"]["status"] == "unavailable"
-    assert data["teams"][0]["recommended_lineup"]["slots"] == []
+    assert data["teams"][0]["recommended_lineup"]["status"] == "ready"
+    assert data["teams"][0]["recommended_lineup"]["slots"] == [{"player": "A"}]
+    assert data["teams"][0]["recommended_lineup"]["date"] == "2026-10-21"

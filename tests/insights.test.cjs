@@ -48,3 +48,51 @@ test("daily badges expire by calendar date and retain human-readable ties", () =
   assert.deepEqual(dailyBadges({daily_badges:[{...p.daily_badges[0],key:"unknown"}]}, "2026-01-01"), []);
   assert.deepEqual(dailyBadges({daily_badges:[{...p.daily_badges[0],value:null}]}, "2026-01-01"), []);
 });
+
+const { rosterSheet } = require("../web/insights.js");
+const lineupFixture = () => ({
+  results: [
+    {player:"Original starter", player_id:"1", starter:true, roster_slot:"PG", positions:["PG"]},
+    {player:"Better guard", player_id:"2", starter:false, roster_slot:"BN", positions:["PG", "SG"]},
+    {player:"Reserve", player_id:"3", starter:false, roster_slot:"IR"},
+    {player:"Center", player_id:"4", starter:true, roster_slot:"C", positions:["C"]},
+  ],
+  recommended_lineup: {date:"2026-10-20", status:"ready", slots:[
+    {slot:"PG", player:"Better guard", player_id:2, projected_fp:50},
+    {slot:"UTIL", player:"Center", player_id:"4", projected_fp:40},
+    {slot:"UTIL", player:null},
+  ], bench:[{player:"Original starter",player_id:"1",reason:"No game today"}]},
+});
+test("roster sheet promotes optimizer choices, preserves vacant slots and canonical detail indexes", () => {
+  const t = lineupFixture(), before = JSON.stringify(t), view = rosterSheet(t);
+  assert.equal(view.recommended, true);
+  assert.deepEqual(view.rows.map(r=>r.i), [1,3,null,0,2]);
+  assert.deepEqual(view.rows.map(r=>r.p.roster_slot), ["PG","UTIL","UTIL","BN","IR"]);
+  assert.equal(view.rows[0].p.lineup_fp,50);
+  assert.equal(view.rows[2].p.vacant,true);
+  assert.equal(view.rows[3].p.starter,false);
+  assert.equal(view.rows[3].p.lineup_reason,"No game today");
+  assert.equal(JSON.stringify(t),before);
+});
+test("unavailable plans and Test Week retain original roster selection", () => {
+  const t = lineupFixture();
+  assert.equal(rosterSheet(t,false).recommended,false);
+  assert.equal(rosterSheet(t,false).rows[0].p.starter,true);
+  t.recommended_lineup.status="unavailable";
+  assert.equal(rosterSheet(t).recommended,false);
+});
+test("missing or duplicated selected players cannot masquerade as a valid roster plan", () => {
+  const t = lineupFixture();
+  t.recommended_lineup.slots[0].player_id="missing";
+  assert.equal(rosterSheet(t).recommended,false);
+  t.recommended_lineup.slots[0].player_id="4";
+  assert.equal(rosterSheet(t).recommended,false);
+});
+test("no-game snapshot leaves active slots empty and all real players on bench or reserve", () => {
+  const t = lineupFixture();
+  t.recommended_lineup = {status:"no_games",slots:[{slot:"PG",player:null}],bench:[]};
+  const view = rosterSheet(t);
+  assert.equal(view.recommended,true);
+  assert.equal(view.rows.filter(r=>r.p.starter&&!r.p.vacant).length,0);
+  assert.equal(view.rows.filter(r=>!r.p.starter).length,4);
+});

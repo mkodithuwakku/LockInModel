@@ -59,12 +59,7 @@
         }
       }
     }
-    for (const t of report.teams) {
-      const daily = t.recommended_lineup;
-      if (daily && (stale || report.refresh_status === "failed" || daily.date !== currentDate(now))) {
-        t.recommended_lineup = {date: currentDate(now), status: "unavailable", reason: "Awaiting a fresh report for today's lineup.", slots: [], bench: [], total_projected_fp: null};
-      }
-    }
+    // Keep the dated lineup snapshot until another report replaces it.
     report.stale = stale;
     return report;
   }

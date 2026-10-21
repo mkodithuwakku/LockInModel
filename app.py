@@ -131,18 +131,6 @@ def dashboard():
             isinstance(week, list) and len(week) == 2 and str(week[1]) < str(today())
         )
         stale = age < -300 or age > 26 * 3600 or past_week
-        from lineup import unavailable_lineup
-
-        for team in cached["teams"]:
-            daily = team.get("recommended_lineup")
-            if daily and (
-                stale
-                or cached.get("refresh_status") == "failed"
-                or daily.get("date") != str(today())
-            ):
-                team["recommended_lineup"] = unavailable_lineup(
-                    today(), "Awaiting a fresh report for today's lineup."
-                )
         if stale:
             cached["alerts"].insert(
                 0,

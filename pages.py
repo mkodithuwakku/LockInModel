@@ -11,7 +11,6 @@ import sys
 
 from engine import build_dashboard, roster_dashboard, today
 from storage import ROOT, load_cfg, read_json, write_json
-from lineup import unavailable_lineup
 
 REPORT_FIELDS = "mode date observation_cutoff generated_at notice refresh_status schedule_week season_start publication_id".split()
 TEAM_FIELDS = (
@@ -105,7 +104,7 @@ def unavailable(report, message):
     report.setdefault("alerts", []).insert(0, {"severity": "error", "message": message})
     for team in report.get("teams", []):
         team["pickups"] = []
-        team["recommended_lineup"] = unavailable_lineup(report.get("date"), message)
+        # Preserve the last dated lineup as a saved snapshot on refresh failure.
         for row in team["results"]:
             row.update(
                 status="DATA_UNAVAILABLE",

@@ -26,4 +26,4 @@ Roster rows show projected FP and PTS/REB/AST; player details add minutes, steal
 
 Historical charts remain observed-only. Verified older observations are shown with a prior-season label when current history is absent. A rookie may have a complete forecast and no NBA history chart. This is an honest absence of observations, not a broken forecast.
 
-The daily lineup's midnight expiry is unchanged. Per-game estimates remain dated baseline information in a saved report; they are not live availability or permission to start a player. The Mac's existing scheduled publication carries new forecasts to GitHub Pages without adding a database there.
+The roster sheet uses the latest saved daily assignment and retains its original date until a new refresh replaces it, including across midnight. Per-game estimates remain dated baseline information in a saved report; they are not live availability or permission to start a player. The Mac's existing scheduled publication carries new forecasts to GitHub Pages without adding a database there.

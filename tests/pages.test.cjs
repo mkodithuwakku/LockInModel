@@ -82,15 +82,16 @@ test("previous fantasy week expires at Monday even within the daily window", () 
   assert.equal(prepareReport(source, new Date("2026-10-19T06:01:00Z")).stale, true);
 });
 
-test("daily lineup expires at Edmonton midnight while the report stays fresh", () => {
+test("dated lineup survives midnight, expiry and refresh failure until replaced", () => {
   const source = fixture();
   source.teams[0].recommended_lineup = {date: "2026-10-15", status: "ready", slots: [{player: "A"}], bench: [], total_projected_fp: 50};
-  assert.equal(prepareReport(source, new Date("2026-10-16T05:59:00Z")).teams[0].recommended_lineup.status, "ready");
-  const expired = prepareReport(source, new Date("2026-10-16T06:00:00Z"));
-  assert.equal(expired.stale, false);
-  assert.equal(expired.teams[0].recommended_lineup.status, "unavailable");
-  assert.deepEqual(expired.teams[0].recommended_lineup.slots, []);
-  assert.equal(source.teams[0].recommended_lineup.slots.length, 1);
+  for (const now of ["2026-10-16T06:00:00Z", "2026-10-18T06:00:00Z"]) {
+    const report = prepareReport(source, new Date(now));
+    assert.deepEqual(report.teams[0].recommended_lineup, source.teams[0].recommended_lineup);
+  }
   source.refresh_status = "failed";
-  assert.equal(prepareReport(source, new Date("2026-10-15T19:00:00Z")).teams[0].recommended_lineup.status, "unavailable");
+  assert.deepEqual(prepareReport(source, new Date("2026-10-15T19:00:00Z")).teams[0].recommended_lineup, source.teams[0].recommended_lineup);
+  const next = fixture();
+  next.teams[0].recommended_lineup = {date: "2026-10-16", status: "ready", slots: [{player: "B"}], total_projected_fp: 60};
+  assert.equal(prepareReport(next).teams[0].recommended_lineup.slots[0].player, "B");
 });

@@ -1,15 +1,15 @@
 # README screenshots
 
-## Current roster-first layout
+## Current recommended roster sheet
 
-- `roster-first-desktop.png`: generic five-player sample, full-width roster with
-  Recommended lineup and Recent form following below. NBA logos sit beside
-  the team abbreviations in each player card.
-- `roster-first-mobile.png`: 390px sample roster displayed before either insight
-  panel; both panels follow beneath the full sheet.
+- `roster-first-desktop.png`: illustrative five-player league with three active
+  slots, using stored forecasts and the optimizer’s assignment for October 21.
+  Recommended starters occupy the sheet; the bench follows. The preview is not
+  a live league or a freshly fetched report.
+- `roster-first-mobile.png`: the same compact roster and lineup summary at 390px.
 
-All earlier screenshots below predate this layout order. They still demonstrate
-individual features but not current placement of the insight panels.
+Earlier screenshots below predate the integrated lineup. Their separate lineup
+cards and synced-starter ordering are historical feature examples.
 
 ## Current visual identity
 
