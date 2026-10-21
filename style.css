@@ -2916,7 +2916,9 @@ button.lineup-name:hover strong { color: #c6b3d6; }
 .available-list { border-top:1px solid var(--line); }
 .available-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--line); }
 .available-row .player-ident { min-width:0; }
-.available-row .portrait { width:42px; height:44px; flex:0 0 42px; }
+/* Keep directory and pickup headshots inside their compact frame at every breakpoint. */
+.available-row .portrait, .pickup-heading .portrait { width:40px; height:40px; flex:0 0 40px; border-radius:6px; }
+.available-row .portrait img, .pickup-heading .portrait img { width:100%; height:100%; max-width:100%; left:0; bottom:0; object-fit:contain; object-position:center bottom; }
 .available-row .player-name { font-size:15px; }
 .available-row .player-meta { font-size:11px; }
 .available-stats { display:flex; gap:24px; color:var(--muted); font-size:10px; text-align:right; flex-shrink:0; }
