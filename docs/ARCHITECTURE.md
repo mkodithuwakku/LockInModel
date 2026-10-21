@@ -6,6 +6,7 @@
 | --- | --- |
 | `app.py` | Flask routes, same-origin protection, background refresh jobs, dashboard cache |
 | `web/` | Responsive interface, team navigation, player details, roster editing, import UI |
+| `badge_awards.py` | Previous-night per-game milestones, assist/turnover lows, season streaks and league-scored contextual leaders; cached birthdays and confirmed game results |
 | `season_review.py` | Full-season current-roster production, weekly aggregates, and descriptive player metrics; see [Season review](SEASON_REVIEW.md) |
 | `web/insights.js` | Pure observed-form calculations and sparklines from scored report history; shared by local and hosted views |
 | `storage.py` | Canonical YAML loading/validation; atomic JSON/YAML writes |

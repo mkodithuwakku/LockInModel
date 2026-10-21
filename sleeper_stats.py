@@ -91,6 +91,13 @@ def parse_games(payload, games, season, directory):
                 raise DataUnavailable(
                     "Final box scores have not reconciled with the schedule yet; retry the refresh shortly."
                 )
+    for row in rows.values():
+        game = games[row["GAME_ID"]]
+        home = row["TEAM_ABBREVIATION"] == game["home"]
+        if game["home_points"] != game["away_points"]:
+            row["WL"] = (
+                "W" if (game["home_points"] > game["away_points"]) == home else "L"
+            )
     return pd.DataFrame(
         rows.values(),
         columns=None if rows else ["GAME_DATE", "GAME_ID", "PLAYER_ID", "PLAYER_NAME"],

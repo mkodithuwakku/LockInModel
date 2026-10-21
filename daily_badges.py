@@ -143,7 +143,9 @@ def fantasy_night_badges(games, reference, weights, forecasts=None):
 
 
 def combine_badges(*groups):
-    order = list(CATEGORIES) + list(FANTASY_CATEGORIES)
+    from badge_awards import EXTRA_KEYS
+
+    order = list(CATEGORIES) + list(FANTASY_CATEGORIES) + EXTRA_KEYS
     return sorted(
         [b for group in groups for b in group],
         key=lambda b: (b["rank"], order.index(b["key"])),

@@ -162,3 +162,24 @@ test("new daily badges label league scoring, saved forecast coverage and nonposi
   assert.equal(result[4].icon,"🧾");
   assert.equal(result[5].icon,"💔");
 });
+
+test("badge guide covers every new award, all tiers, and exact trigger rules", () => {
+  const {badgeGuide, dailyBadges} = require("../web/insights.js");
+  const guide = badgeGuide();
+  assert.equal(guide.length, 44);
+  assert.equal(new Set(guide.map(b => b.key)).size, guide.length);
+  for (const b of guide) {
+    assert.ok(b.icon && b.name && b.rule && b.group);
+    assert.equal(dailyBadges({daily_badges:[{key:b.key,date:"2025-12-25",rank:1,value:10,tied:false}]},"2025-12-26").length,1);
+  }
+  assert.match(guide.find(b=>b.key==="unc").rule,/fantasy points.*32/);
+  assert.match(guide.find(b=>b.key==="careless").rule,/−5/);
+});
+test("signed awards render, milestones have no fake ranking, streak explains average", () => {
+  const {dailyBadges} = require("../web/insights.js");
+  const make = (key,value,extra={}) => dailyBadges({daily_badges:[{key,value,date:"2025-12-25",rank:1,tied:false,...extra}]},"2025-12-26")[0];
+  assert.match(make("careless",-5).label, /−5|-5/);
+  assert.ok(make("win_low",-2));
+  assert.doesNotMatch(make("milestone_pts_70",71).label, /#1/);
+  assert.match(make("hot_streak",3,{season_average:25.35}).label, /season average 25.4 FP/);
+});

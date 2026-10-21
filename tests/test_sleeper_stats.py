@@ -43,6 +43,7 @@ def test_sparse_final_stats_are_observations_not_totals_or_forecasts():
     ]
     frame = parse_games(rows, games, "2026", {})
     assert len(frame) == 2 and frame.PTS.tolist() == [10, 12]
+    assert frame.WL.tolist() == ["L", "W"]
     assert frame.FG3M.tolist() == [0, 0]
     assert frame.FG3A.tolist() == [0, 0]
     assert frame.SOURCE.unique().tolist() == ["Sleeper / Sportradar"]

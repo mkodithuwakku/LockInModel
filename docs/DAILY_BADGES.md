@@ -1,4 +1,4 @@
-# Previous-night player badges
+# Previous-night player badges and guide
 
 Each refresh ranks the previous calendar day's observed NBA performances before
 filtering to fantasy rosters. Box-score badges are identical across leagues;
@@ -26,10 +26,69 @@ fantasy-point badges use each league's own formula across the NBA player pool.
 | ⚡ | Minute maximizer | Highest fantasy points / minutes played |
 | 🐌 | Slow night | Lowest fantasy points / minutes played |
 
-Ranks use competition ranking: 1, 1, 3. Everyone in the first three places earns
+## Milestones and contextual awards
+
+The compact **Badge guide** button in the top bar opens a scrollable reference
+panel. It does not add a main navigation tab or displace the roster. All **44**
+indicators have an icon, name, and exact trigger; fantasy awards are labeled as
+league-scored. Escape or the close button returns focus to the guide button.
+
+| Icons | Single-game milestones |
+| --- | --- |
+| 🏹 / 🛰️ | 5+ / 10+ made threes |
+| 📬 / 🧵 / 🎼 | 10+ / 15+ / 20+ assists |
+| 🧲 / 🧹 / 🪝 | 10+ / 15+ / 20+ rebounds |
+| 🛑 | 10+ blocks |
+| 🦝 | 10+ steals |
+| 🎬 / 💎 / 🌋 / ☄️ / 👑 | 30+ / 40+ / 50+ / 60+ / 70+ NBA points |
+
+Every qualifying player receives a milestone, with **only the highest reached
+tier per stat**. These are per-game thresholds, never summed across games.
+They can coexist with leaderboard, double-double, and triple-double badges.
+
+| Icon | Award | Trigger |
+| --- | --- | --- |
+| 🧈 | Butterfingers | Three lowest AST − TOV totals; 2 assists and 7 turnovers is −5. Zero and negative margins qualify; ties included. |
+| 🌶️ | Three-game heater | Each of the last three observed season games strictly above the season FP average through last night. |
+| 🧊 | Cold spell | Each of the last three observed season games strictly below that same average. |
+| 🏆 | Winning effort | Highest single-game FP in a confirmed win. |
+| 🥀 | In vain | Highest single-game FP in a confirmed loss. |
+| 🚌 | Along for the ride | Lowest single-game FP in a confirmed win, excluding exactly zero FP; negative FP is eligible. |
+| 🏡 | Hometown hero | Highest single-game FP by a home player. |
+| 🦹 | Villain | Highest single-game FP by an away player. |
+| 👴 | Best unc | Highest single-game FP by a player aged 32 or older on game day. |
+| 🐣 | Best new gen | Highest single-game FP by a player aged 23 or younger on game day. |
+
+The win/loss, home/away, and age awards select **first place, including ties**,
+across the NBA for each league formula. The repeated request for the loss leader
+is represented by one award. Age uses Sleeper birth dates, not a potentially stale
+integer age; missing/invalid birthdays are excluded. Home/away and outcomes use
+confirmed schedule context or observed NBA `MATCHUP`/`WL`. Ambiguous schedule
+matches do not supply context. The validated Sleeper fallback now persists `WL`
+after final box-score reconciliation in the same SQLite game payloads.
+
+Streaks require a game last night and at least four current-season appearances.
+The average includes the last three games and all other observed games in that
+season through last night; all three must be strictly on the same side of that
+average. It is not a comparison of just the three-game average. Prior seasons,
+future games, duplicate records, and DNPs do not enter the comparison. Every
+qualifier earns the streak, and its detail includes the season average. Opening
+night cannot produce a three-game streak. Missing data is never manufactured to
+fill the requirement.
+
+New awards in `badge_awards.py` reuse observed full-season history, cached player
+metadata and the existing season schedule. Raw milestones are computed once per
+report; fantasy awards are shared by leagues with the same formula. No additional
+service, website database, or scheduled job is introduced. Only public award
+explanations cross the report allowlist; birth dates are not exported.
+
+## Ranking and data rules
+
+For the original ranked categories and Butterfingers, ranks use competition ranking: 1, 1, 3. Everyone in the first three places earns
 the badge, including ties at third; this can mean more than three recipients.
-Stat totals must be positive, but FP/min rankings include zero and negative fantasy
-scores. Rates use total fantasy points divided by total minutes, excluding
+Original raw-stat leader totals must be positive. Butterfingers and FP/min
+rankings include zero and negative values. Contextual fantasy leaders also allow
+zero and negative FP, except Along for the ride excludes exactly zero. Rates use total fantasy points divided by total minutes, excluding
 zero-minute/DNP rows. There is no minimum-minutes threshold beyond positive
 playing time: a short appearance can qualify. Exact ties use unrounded values.
 Duplicate player/game records count once, with the last correction retained. Multiple games on a date are summed; the per-game forecast is multiplied by the number of observed games for that player-night.
@@ -80,11 +139,22 @@ uses its simulated date. No games yesterday means no icons.
 
 `daily_badges.py` computes stat rankings once per report and fantasy rankings once
 per scoring formula. `pages.py` allowlists badge identity, rank, value, tie, scope,
-and optional actual/projected FP and coverage. New raw-stat categories belong in
-`CATEGORIES`; fantasy categories use `fantasy_night_badges()`. Icons and labels
-live in `web/insights.js`.
+and optional actual/projected FP and coverage. Original raw-stat categories belong in
+`CATEGORIES`; original fantasy categories use `fantasy_night_badges()`. New
+thresholds and contextual categories live in `badge_awards.py`. Icons, labels and
+guide rules share one catalog in `web/insights.js`.
 
 The [expanded badge example](screenshots/expanded-badges-mobile.png) uses generic
 team labels and real stored October 20 results. The earlier [desktop sample](screenshots/daily-badges-desktop.png)
 and [phone sample](screenshots/daily-badges-mobile.png) use December 25, 2025
 practice results and predate the new categories. None establishes model accuracy.
+
+
+## Guide previews
+
+These captures show the guide with generic team labels; they demonstrate layout,
+not model accuracy. The older expanded-player image above predates this guide.
+
+![Desktop badge guide](screenshots/badge-guide-desktop.png)
+
+![Phone badge guide](screenshots/badge-guide-mobile.png)

@@ -12,6 +12,7 @@ from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import project_players, recommend_lineup, unavailable_lineup
 from daily_badges import previous_night_badges, fantasy_night_badges, combine_badges
+from badge_awards import raw_awards, fantasy_awards
 from season_review import season_review
 
 
@@ -98,6 +99,20 @@ def build_dashboard(
         }
     )
     sleeper_players = read_json(ROOT / "state/sleeper-players.json", {})
+    birthdays = {
+        identity.get(
+            canonical_name(p.get("full_name") or ""), "sleeper:" + str(sid)
+        ): p.get("birth_date")
+        for sid, p in sleeper_players.items()
+        if p.get("birth_date")
+    }
+    if not getattr(provider, "stats_error", None):
+        milestones = raw_awards(observed, reference)
+        daily_badges = {
+            pid: combine_badges(daily_badges.get(pid, []), milestones.get(pid, []))
+            for pid in daily_badges.keys() | milestones.keys()
+        }
+
     positions = {
         canonical_name(
             p.get("full_name")
@@ -183,6 +198,20 @@ def build_dashboard(
                 fantasy_badge_cache[badge_key] = fantasy_night_badges(
                     observed, reference, badge_weights, saved_forecasts
                 )
+                context_badges = fantasy_awards(
+                    observed,
+                    reference,
+                    badge_weights,
+                    getattr(getattr(provider, "calendar", None), "games", None),
+                    birthdays,
+                )
+                existing = fantasy_badge_cache[badge_key]
+                fantasy_badge_cache[badge_key] = {
+                    pid: combine_badges(
+                        existing.get(pid, []), context_badges.get(pid, [])
+                    )
+                    for pid in existing.keys() | context_badges.keys()
+                }
         league_badges = fantasy_badge_cache[badge_key]
         for name in team["players"]:
             pid = identity.get(canonical_name(name))

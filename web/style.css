@@ -3005,3 +3005,27 @@ button.lineup-name:hover strong { color: #c6b3d6; }
   .review-chart { height:110px; }
 }
 @media(max-width:360px) { .review-teams, .review-highlights { grid-template-columns:1fr; } }
+
+/* Secondary reference: no new navigation tab or content above the roster. */
+#badge-guide-open { font-size: 11px; color: var(--muted); white-space: nowrap; }
+#badge-guide-dialog { width: min(720px, calc(100vw - 24px)); max-height: 85dvh; overflow-y: auto; }
+#badge-guide-dialog h2 { font-size: 30px; margin: 8px 0 12px; }
+#badge-guide-dialog .badge-guide-intro, #badge-guide-dialog .badge-guide-note { font-size: 12px; line-height: 1.6; }
+.badge-guide-group { margin-top: 24px; }
+.badge-guide-group h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 12px; }
+.badge-guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
+.badge-guide-item { display: flex; gap: 10px; min-width: 0; }
+.badge-guide-icon { font-size: 19px; width: 26px; flex-shrink: 0; }
+.badge-guide-item h4 { margin: 0 0 4px; font-size: 13px; }
+#badge-guide-dialog .badge-guide-item p { margin: 0; font-size: 12px; line-height: 1.5; }
+.badge-guide-item small { color: var(--muted); font-size: 10px; }
+@media (max-width: 540px) {
+  .badge-guide-grid { grid-template-columns: 1fr; gap: 16px; }
+  #badge-guide-dialog { padding: 24px 20px; }
+  #badge-guide-open { font-size: 10px; padding: 4px; }
+}
+@media (max-width: 360px) {
+  html[data-hosting="pages"] .top-actions { flex-wrap: nowrap; gap: 4px; }
+  html[data-hosting="pages"] .top-actions #freshness { flex: 1; text-align: center; font-size: 8px; min-width: 0; }
+  html[data-hosting="pages"] .top-actions #refresh { white-space: nowrap; padding-inline: 4px; font-size: 9px; }
+}

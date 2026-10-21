@@ -85,6 +85,7 @@
             >COURTSIDE / <b>DESK</b> <span id="breadcrumb">My teams</span></span
           >
           <div class="top-actions">
+            <button id="badge-guide-open" class="subtle" aria-haspopup="dialog" aria-controls="badge-guide-dialog">Badge guide</button>
             <button id="mobile-connect" class="subtle">Sync teams</button>
             <span id="freshness" class="muted">Saved data</span
             ><button id="refresh" class="subtle">
@@ -184,6 +185,14 @@
         </div>
       </main>
     </div>
+    <dialog id="badge-guide-dialog" aria-labelledby="badge-guide-title">
+      <button class="close" aria-label="Close badge guide" autofocus>×</button>
+      <div class="eyebrow">THE LITTLE DETAILS</div>
+      <h2 id="badge-guide-title">Badge guide</h2>
+      <p class="badge-guide-intro">Last night’s NBA performances. Rankings include ties; fantasy awards use your league’s scoring. Milestones and streaks go to every qualifier. Missing data means no badge.</p>
+      <div id="badge-guide-content"></div>
+      <p class="badge-guide-note">Nightly leaders are top 3 unless stated otherwise. Win/loss, home/away and age awards are first place, including ties. Badges never change scores or recommendations.</p>
+    </dialog>
     <dialog id="player-dialog">
       <button class="close" aria-label="Close player details">×</button>
       <div id="player-detail"></div>

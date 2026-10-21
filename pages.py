@@ -95,6 +95,8 @@ def public_report(report):
                         "value",
                         "tied",
                         "scope",
+                        "kind",
+                        "season_average",
                         "projected_fp",
                         "actual_fp",
                         "forecast_count",
