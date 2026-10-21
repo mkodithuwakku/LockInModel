@@ -1,0 +1,3430 @@
+{
+  "mode": "live",
+  "date": "2026-10-20",
+  "observation_cutoff": "2026-10-19",
+  "generated_at": "2026-10-21T04:41:05.676815+00:00",
+  "notice": "Daily snapshot from your Mac, with catch-up after wake. Reload checks the published report; manage locks in Sleeper.",
+  "refresh_status": "ok",
+  "schedule_week": [
+    "2026-10-19",
+    "2026-10-25"
+  ],
+  "season_start": "2026-10-20",
+  "publication_id": "c1fe5afba51e48c58e423f86b585e4f4",
+  "schema_version": 1,
+  "sleeper": {},
+  "dataset": {},
+  "teams": [
+    {
+      "id": "sleeper-1417213338928078848",
+      "team_name": "Sweet Home Wembanyama",
+      "league_name": "Lock TF In",
+      "source": "sleeper",
+      "season": "2026",
+      "league_status": "in_season",
+      "synced_at": "2026-10-21T04:41:04.811723+00:00",
+      "ownership_complete": true,
+      "unsupported_scoring": {},
+      "ignored_scoring": {
+        "ff": -2.0,
+        "tf": -2.0
+      },
+      "scoring_notes": [
+        "Unavailable foul penalties omitted: ff, tf."
+      ],
+      "results": [
+        {
+          "player": "Anfernee Simons",
+          "player_id": "1629014",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "PHI",
+          "roster_slot": "PG",
+          "lineup_order": 0,
+          "injury_status": "GTD",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "NYK",
+              "home": false,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-22",
+              "opponent": "CLE",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Cason Wallace",
+          "player_id": "1641717",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SF",
+            "SG"
+          ],
+          "nba_team": "OKC",
+          "roster_slot": "SG",
+          "lineup_order": 1,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "SAS",
+              "home": false,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-22",
+              "opponent": "DEN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "LAC",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Josh Giddey",
+          "player_id": "1630581",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "G",
+          "lineup_order": 2,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Lauri Markkanen",
+          "player_id": "1628374",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "UTA",
+          "roster_slot": "SF",
+          "lineup_order": 3,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MEM",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "NOP",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "LAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Domantas Sabonis",
+          "player_id": "1627734",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "SAC",
+          "roster_slot": "PF",
+          "lineup_order": 4,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "LAC",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "POR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "MEM",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Paolo Banchero",
+          "player_id": "1631094",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PF"
+          ],
+          "nba_team": "ORL",
+          "roster_slot": "F",
+          "lineup_order": 5,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ATL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "NYK",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Victor Wembanyama",
+          "player_id": "1641705",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "SAS",
+          "roster_slot": "C",
+          "lineup_order": 6,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "OKC",
+              "home": true,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "DAL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Onyeka Okongwu",
+          "player_id": "1630168",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "UTIL",
+          "lineup_order": 7,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Keyonte George",
+          "player_id": "1641718",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "UTA",
+          "roster_slot": "UTIL",
+          "lineup_order": 8,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MEM",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "NOP",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "LAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Fred VanVleet",
+          "player_id": "1627832",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG"
+          ],
+          "nba_team": "HOU",
+          "roster_slot": "BN",
+          "lineup_order": 9,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "DAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "SAS",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "ATL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Coby White",
+          "player_id": "1629632",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "CHA",
+          "roster_slot": "IR",
+          "lineup_order": 10,
+          "injury_status": "DTD",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "BKN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "ATL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "MIA",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "P.J. Washington",
+          "player_id": "1629023",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C",
+            "PF",
+            "SF"
+          ],
+          "nba_team": "DAL",
+          "roster_slot": "BN",
+          "lineup_order": 11,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "HOU",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "IND",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "SAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Nickeil Alexander-Walker",
+          "player_id": "1629638",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "BN",
+          "lineup_order": 12,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Tre Jones",
+          "player_id": "1630200",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG",
+            "SF",
+            "SG"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "BN",
+          "lineup_order": 13,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Ayo Dosunmu",
+          "player_id": "1630245",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "MIN",
+          "roster_slot": "BN",
+          "lineup_order": 14,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        }
+      ],
+      "pickups": []
+    },
+    {
+      "id": "sleeper-1417002266736513024",
+      "team_name": "Wembendyamama ova",
+      "league_name": "Farm House Files",
+      "source": "sleeper",
+      "season": "2026",
+      "league_status": "in_season",
+      "synced_at": "2026-10-21T04:41:04.812809+00:00",
+      "ownership_complete": true,
+      "unsupported_scoring": {},
+      "ignored_scoring": {
+        "ff": -2.0,
+        "tf": -1.0
+      },
+      "scoring_notes": [
+        "Unavailable foul penalties omitted: ff, tf.",
+        "Personal-foul penalties omitted because the box scores lack them.",
+        "Rebound splits unavailable; total rebounds use 1.375 FP each (base weight plus the mean of the two split weights)."
+      ],
+      "results": [
+        {
+          "player": "Devin Booker",
+          "player_id": "1626164",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "PHX",
+          "roster_slot": "PG",
+          "lineup_order": 0,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "POR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "GSW",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Ajay Mitchell",
+          "player_id": "1642349",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "OKC",
+          "roster_slot": "PG",
+          "lineup_order": 1,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "SAS",
+              "home": false,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-22",
+              "opponent": "DEN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "LAC",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Kawhi Leonard",
+          "player_id": "202695",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "TOR",
+          "roster_slot": "SG",
+          "lineup_order": 2,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "CHI",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "WAS",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "MIN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Jrue Holiday",
+          "player_id": "201950",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "POR",
+          "roster_slot": "SG",
+          "lineup_order": 3,
+          "injury_status": "DTD",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "PHX",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "SAC",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Miles Bridges",
+          "player_id": "1628970",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "PHX",
+          "roster_slot": "SF",
+          "lineup_order": 4,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "POR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "GSW",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Dyson Daniels",
+          "player_id": "1630700",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "SF",
+          "lineup_order": 5,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Domantas Sabonis",
+          "player_id": "1627734",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "SAC",
+          "roster_slot": "PF",
+          "lineup_order": 6,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "LAC",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "POR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "MEM",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Jalen Smith",
+          "player_id": "1630188",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "PF",
+          "lineup_order": 7,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Victor Wembanyama",
+          "player_id": "1641705",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "SAS",
+          "roster_slot": "C",
+          "lineup_order": 8,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "OKC",
+              "home": true,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "DAL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Walker Kessler",
+          "player_id": "1631117",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "LAL",
+          "roster_slot": "UTIL",
+          "lineup_order": 9,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "GSW",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "LAC",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "UTA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Onyeka Okongwu",
+          "player_id": "1630168",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "UTIL",
+          "lineup_order": 10,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Rudy Gobert",
+          "player_id": "203497",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "MIN",
+          "roster_slot": "BN",
+          "lineup_order": 11,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "John Collins",
+          "player_id": "1628381",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "DET",
+          "roster_slot": "BN",
+          "lineup_order": 12,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "BOS",
+              "home": true,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "PHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Trae Young",
+          "player_id": "1629027",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG"
+          ],
+          "nba_team": "WAS",
+          "roster_slot": "BN",
+          "lineup_order": 13,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Deandre Ayton",
+          "player_id": "1629028",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "WAS",
+          "roster_slot": "BN",
+          "lineup_order": 14,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Nic Claxton",
+          "player_id": "1629651",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "IR",
+          "lineup_order": 15,
+          "injury_status": "Out",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Aaron Nesmith",
+          "player_id": "1630174",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "IND",
+          "roster_slot": "IR",
+          "lineup_order": 16,
+          "injury_status": "DTD",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "NOP",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "BKN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        }
+      ],
+      "pickups": []
+    },
+    {
+      "id": "sleeper-1416464779651899392",
+      "team_name": "Spectrum Scottie ",
+      "league_name": "Give me a LaimBeer",
+      "source": "sleeper",
+      "season": "2026",
+      "league_status": "in_season",
+      "synced_at": "2026-10-21T04:41:04.814025+00:00",
+      "ownership_complete": true,
+      "unsupported_scoring": {},
+      "ignored_scoring": {
+        "ff": -2.0,
+        "tf": -2.0
+      },
+      "scoring_notes": [
+        "Unavailable foul penalties omitted: ff, tf."
+      ],
+      "results": [
+        {
+          "player": "Nickeil Alexander-Walker",
+          "player_id": "1629638",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "PG",
+          "lineup_order": 0,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Keyonte George",
+          "player_id": "1641718",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "UTA",
+          "roster_slot": "SG",
+          "lineup_order": 1,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MEM",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "NOP",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "LAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Josh Giddey",
+          "player_id": "1630581",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "G",
+          "lineup_order": 2,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "P.J. Washington",
+          "player_id": "1629023",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF",
+            "SF"
+          ],
+          "nba_team": "DAL",
+          "roster_slot": "SF",
+          "lineup_order": 3,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "HOU",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "IND",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "SAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Scottie Barnes",
+          "player_id": "1630567",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "TOR",
+          "roster_slot": "PF",
+          "lineup_order": 4,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "CHI",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "WAS",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "MIN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Bam Adebayo",
+          "player_id": "1628389",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "MIA",
+          "roster_slot": "F",
+          "lineup_order": 5,
+          "injury_status": "DTD",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Joel Embiid",
+          "player_id": "203954",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "PHI",
+          "roster_slot": "C",
+          "lineup_order": 6,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "NYK",
+              "home": false,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-22",
+              "opponent": "CLE",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Jalen Smith",
+          "player_id": "1630188",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "UTIL",
+          "lineup_order": 7,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Onyeka Okongwu",
+          "player_id": "1630168",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "UTIL",
+          "lineup_order": 8,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "James Harden",
+          "player_id": "201935",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG"
+          ],
+          "nba_team": "CLE",
+          "roster_slot": "BN",
+          "lineup_order": 9,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-22",
+              "opponent": "PHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "BKN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Zach LaVine",
+          "player_id": "203897",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "SAC",
+          "roster_slot": "BN",
+          "lineup_order": 10,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "LAC",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "POR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "MEM",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Jarrett Allen",
+          "player_id": "1628386",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "CLE",
+          "roster_slot": "BN",
+          "lineup_order": 11,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-22",
+              "opponent": "PHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "BKN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Jayson Tatum",
+          "player_id": "1628369",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "BOS",
+          "roster_slot": "BN",
+          "lineup_order": 12,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "DET",
+              "home": false,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "NYK",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Nic Claxton",
+          "player_id": "1629651",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "IR",
+          "lineup_order": 13,
+          "injury_status": "Out",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Aaron Nesmith",
+          "player_id": "1630174",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "IND",
+          "roster_slot": "BN",
+          "lineup_order": 14,
+          "injury_status": "DTD",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "NOP",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "BKN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Tre Jones",
+          "player_id": "1630200",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG",
+            "SF",
+            "SG"
+          ],
+          "nba_team": "CHI",
+          "roster_slot": "BN",
+          "lineup_order": 15,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "TOR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "WAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Herbert Jones",
+          "player_id": "1630529",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "NOP",
+          "roster_slot": "BN",
+          "lineup_order": 16,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "IND",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "UTA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "DEN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Davion Mitchell",
+          "player_id": "1630558",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG"
+          ],
+          "nba_team": "MIA",
+          "roster_slot": "BN",
+          "lineup_order": 17,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Scoot Henderson",
+          "player_id": "1630703",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG"
+          ],
+          "nba_team": "POR",
+          "roster_slot": "BN",
+          "lineup_order": 18,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "PHX",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "SAC",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Daniss Jenkins",
+          "player_id": "1642450",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "DET",
+          "roster_slot": "TAXI",
+          "lineup_order": 19,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "BOS",
+              "home": true,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "PHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Ronald Holland",
+          "player_id": "1641842",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "DET",
+          "roster_slot": "TAXI",
+          "lineup_order": 20,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "BOS",
+              "home": true,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "PHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "AJ Dybantsa",
+          "player_id": null,
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "WAS",
+          "roster_slot": "IR",
+          "lineup_order": 21,
+          "injury_status": "Out",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        }
+      ],
+      "pickups": []
+    },
+    {
+      "id": "sleeper-1415801499308580864",
+      "team_name": "Scottie Spectrum",
+      "league_name": "20 person league",
+      "source": "sleeper",
+      "season": "2026",
+      "league_status": "in_season",
+      "synced_at": "2026-10-21T04:41:04.814993+00:00",
+      "ownership_complete": true,
+      "unsupported_scoring": {},
+      "ignored_scoring": {
+        "ff": -2.0,
+        "tf": -2.0
+      },
+      "scoring_notes": [
+        "Unavailable foul penalties omitted: ff, tf.",
+        "Rebound splits unavailable; total rebounds use 1.5 FP each (base weight plus the mean of the two split weights)."
+      ],
+      "results": [
+        {
+          "player": "Nickeil Alexander-Walker",
+          "player_id": "1629638",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "PG",
+          "lineup_order": 0,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Dejounte Murray",
+          "player_id": "1627749",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "NOP",
+          "roster_slot": "SG",
+          "lineup_order": 1,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "IND",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "UTA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "DEN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Collin Gillespie",
+          "player_id": "1631221",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "PHX",
+          "roster_slot": "G",
+          "lineup_order": 2,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "POR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "GSW",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Scottie Barnes",
+          "player_id": "1630567",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "TOR",
+          "roster_slot": "SF",
+          "lineup_order": 3,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "CHI",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "WAS",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "MIN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Bam Adebayo",
+          "player_id": "1628389",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "MIA",
+          "roster_slot": "PF",
+          "lineup_order": 4,
+          "injury_status": "DTD",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Lauri Markkanen",
+          "player_id": "1628374",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "UTA",
+          "roster_slot": "F",
+          "lineup_order": 5,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MEM",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "NOP",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "LAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Day'Ron Sharpe",
+          "player_id": "1630549",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "BKN",
+          "roster_slot": "C",
+          "lineup_order": 6,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "CHA",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CLE",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "IND",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Miles Bridges",
+          "player_id": "1628970",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PF",
+            "SF"
+          ],
+          "nba_team": "PHX",
+          "roster_slot": "UTIL",
+          "lineup_order": 7,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "POR",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "GSW",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Fred VanVleet",
+          "player_id": "1627832",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG"
+          ],
+          "nba_team": "HOU",
+          "roster_slot": "UTIL",
+          "lineup_order": 8,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "DAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "SAS",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "ATL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Wendell Carter",
+          "player_id": "1628976",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "ORL",
+          "roster_slot": "UTIL",
+          "lineup_order": 9,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ATL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "NYK",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Tim Hardaway",
+          "player_id": "203501",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "MIA",
+          "roster_slot": "BN",
+          "lineup_order": 10,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Daniel Gafford",
+          "player_id": "1629655",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "DAL",
+          "roster_slot": "BN",
+          "lineup_order": 11,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "HOU",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "IND",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "SAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Isaiah Joe",
+          "player_id": "1630198",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "DET",
+          "roster_slot": "BN",
+          "lineup_order": 12,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "BOS",
+              "home": true,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "MIA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "PHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Bennedict Mathurin",
+          "player_id": "1631097",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "NOP",
+          "roster_slot": "BN",
+          "lineup_order": 13,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "IND",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "UTA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "DEN",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        }
+      ],
+      "pickups": []
+    },
+    {
+      "id": "sleeper-1415115155703926784",
+      "team_name": "Send da video ™",
+      "league_name": "BILLUP’S UNDERGROUND POKER",
+      "source": "sleeper",
+      "season": "2026",
+      "league_status": "in_season",
+      "synced_at": "2026-10-21T04:41:04.816039+00:00",
+      "ownership_complete": true,
+      "unsupported_scoring": {},
+      "ignored_scoring": {
+        "ff": -2.0,
+        "tf": -2.0
+      },
+      "scoring_notes": [
+        "Unavailable foul penalties omitted: ff, tf."
+      ],
+      "results": [
+        {
+          "player": "Anthony Edwards",
+          "player_id": "1630162",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "MIN",
+          "roster_slot": "PG",
+          "lineup_order": 0,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Dyson Daniels",
+          "player_id": "1630700",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "SG",
+          "lineup_order": 1,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Tim Hardaway",
+          "player_id": "203501",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "MIA",
+          "roster_slot": "SF",
+          "lineup_order": 2,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "P.J. Washington",
+          "player_id": "1629023",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C",
+            "PF",
+            "SF"
+          ],
+          "nba_team": "DAL",
+          "roster_slot": "PF",
+          "lineup_order": 3,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "HOU",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "IND",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "SAS",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Onyeka Okongwu",
+          "player_id": "1630168",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "C",
+          "lineup_order": 4,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Tre Johnson",
+          "player_id": "1642848",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": true,
+          "positions": [
+            "PG",
+            "SG"
+          ],
+          "nba_team": "WAS",
+          "roster_slot": "UTIL",
+          "lineup_order": 5,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Steven Adams",
+          "player_id": "203500",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "HOU",
+          "roster_slot": "BN",
+          "lineup_order": 6,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "DAL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "SAS",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "ATL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Tobias Harris",
+          "player_id": "202699",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PF"
+          ],
+          "nba_team": "SAS",
+          "roster_slot": "IR",
+          "lineup_order": 7,
+          "injury_status": "Out",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "OKC",
+              "home": true,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "DAL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Kevon Looney",
+          "player_id": "1626172",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "LAL",
+          "roster_slot": "BN",
+          "lineup_order": 8,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "GSW",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "LAC",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "UTA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Luguentz Dort",
+          "player_id": "1629652",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "SF",
+            "SG"
+          ],
+          "nba_team": "ATL",
+          "roster_slot": "BN",
+          "lineup_order": 9,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "ORL",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "HOU",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Nick Richards",
+          "player_id": "1630208",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C"
+          ],
+          "nba_team": "MIA",
+          "roster_slot": "BN",
+          "lineup_order": 10,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIN",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHA",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Dominick Barlow",
+          "player_id": "1631230",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "C",
+            "PF"
+          ],
+          "nba_team": "PHI",
+          "roster_slot": "IR",
+          "lineup_order": 11,
+          "injury_status": "Out",
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-20",
+              "opponent": "NYK",
+              "home": false,
+              "status": "complete",
+              "fp": null
+            },
+            {
+              "date": "2026-10-22",
+              "opponent": "CLE",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-25",
+              "opponent": "DET",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        },
+        {
+          "player": "Will Riley",
+          "player_id": "1642860",
+          "status": "UPCOMING",
+          "decision": null,
+          "note": "Regular season begins 2026-10-20. No completed regular-season game to lock yet.",
+          "starter": false,
+          "positions": [
+            "PF",
+            "SF",
+            "SG"
+          ],
+          "nba_team": "WAS",
+          "roster_slot": "BN",
+          "lineup_order": 12,
+          "injury_status": null,
+          "schedule_state": "verified",
+          "week_games": [
+            {
+              "date": "2026-10-21",
+              "opponent": "MIL",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-23",
+              "opponent": "TOR",
+              "home": true,
+              "status": "pre_game",
+              "fp": null
+            },
+            {
+              "date": "2026-10-24",
+              "opponent": "CHI",
+              "home": false,
+              "status": "pre_game",
+              "fp": null
+            }
+          ],
+          "history": []
+        }
+      ],
+      "pickups": []
+    }
+  ],
+  "alerts": [
+    {
+      "severity": "info",
+      "team": "Sweet Home Wembanyama",
+      "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf."
+    },
+    {
+      "severity": "info",
+      "team": "Wembendyamama ova",
+      "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf. Personal-foul penalties omitted because the box scores lack them. Rebound splits unavailable; total rebounds use 1.375 FP each (base weight plus the mean of the two split weights)."
+    },
+    {
+      "severity": "info",
+      "team": "Spectrum Scottie ",
+      "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf."
+    },
+    {
+      "severity": "info",
+      "team": "Scottie Spectrum",
+      "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf. Rebound splits unavailable; total rebounds use 1.5 FP each (base weight plus the mean of the two split weights)."
+    },
+    {
+      "severity": "info",
+      "team": "Send da video ™",
+      "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf."
+    }
+  ],
+  "published_at": "2026-10-21T04:41:04.140095+00:00",
+  "portraits": [
+    "1627749",
+    "1628386",
+    "1628970",
+    "1629023",
+    "1629638",
+    "1629652",
+    "1630168",
+    "1630174",
+    "1631097",
+    "1641705",
+    "1642349",
+    "203497"
+  ]
+}
