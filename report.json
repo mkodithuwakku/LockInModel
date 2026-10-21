@@ -2,7 +2,7 @@
   "mode": "live",
   "date": "2026-10-20",
   "observation_cutoff": "2026-10-19",
-  "generated_at": "2026-10-21T04:41:05.676815+00:00",
+  "generated_at": "2026-10-21T04:44:28.302721+00:00",
   "notice": "Daily snapshot from your Mac, with catch-up after wake. Reload checks the published report; manage locks in Sleeper.",
   "refresh_status": "ok",
   "schedule_week": [
@@ -10,7 +10,7 @@
     "2026-10-25"
   ],
   "season_start": "2026-10-20",
-  "publication_id": "c1fe5afba51e48c58e423f86b585e4f4",
+  "publication_id": "ad93c86cc53046d4b1e830c9821b039f",
   "schema_version": 1,
   "sleeper": {},
   "dataset": {},
@@ -22,7 +22,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T04:41:04.811723+00:00",
+      "synced_at": "2026-10-21T04:44:27.364518+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -664,7 +664,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T04:41:04.812809+00:00",
+      "synced_at": "2026-10-21T04:44:27.365644+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -1357,7 +1357,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T04:41:04.814025+00:00",
+      "synced_at": "2026-10-21T04:44:27.367066+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -2255,7 +2255,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T04:41:04.814993+00:00",
+      "synced_at": "2026-10-21T04:44:27.368170+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -2833,7 +2833,7 @@
       "source": "sleeper",
       "season": "2026",
       "league_status": "in_season",
-      "synced_at": "2026-10-21T04:41:04.816039+00:00",
+      "synced_at": "2026-10-21T04:44:27.369521+00:00",
       "ownership_complete": true,
       "unsupported_scoring": {},
       "ignored_scoring": {
@@ -3412,7 +3412,7 @@
       "message": "Scoring estimate: Unavailable foul penalties omitted: ff, tf."
     }
   ],
-  "published_at": "2026-10-21T04:41:04.140095+00:00",
+  "published_at": "2026-10-21T04:44:26.663699+00:00",
   "portraits": [
     "1627749",
     "1628386",
