@@ -2877,3 +2877,19 @@ button.lineup-name:hover strong { color: #d0b483; }
 
 .roster-empty-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 18px; }
 .roster-empty-slots small { color: var(--muted); font-size: 10px; }
+
+/* Roster-first hierarchy: compact context above, all supporting panels below. */
+.workspace { padding-top: 12px; }
+.edition-line, .court-stamp, .sheet-heading .section-label { display: none; }
+.heading { padding: 4px 0 14px; gap: 12px; }
+.heading h1 { font-size: 28px; line-height: 1.1; margin: 0; }
+.heading .eyebrow { font-size: 9px; margin-bottom: 3px; }
+.heading p { display: none; }
+.view-controls { gap: 5px; }
+.right-rail .summary { margin: 0; }
+.right-rail .context-banner { margin: 0; padding: 8px 0; }
+@media (max-width: 740px) {
+  .workspace { padding-top: 0; }
+  .heading { padding: 8px 0 12px; }
+  .heading h1 { font-size: 24px; }
+}
