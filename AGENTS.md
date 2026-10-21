@@ -34,3 +34,12 @@ README edit. Documentation-only changes do not require new application tests.
 
 These instructions govern future work in this repository; they do not create a
 background README generator or scheduled task.
+
+## Roster-first interface
+
+The roster sheet is the primary UI on desktop and mobile. Keep it first in the
+main content, immediately after compact team selection and essential controls.
+Recommended players and positions belong in the sheet. Team counters, insights,
+explanatory copy, and decorative elements must not displace it above the fold.
+Keep the header compact; put supporting panels below the complete roster.
+Validate this hierarchy at phone and desktop widths when changing the layout.

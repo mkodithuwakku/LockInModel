@@ -4,7 +4,8 @@
 
 - `roster-first-desktop.png`: illustrative five-player league with three active
   slots, using stored forecasts and the optimizer’s assignment for October 21.
-  Recommended starters occupy the sheet; the bench follows. The preview is not
+  Recommended starters occupy the sheet; the bench follows. The compact header
+  keeps players first, with summary counters and insights below the full roster. The preview is not
   a live league or a freshly fetched report.
 - `roster-first-mobile.png`: the same compact roster and lineup summary at 390px.
 

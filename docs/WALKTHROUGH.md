@@ -8,7 +8,7 @@ It does not submit the decision to Sleeper. It also does not infer that you have
 
 ## Daily workflow
 
-Open the dashboard and choose a team. The roster shows the latest score, recent baseline, remaining opportunities, and a decision status. Open a player to inspect actual observed game history and the explanation behind the recommendation.
+Open the dashboard and choose a team. A compact header leads directly to the roster sheet; summary counters and supporting context follow below the full roster. The roster shows the latest score, recent baseline, remaining opportunities, and a decision status. Open a player to inspect actual observed game history and the explanation behind the recommendation.
 
 The dashboard uses a compact dark lineup layout with colored position slots, small headshots, NBA team/injury labels, and a seven-day opponent strip. Recommended starters from the latest refresh, bench, and reserve players are grouped separately. Completed performances show fantasy points in their game tile; an unknown schedule shows question marks rather than off days. Green indicates LOCK, blue indicates WAIT, and amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. Each state also has a text label. A lock score is a heuristic preference; it is not calibrated confidence.
 
