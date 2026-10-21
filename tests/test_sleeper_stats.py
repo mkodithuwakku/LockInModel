@@ -44,6 +44,7 @@ def test_sparse_final_stats_are_observations_not_totals_or_forecasts():
     frame = parse_games(rows, games, "2026", {})
     assert len(frame) == 2 and frame.PTS.tolist() == [10, 12]
     assert frame.FG3M.tolist() == [0, 0]
+    assert frame.FG3A.tolist() == [0, 0]
     assert frame.SOURCE.unique().tolist() == ["Sleeper / Sportradar"]
     assert frame.PLAYER_ID.tolist() == ["sleeper:0", "sleeper:1"]
 
@@ -97,3 +98,10 @@ def test_opening_night_final_uses_fallback_and_reaches_roster(monkeypatch):
     c.games[0]["status"] = "in_progress"
     row = build_dashboard("live", "2026-10-20", p, cfg())["teams"][0]["results"][0]
     assert row.get("last_game_fp") is None and row["week_games"][0]["fp"] is None
+
+
+def test_three_point_attempts_survive_fallback_ingestion():
+    rows, games = fixture()
+    rows[0]["stats"].update(tpa=7, tpm=2)
+    frame = parse_games(rows, games, "2026", {})
+    assert frame.iloc[0].FG3A == 7 and frame.iloc[0].FG3M == 2

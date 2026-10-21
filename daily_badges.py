@@ -1,4 +1,4 @@
-"""Small previous-night leader badges, independent of fantasy league scoring."""
+"""Small previous-night NBA leader badges, with optional league-scored categories."""
 
 import datetime as dt
 import numpy as np
@@ -15,6 +15,8 @@ CATEGORIES = {
     "runner": ("MIN",),
     "dime": ("AST",),
     "sandwich": ("TOV",),
+    "merchant": ("FTM",),
+    "heartbreak": ("FG3A", "FG3M"),
 }
 
 
@@ -44,7 +46,7 @@ def previous_night_badges(games, reference):
         if not np.isfinite(values.to_numpy()).all() or (values < 0).any().any():
             continue
         scores = values.iloc[:, 0]
-        if key == "bricks":
+        if key in {"bricks", "heartbreak"}:
             scores = scores - values.iloc[:, 1]
             if (scores < 0).any():
                 continue
@@ -65,3 +67,73 @@ def previous_night_badges(games, reference):
     for awards in result.values():
         awards.sort(key=lambda b: (b["rank"], list(CATEGORIES).index(b["key"])))
     return result
+
+
+FANTASY_CATEGORIES = ("overachiever", "underachiever", "efficient", "inefficient")
+
+
+def fantasy_night_badges(games, reference, weights, forecasts=None):
+    """Rank observed FP/min and signed errors against saved pregame forecasts."""
+    from fetch_data import normalize_stats_for_scoring
+    from scoring import add_fantasy_points
+    from transport import DataUnavailable
+
+    if games.empty or not {"PLAYER_ID", "GAME_DATE", "MIN"}.issubset(games):
+        return {}
+    day = dt.date.fromisoformat(str(reference)) - dt.timedelta(days=1)
+    night = games[pd.to_datetime(games.GAME_DATE).dt.date == day].copy()
+    if night.empty:
+        return {}
+    night = night.dropna(subset=["PLAYER_ID"])
+    night["PLAYER_ID"] = night.PLAYER_ID.astype(str)
+    night = night.drop_duplicates(
+        ["PLAYER_ID"] + (["GAME_ID"] if "GAME_ID" in night else []), keep="last"
+    )
+    try:
+        scored = add_fantasy_points(normalize_stats_for_scoring(night), weights)
+    except (DataUnavailable, ValueError, KeyError, TypeError):
+        return {}
+    totals = scored.groupby("PLAYER_ID")[["FP", "MIN"]].sum()
+    totals = totals[totals.MIN > 0]  # Zero-minute/DNP rows cannot earn rate badges.
+    if totals.empty:
+        return {}
+    rates = totals.FP / totals.MIN
+    projected = pd.Series(forecasts or {}, dtype=float).reindex(totals.index)
+    projected = projected * scored.groupby("PLAYER_ID").size().reindex(totals.index)
+    valid = np.isfinite(projected)
+    delta = (totals.FP - projected)[valid]
+    result = {}
+    for key, values, ascending in (
+        ("overachiever", delta[delta > 0], False),
+        ("underachiever", -delta[delta < 0], False),
+        ("efficient", rates, False),
+        ("inefficient", rates, True),
+    ):
+        ranks = values.rank(method="min", ascending=ascending)
+        for pid, rank in ranks[ranks <= 3].items():
+            value = float(values[pid])
+            award = dict(
+                key=key,
+                date=str(day),
+                rank=int(rank),
+                value=round(value, 3),
+                tied=bool((values == value).sum() > 1),
+                scope="league_nba",
+            )
+            if key in {"overachiever", "underachiever"}:
+                award.update(
+                    projected_fp=float(projected[pid]),
+                    actual_fp=float(totals.loc[pid, "FP"]),
+                    forecast_count=int(valid.sum()),
+                    player_count=len(totals),
+                )
+            result.setdefault(pid, []).append(award)
+    return result
+
+
+def combine_badges(*groups):
+    order = list(CATEGORIES) + list(FANTASY_CATEGORIES)
+    return sorted(
+        [b for group in groups for b in group],
+        key=lambda b: (b["rank"], order.index(b["key"])),
+    )

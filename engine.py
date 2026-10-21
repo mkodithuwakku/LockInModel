@@ -11,7 +11,7 @@ from pickups import find_pickups, available_players
 from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import project_players, recommend_lineup, unavailable_lineup
-from daily_badges import previous_night_badges
+from daily_badges import previous_night_badges, fantasy_night_badges, combine_badges
 
 
 def today():
@@ -19,8 +19,14 @@ def today():
 
 
 def build_dashboard(
-    mode="replay", reference=None, provider=None, cfg=None, phase="night"
+    mode="replay",
+    reference=None,
+    provider=None,
+    cfg=None,
+    phase="night",
+    forecast_store=None,
 ):
+    real_live_refresh = mode == "live" and provider is None
     cfg = cfg or load_cfg()
     if mode == "live":
         cfg = dict(cfg, teams=[t for t in cfg["teams"] if not t.get("archived")])
@@ -123,6 +129,11 @@ def build_dashboard(
                     "message": "Current-season projections unavailable: " + str(exc),
                 }
             )
+    if real_live_refresh and forecast_store is None:
+        from forecast_store import ForecastStore
+
+        forecast_store = ForecastStore()
+    fantasy_badge_cache = {}
     projection_cache = {}
     for team in cfg["teams"]:
         team = apply_scoring_policy(dict(team))
@@ -142,6 +153,36 @@ def build_dashboard(
                     + ". Lock decisions withheld; displayed FP are partial estimates.",
                 }
             )
+        badge_weights = team.get("weights") or cfg["weights"]
+        badge_key = tuple(sorted(badge_weights.items()))
+        if badge_key not in fantasy_badge_cache:
+            fantasy_badge_cache[badge_key] = {}
+            if not getattr(provider, "stats_error", None) and not team.get(
+                "unsupported_scoring"
+            ):
+                saved_forecasts = {}
+                if mode == "live" and forecast_store is not None:
+                    from forecast_store import capture_pregame
+
+                    saved_forecasts = forecast_store.read_forecasts(
+                        badge_weights, reference - dt.timedelta(days=1)
+                    )
+                    capture_pregame(
+                        forecast_store,
+                        getattr(provider, "calendar", None),
+                        sleeper_players,
+                        identity,
+                        observed,
+                        fallback,
+                        forecasts,
+                        badge_weights,
+                        cfg,
+                        reference,
+                    )
+                fantasy_badge_cache[badge_key] = fantasy_night_badges(
+                    observed, reference, badge_weights, saved_forecasts
+                )
+        league_badges = fantasy_badge_cache[badge_key]
         for name in team["players"]:
             pid = identity.get(canonical_name(name))
             meta = roster_metadata(team, name, sleeper_players)
@@ -226,7 +267,9 @@ def build_dashboard(
                     decision_cache[key] = calculated
                 row = dict(decision_cache[key])
                 row["player"] = name
-            row["daily_badges"] = daily_badges.get(str(pid), [])
+            row["daily_badges"] = combine_badges(
+                daily_badges.get(str(pid), []), league_badges.get(str(pid), [])
+            )
             row["starter"] = name in team["starters"]
             row["positions"] = meta.get("positions") or positions.get(
                 canonical_name(name), []

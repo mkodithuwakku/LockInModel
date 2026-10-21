@@ -87,7 +87,7 @@ The Recent form panel consumes existing `history` records, bounded by `observati
 | Path | Contents |
 | --- | --- |
 | `config.local.yaml` | Personal teams, scoring, notification addresses, Sleeper connection |
-| `data/lockin.sqlite3` | Permanent observations and successful per-season refresh metadata |
+| `data/lockin.sqlite3` | Permanent observations, pregame forecast snapshots, and per-season refresh metadata |
 | `state/publication.json` | Publication completion, pending commit, retry state |
 | `data/cache/http/` | Response files, host cooldowns, request lock |
 | `data/cache/archive/` | Raw Parquet downloads and immutable source revision |
@@ -157,13 +157,24 @@ layout and text labels for every status.
 
 ### Previous-night badges
 
-`daily_badges.py` ranks the prior day's NBA observations once before the roster
-loop. Results are keyed by player ID and reused across all leagues. Provider
-failures suppress awards; forecasts and older-season fallback histories never
-enter the ranking. The public exporter allowlists each badge's display fields.
-`web/insights.js` validates badge keys and dates; `web/app.js` renders the tiny
-roster strip and detailed labels, with midnight/wake expiry. See
-[Daily badges](DAILY_BADGES.md) for category and tie rules.
+`daily_badges.py` ranks the prior day's NBA stat totals once per report, then
+fantasy rates and saved-forecast errors once per scoring formula. Rankings include
+players outside the user's rosters. Stat leaders stay identical across leagues;
+FP/min and projection errors use league weights. Provider failures suppress awards.
+
+`forecast_store.py` adds `forecast_snapshots` to the same local SQLite database.
+Real live refreshes capture the current day's NBA pregame player pool using the
+same history/forecast precedence as roster projections. Formula/date/player keys
+preserve league-specific benchmarks. Only newer pregame snapshots may replace
+existing ones; past dates and started games cannot be captured. Forecasts never
+enter `games`, actual history, or the lock model as observations. The next refresh
+reads the previous day's snapshots, with missing coverage explicitly labeled in
+badge details. Replay has no historical forecast comparisons.
+
+The public exporter allowlists only badge display and comparison fields.
+`web/insights.js` validates keys and dates; `web/app.js` renders at most three tiny
+icons plus an overflow count, with the full list in player details and midnight/wake
+expiry. See [Daily badges](DAILY_BADGES.md) for category, coverage, and tie rules.
 
 ## Weekly game-tile scores
 

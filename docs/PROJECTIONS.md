@@ -10,7 +10,7 @@ Every roster player has a projection independently of start eligibility. Bench, 
 
 Unusable records remain unavailable with an explanation. They never become invented zero forecasts. Rookie identity can use Sleeper's imported player ID; it does not require an invented NBA ID.
 
-The projection carries source, as-of date, FP, stat components, and either observed sample/last-played metadata or the forecast provider update time. The public export allowlists every nested field. Forecasts are cached separately from immutable observations and never inserted as completed games.
+The projection carries source, as-of date, FP, stat components, and either observed sample/last-played metadata or the forecast provider update time. The public export allowlists every nested field. Forecasts are cached separately from observed games and never inserted as completed games. Real live refreshes also archive same-day pregame estimates for the NBA player pool in a separate table in the existing SQLite database, so next-day [above/below-projection badges](DAILY_BADGES.md#forecast-comparisons) use a saved benchmark.
 
 ## Small current-season samples
 

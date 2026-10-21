@@ -41,7 +41,10 @@ def parse_games(payload, games, season, directory):
             minutes = float(raw["sp"]) / 60
             if not math.isfinite(minutes) or minutes <= 0:
                 continue  # DNPs are not zero-point performances.
-            stats = {name: float(raw.get(key, 0)) for key, name in STATS.items()}
+            stats = {
+                name: float(raw.get(key, 0))
+                for key, name in dict(STATS, tpa="FG3A").items()
+            }
             if not all(math.isfinite(v) and v >= 0 for v in stats.values()):
                 raise ValueError("Invalid counters")
             metadata = directory.get(sid) or record.get("player") or {}

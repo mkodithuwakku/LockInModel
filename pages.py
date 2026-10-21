@@ -65,7 +65,21 @@ def public_report(report):
         for player in team.get("results", []):
             row = select(player, PLAYER_FIELDS)
             row["daily_badges"] = [
-                select(badge, ["key", "date", "rank", "value", "tied"])
+                select(
+                    badge,
+                    [
+                        "key",
+                        "date",
+                        "rank",
+                        "value",
+                        "tied",
+                        "scope",
+                        "projected_fp",
+                        "actual_fp",
+                        "forecast_count",
+                        "player_count",
+                    ],
+                )
                 for badge in player.get("daily_badges", [])
             ]
             row["week_games"] = [

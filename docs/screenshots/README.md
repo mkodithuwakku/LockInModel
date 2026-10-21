@@ -25,6 +25,10 @@ cards and synced-starter ordering are historical feature examples.
   photo, demonstrating the initials fallback. Real imported league photos are
   verified separately and excluded from committed screenshots.
 
+## Expanded daily badge captures
+
+- `expanded-badges-mobile.png`: generic team labels with real October 20 observations, including the new free-throw and/or missed-three categories. The tiny roster strip still caps at three icons; player details show the full breakdown. Projection-comparison badges need a previously saved pregame benchmark and are not fabricated for this capture.
+
 ## Daily badge captures
 
 - `daily-badges-desktop.png`: generic Night Shift practice roster, showing small

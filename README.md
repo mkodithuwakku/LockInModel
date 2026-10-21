@@ -4,7 +4,7 @@
 
 Python · Flask · SQLite · pandas · NumPy · vanilla JavaScript · pytest · macOS launchd · GitHub Pages / Actions
 
-One local SQLite database retains live game history for every league. A daily Mac job refreshes that history, computes league-specific reports, and publishes static files to GitHub Pages. The website needs no database or application server; historical practice uses separate, checksum-verified fixtures.
+One local SQLite database retains live game history and separate pregame forecasts for every league. A daily Mac job refreshes that history, computes league-specific reports, and publishes static files to GitHub Pages. The website needs no database or application server; historical practice uses separate, checksum-verified fixtures.
 
 **[Open the daily dashboard](https://mkodithuwakku.github.io/LockInModel/)** — a public, read-only report published from the local Mac around 12:17 PM America/Edmonton, with catch-up after wake. Browse teams, player details, and league-specific pickup signals from any device. [Hosting and refresh details](docs/HOSTING.md).
 
@@ -17,7 +17,7 @@ One local SQLite database retains live game history for every league. A daily Ma
 
 The interface uses a compact fantasy lineup layout: charcoal surfaces with a subtle plum undertone, soft off-white text, muted purple accents, small soft-gold details, colored position slots, small portraits, NBA logos beside team abbreviations, injury labels, and a seven-day opponent strip for every player. Each upcoming game tile shows **Proj FP** using that player’s saved per-game baseline; completed games show **Final FP** when observed. Estimates are league-scored and are not opponent-adjusted. A custom interlocking LI emblem anchors the wordmark and favicon. Team selection uses each league’s custom Sleeper photo, then the owner’s profile photo, with initials if neither loads. The live roster sheet places the latest refresh’s recommended starters in their optimized position slots, followed by bench and reserves. Each card retains its forecasts, lock/wait indicators, and completed fantasy points. **Recommended lineup** assigns eligible players to each league’s slots to maximize that day’s projected FP. The full-width **Roster sheet** is the primary interface on every screen, immediately after compact team context and controls. Summary counters and explanatory context sit below the full roster, with no large hero or decorative header above the players. The date, projected total, and snapshot details sit inside the sheet; **Recent form** stays below it. Recent form shows individual five-game averages, sparklines, changes versus the previous five games, and remaining opportunities. The earlier lineup/form captures below show the previous navy palette and historical/sample data, not current NBA recommendations.
 
-**Daily details:** tiny previous-night badges mark NBA-wide top-three performances in threes, made baskets, rebounds, missed shots, steals, blocks, minutes, assists, and turnovers. Ties qualify; three icons stay visible beside a name, with the full breakdown on tap. These are fun stat annotations, separate from fantasy scoring. See the [badge rules and sample](docs/DAILY_BADGES.md).
+**Daily details:** tiny previous-night badges mark NBA-wide top-three performances in threes, made baskets, rebounds, missed shots, steals, blocks, minutes, assists, turnovers, made free throws, and missed threes. League-scored badges add highest/lowest fantasy points per minute and the largest positive/negative differences from saved pregame forecasts. Ties qualify; three icons stay visible beside a name, with the full breakdown on tap. These are fun annotations and never change fantasy scores or recommendations. Projection comparisons start once pregame forecasts have been archived in the existing local database; missing forecasts are not reconstructed after results. See the [badge rules and sample](docs/DAILY_BADGES.md).
 
 ![Recommended daily lineup and recent form beside a generic practice roster](docs/screenshots/daily-lineup-desktop.png)
 
@@ -69,7 +69,7 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 | Interface | HTML, CSS, vanilla JavaScript; browser fetch, dialogs, and localStorage for the selected team; no frontend build step |
 | Backend | Python and Flask, with one background worker for sync/refresh jobs |
 | Analysis | pandas and NumPy for normalization, weighted statistics, and candidate screening |
-| Persistence | SQLite game history, PyYAML configuration, JSON snapshots/ledgers, Parquet replay fixtures; no database server |
+| Persistence | SQLite history + forecasts, PyYAML configuration, JSON snapshots/ledgers, Parquet replay fixtures; no database server |
 | Integrations | nba_api endpoint definitions, Requests, Sleeper league/player/schedule feeds, archived NBA tables, Gmail SMTP over TLS |
 | Configuration | python-dotenv, checked-in sample YAML, ignored local overrides |
 | Verification | pytest, Black, Node frontend policy tests; GitHub Actions runs checks on source pushes and pull requests with Python 3.11 and 3.12 |
@@ -91,7 +91,7 @@ flowchart TD
         Refresh --> Sleeper[Sleeper roster and scoring import]
         Sleeper --> Config[Local YAML configuration]
         Refresh --> Live[Live provider]
-        Live --> DB[(SQLite game history)]
+        Live --> DB[(SQLite history + forecasts)]
         Live --> Engine[Shared scoring and analysis engine]
         Config --> Engine
         API --> Practice[Test Week state]
@@ -121,20 +121,20 @@ flowchart TD
 
 | Files | Responsibility |
 | --- | --- |
-| [daily_badges.py](daily_badges.py) | League-independent previous-night leaders, tie handling and observation-only badges |
+| [daily_badges.py](daily_badges.py) | NBA-wide stat and league-scored badges, saved-forecast comparisons, and tie handling |
 | [app.py](app.py), [web/](web/) | HTTP boundary, jobs, interface state, rendering, and user actions; [insights.js](web/insights.js) derives observed team form |
 | [engine.py](engine.py), [providers.py](providers.py), [schedule.py](schedule.py) | Shared orchestration, live/replay policies, and cached weekly schedule |
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |
 | [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
 | [simulation.py](simulation.py), [storage.py](storage.py) | Practice transitions, config validation, atomic file replacement |
 | [lineup.py](lineup.py), [projections.py](projections.py) | History-based and validated Sleeper forecasts, projected box scores, and exact positional assignment |
-| [game_store.py](game_store.py) | Permanent SQLite history, incremental daily upserts, weekly reconciliation |
+| [game_store.py](game_store.py), [forecast_store.py](forecast_store.py) | SQLite observations, incremental upserts, and separate pregame forecast snapshots |
 | [sleeper.py](sleeper.py), [transport.py](transport.py), [capture.py](capture.py) | League import, cached/paced requests, historical capture |
 | [pages.py](pages.py), [publication.py](publication.py), [web/pages.js](web/pages.js) | Allowlisted export, local daily publication, wake catch-up, browser expiry |
 | [main.py](main.py), [notify.py](notify.py) | Reports, delivery ledger, pickup cooldowns, SMTP |
 | [tests/](tests/), [docs/](docs/) | Regression checks and implementation guides |
 
-The main entities are **teams**, **player-game observations**, **practice runs**, and **reports**. A team contains a stable ID, roster names, a starter subset, full imported `roster_positions` (including empty and repeated slots), and optional league weights and ownership metadata. Imported teams use `sleeper-<league_id>` IDs. SQLite stores observations under a composite season/game/player key and records successful refresh metadata per season. Raw box scores can be rescored for different leagues; derived bonus indicators are recomputed when scoring. The engine maps roster names to NBA identities. Configuration and reports remain separate files, without cross-file foreign-key constraints.
+The main entities are **teams**, **player-game observations**, **practice runs**, and **reports**. A team contains a stable ID, roster names, a starter subset, full imported `roster_positions` (including empty and repeated slots), and optional league weights and ownership metadata. Imported teams use `sleeper-<league_id>` IDs. SQLite stores observations under a composite season/game/player key and records successful refresh metadata per season. A separate forecast table retains pregame estimates by scoring formula, date, and player for next-day badge comparisons. Raw box scores can be rescored for different leagues; derived bonus indicators are recomputed when scoring. The engine maps roster names to NBA identities. Configuration and reports remain separate files, without cross-file foreign-key constraints.
 
 | Local path | Stored data |
 | --- | --- |

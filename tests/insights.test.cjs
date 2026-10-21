@@ -141,3 +141,24 @@ test("zero forecasts remain valid projections and in-progress games retain the s
   assert.equal(gameFantasy(p,{date:"2026-10-21",status:"in_progress"}).value,0);
   assert.equal(gameFantasy(p,{date:"2026-10-21",status:"pre_game"}).kind,"projection");
 });
+
+test("new daily badges label league scoring, saved forecast coverage and nonpositive low rates", () => {
+  const daily = require("../web/insights.js").dailyBadges;
+  const base={date:"2026-10-20",rank:1,tied:false,scope:"league_nba"};
+  const result=daily({daily_badges:[
+    {...base,key:"overachiever",value:12,actual_fp:32,projected_fp:20,forecast_count:60,player_count:68},
+    {...base,key:"inefficient",value:-.125},
+    {...base,key:"inefficient",value:0},
+    {...base,key:"efficient",value:1.234},
+    {...base,key:"merchant",value:10,scope:undefined},
+    {...base,key:"heartbreak",value:8,scope:undefined},
+  ]},"2026-10-21");
+  assert.equal(result.length,6);
+  assert.match(result[0].label,/32 actual vs 20 projected/);
+  assert.match(result[0].label,/60\/68 players with saved forecasts/);
+  assert.match(result[1].label,/-0.13 FP\/min \(lowest\)/);
+  assert.equal(result[2].value,0);
+  assert.match(result[3].label,/NBA · league scoring/);
+  assert.equal(result[4].icon,"🧾");
+  assert.equal(result[5].icon,"💔");
+});

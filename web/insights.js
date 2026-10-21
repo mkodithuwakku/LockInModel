@@ -79,6 +79,12 @@
     runner: ["🏃", "Marathon man", "minutes"],
     dime: ["🪙", "Dropping dimes", "assists"],
     sandwich: ["🥪", "Turnover sandwich", "turnovers"],
+    merchant: ["🧾", "Free-throw merchant", "made free throws"],
+    heartbreak: ["💔", "Heartbreaker", "missed threes"],
+    overachiever: ["🚀", "Above expectations", "FP above projection"],
+    underachiever: ["🫠", "Below expectations", "FP below projection"],
+    efficient: ["⚡", "Minute maximizer", "FP/min"],
+    inefficient: ["🐌", "Slow night", "FP/min (lowest)"],
   };
   function previousDate(reference) {
     const day = new Date(reference + "T12:00:00Z");
@@ -89,11 +95,14 @@
   function dailyBadges(player, reference) {
     const day = previousDate(reference);
     return (player.daily_badges || []).filter(b => badgeTypes[b.key] && b.date === day &&
-      Number.isInteger(b.rank) && b.rank >= 1 && b.rank <= 3 && Number.isFinite(b.value) && b.value > 0)
+      Number.isInteger(b.rank) && b.rank >= 1 && b.rank <= 3 && Number.isFinite(b.value) && (b.value > 0 || b.key === "inefficient" || b.key === "efficient"))
       .map(b => {
         const [icon, name, stat] = badgeTypes[b.key];
-        const value = Number(b.value.toFixed(1));
-        return {...b, icon, name, label: `${name} · ${b.tied ? "Tied #" : "#"}${b.rank} NBA-wide · ${value} ${stat} · ${b.date}`};
+        const value = Number(b.value.toFixed(b.key === "efficient" || b.key === "inefficient" ? 2 : 1));
+        const scope = b.scope === "league_nba" ? "NBA · league scoring" : "NBA-wide";
+        const coverage = Number.isInteger(b.forecast_count) ? ` · ${b.forecast_count}/${b.player_count} players with saved forecasts` : "";
+        const comparison = Number.isFinite(b.actual_fp) && Number.isFinite(b.projected_fp) ? ` (${Number(b.actual_fp.toFixed(1))} actual vs ${Number(b.projected_fp.toFixed(1))} projected)` : "";
+        return {...b, icon, name, label: `${name} · ${b.tied ? "Tied #" : "#"}${b.rank} ${scope} · ${value} ${stat}${comparison}${coverage} · ${b.date}`};
       });
   }
   const helpers = { gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate };
