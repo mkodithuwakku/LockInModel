@@ -3057,3 +3057,37 @@ button.lineup-name:hover strong { color: #c6b3d6; }
   #player-dialog .detail-hero .nba-team-logo { width: 28px; height: 28px; }
   .game-day .game-score[data-kind="actual"] { padding: 2px; }
 }
+
+/* A season-long side competition, kept below the team performance review. */
+.season-badge-board { border-top: 1px solid var(--line); padding-top: 26px; margin-top: 32px; }
+.badge-race-controls { display: flex; gap: 14px; margin: 18px 0; }
+.badge-race-controls label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; flex: 1; min-width: 0; }
+.badge-race-controls select { width: 100%; min-width: 0; padding: 10px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+.badge-race-highlights { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.badge-race-highlights article { padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; }
+.badge-race-highlights article > div { margin-top: 10px; }
+.badge-race-highlights b { display: block; font: 28px var(--display); margin-top: 8px; }
+.badge-race-highlights small, .badge-race-highlights p { color: var(--muted); font: 11px var(--font); }
+.badge-race-highlights article > small { display: block; margin-top: 5px; }
+.badge-race-player { font-weight: 600; text-align: left; color: var(--ink); padding: 0; }
+.badge-race-player:hover { text-decoration: underline; }
+.badge-race-heading { display: flex; justify-content: space-between; gap: 10px; margin: 24px 0 10px; align-items: baseline; }
+.badge-race-heading h4 { margin: 0; font-size: 16px; }
+.badge-race-heading span { color: var(--muted); font-size: 10px; }
+.badge-race-list { padding: 0; margin: 0; list-style: none; }
+.badge-race-list li { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 13px 4px; border-bottom: 1px solid var(--line); }
+.badge-race-rank { font: 12px var(--mono); color: var(--muted); }
+.badge-race-list li > div > small { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+.badge-race-list li > b { text-align: right; font: 24px var(--display); }
+.badge-race-list li > b small { display: block; font: 9px var(--mono); color: var(--muted); }
+.badge-race-categories, .badge-race-rules { margin-top: 20px; font-size: 12px; }
+.badge-race-categories summary, .badge-race-rules summary { cursor: pointer; color: var(--muted); padding-block: 8px; }
+.badge-race-categories > div { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) 24px; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.badge-race-categories > div > span:nth-child(2), .badge-race-rules p { color: var(--muted); line-height: 1.6; }
+.badge-race-categories b { text-align: right; }
+@media (max-width: 740px) {
+  .badge-race-highlights { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .badge-race-highlights article { padding: 12px; font-size: 12px; }
+  .badge-race-controls { gap: 8px; }
+  .badge-race-controls select { font-size: 16px; padding: 8px; }
+}

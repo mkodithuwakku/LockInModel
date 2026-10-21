@@ -27,6 +27,7 @@ def build_dashboard(
     cfg=None,
     phase="night",
     forecast_store=None,
+    badge_store=None,
 ):
     real_live_refresh = mode == "live" and provider is None
     cfg = cfg or load_cfg()
@@ -149,6 +150,11 @@ def build_dashboard(
         from forecast_store import ForecastStore
 
         forecast_store = ForecastStore()
+    if real_live_refresh and badge_store is None:
+        from badge_store import BadgeStore
+
+        badge_store = BadgeStore()
+    season_badge_cache = {}
     fantasy_badge_cache = {}
     projection_cache = {}
     for team in cfg["teams"]:
@@ -213,6 +219,32 @@ def build_dashboard(
                     for pid in existing.keys() | context_badges.keys()
                 }
         league_badges = fantasy_badge_cache[badge_key]
+        from badge_store import empty_summary
+
+        season_key = (
+            str(team.get("season") or reference.year - (reference.month < 10)),
+            badge_key,
+        )
+        if season_key not in season_badge_cache:
+            if badge_store is not None and not team.get("unsupported_scoring"):
+                if getattr(provider, "stats_error", None):
+                    season_badge_cache[season_key] = badge_store.summary(
+                        reference, badge_weights, season_key[0], stale=True
+                    )
+                else:
+                    season_badge_cache[season_key] = badge_store.sync(
+                        observed,
+                        reference,
+                        badge_weights,
+                        getattr(getattr(provider, "calendar", None), "games", None),
+                        birthdays,
+                        season_key[0],
+                    )
+            else:
+                season_badge_cache[season_key] = empty_summary(
+                    reference, season_key[0], status="unavailable"
+                )
+
         for name in team["players"]:
             pid = identity.get(canonical_name(name))
             meta = roster_metadata(team, name, sleeper_players)
@@ -494,6 +526,7 @@ def build_dashboard(
                 "ignored_scoring": team.get("ignored_scoring", {}),
                 "scoring_notes": notes,
                 "results": rows,
+                "season_badges": season_badge_cache[season_key],
                 "season_review": season_review(
                     observed,
                     rows,
@@ -679,6 +712,7 @@ def roster_dashboard(cfg, include_archived=False):
                 }
             )
         review = None
+        badge_review = None
         if t.get("league_status") == "complete" and str(t.get("season", "")).isdigit():
             from game_store import GameStore
 
@@ -694,6 +728,11 @@ def roster_dashboard(cfg, include_archived=False):
                         canonical_name(row["player"]), row["player_id"]
                     )
             policy = apply_scoring_policy(dict(t))
+            from badge_store import BadgeStore
+
+            badge_review = BadgeStore.saved_summary(
+                today(), policy.get("weights") or cfg["weights"], t["season"]
+            )
             review = season_review(
                 saved_games,
                 rows,
@@ -705,6 +744,7 @@ def roster_dashboard(cfg, include_archived=False):
         teams.append(
             {
                 "season_review": review,
+                "season_badges": badge_review,
                 "id": t["id"],
                 "team_name": t["name"],
                 "team_avatar_url": t.get("team_avatar_url"),

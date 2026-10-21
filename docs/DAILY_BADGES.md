@@ -162,3 +162,13 @@ not model accuracy. The older expanded-player image above predates this guide an
 The expanded player card keeps a small NBA logo beside its team abbreviation above the name and stats.
 
 ![Expanded player card with NBA team logo and renamed badges](screenshots/player-card-team-logo-mobile.png)
+
+## Season totals
+
+The **Badge race** in [Season review](SEASON_REVIEW.md#season-badge-race) retains
+earned indicators for the whole season, even after the previous-night icons
+expire. It offers current-roster and NBA-wide views, every badge leaderboard,
+and total, negative, milestone, and variety leaders. Refreshes reuse the same
+award rules and update `badge_days` / `badge_awards` in the existing SQLite file.
+One player/badge/night counts once; ties remain eligible. Coverage reflects
+stored observations and genuine pregame forecasts, not invented past awards.

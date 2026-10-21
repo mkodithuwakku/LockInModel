@@ -77,3 +77,37 @@ corrections, scoring bonuses, weighted shooting percentages, missing data,
 negative totals, completed-season reads, export privacy, key-player sample gates,
 and player-detail identity mapping. Responsive browser checks cover the team
 cards, contributor details, weekly disclosure, and returning to the roster.
+
+## Season Badge race
+
+Below the contributors, **Badge race** counts awards across the selected league's
+season through the previous night. Switch between **My roster** (current players,
+including awards before joining) and **NBA-wide**. Four compact cards show total
+badges, negative badges (Chaos leader), milestones, and distinct badge types.
+The leaderboard selector also includes every individual badge. Competition ranks
+preserve ties; the first ten places are shown, including ties at tenth. Expand
+**Leaders for all 44 badges** for a category-by-category view.
+
+Each badge counts once per player per night, regardless of its daily rank.
+A player can earn several different badges on the same night. Milestones include
+double-/triple-doubles and the highest qualifying tier for each stat; repeat
+qualifying streak nights earn repeat awards. Negative categories are Bricklayer,
+Meatball sub, Oh my goodness Valentine, Butterfingers, Below expectations,
+Slow night, Cold spell, and Along for the ride. A high FP score in a loss does
+not count as negative. The coverage disclosure lists these categories and the
+available game dates and forecast coverage.
+
+`badge_store.py` persists the ledger in the existing local database and reuses
+the daily award rules. Historical observations can backfill earned badges;
+projection-surprise awards require genuine saved pregame forecasts. Repeated
+refreshes do not add duplicates. Corrected nights replace their old awards and
+earlier stat corrections invalidate later streak calculations. Formula changes
+use separate tallies. Missing data stays missing, and completed leagues read
+saved awards without historical network requests. Test Week does not fabricate
+a season ledger. The static website receives only aggregate public counts.
+
+[Desktop Badge race](screenshots/season-badge-race-desktop.png) and
+[phone Badge race](screenshots/season-badge-race-mobile.png) show generic team
+labels with the stored opening-night results. Ledger tests cover idempotency,
+corrections, streak invalidation, date/formula isolation, forecasts, and export
+privacy; frontend tests cover roster scope, metrics, and tied ranks.

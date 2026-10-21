@@ -184,6 +184,21 @@
         return {...b, icon, name, label: `${name} · ${rank}${scope} · ${value} ${stat}${comparison}${coverage}${average} · ${b.date}`};
       });
   }
+  function seasonBadgeLeaders(team, metric = "total", scope = "roster") {
+    const roster = new Map((team.results || []).map((p, index) => ({...p, index})).filter(p => p.player_id).map(p => [String(p.player_id), p]));
+    const aggregate = new Set(["total", "negative", "milestones", "variety"]);
+    if (!aggregate.has(metric) && !badgeTypes[metric]) return [];
+    const rows = (team.season_badges?.players || []).filter(p => scope === "nba" || roster.has(String(p.player_id)))
+      .map(p => {
+        const current = roster.get(String(p.player_id));
+        return {...p, player: current?.player || p.player, nba_team: current?.nba_team || p.nba_team,
+          index: current?.index, count: aggregate.has(metric) ? p[metric] : p.counts?.[metric]};
+      }).filter(p => Number.isFinite(p.count) && p.count > 0)
+      .sort((a,b) => b.count - a.count || a.player.localeCompare(b.player) || String(a.player_id).localeCompare(String(b.player_id)));
+    const ranks = new Map(), ties = new Map();
+    rows.forEach((p,i) => { if (!ranks.has(p.count)) ranks.set(p.count, i+1); ties.set(p.count, (ties.get(p.count) || 0)+1); });
+    return rows.map(p => ({...p, rank: ranks.get(p.count), tied: ties.get(p.count)>1}));
+  }
   function seasonContributors(team) {
     const observed = new Map((team.season_review?.players || []).map(p => [String(p.player_id), p]));
     return (team.results || []).map((p, index) => ({...p, ...observed.get(String(p.player_id)), index}))
@@ -194,7 +209,7 @@
       .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
     return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
   }
-  const helpers = { performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
+  const helpers = { seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);

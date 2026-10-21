@@ -82,6 +82,26 @@ def public_report(report):
                 )
                 for p in review.get("players", [])
             ]
+        if team.get("season_badges"):
+            from badge_store import BADGE_KEYS, NEGATIVE_KEYS, MILESTONE_KEYS
+
+            badges = team["season_badges"]
+            item["season_badges"] = select(
+                badges,
+                "season as_of status first_date last_date tracked_days player_games forecast_player_games total_awards".split(),
+            )
+            item["season_badges"]["negative_keys"] = sorted(NEGATIVE_KEYS)
+            item["season_badges"]["milestone_keys"] = sorted(MILESTONE_KEYS)
+            item["season_badges"]["players"] = [
+                dict(
+                    select(
+                        p,
+                        "player_id player nba_team last_award total negative milestones variety".split(),
+                    ),
+                    counts=select(p.get("counts", {}), BADGE_KEYS),
+                )
+                for p in badges.get("players", [])
+            ]
         item["results"] = []
         for player in team.get("results", []):
             row = select(player, PLAYER_FIELDS)

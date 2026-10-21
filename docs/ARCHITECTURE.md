@@ -7,6 +7,7 @@
 | `app.py` | Flask routes, same-origin protection, background refresh jobs, dashboard cache |
 | `web/` | Responsive interface, team navigation, player details, roster editing, import UI |
 | `badge_awards.py` | Previous-night per-game milestones, assist/turnover lows, season streaks and league-scored contextual leaders; cached birthdays and confirmed game results |
+| `badge_store.py` | Cached season award ledger in the existing SQLite file, correction replacement, formula isolation, and public aggregate counts |
 | `season_review.py` | Full-season current-roster production, weekly aggregates, and descriptive player metrics; see [Season review](SEASON_REVIEW.md) |
 | `web/insights.js` | Pure observed-form calculations and sparklines from scored report history; shared by local and hosted views |
 | `storage.py` | Canonical YAML loading/validation; atomic JSON/YAML writes |
@@ -219,3 +220,26 @@ and kickoff proposal, separate from the implemented contracts above. It proposes
 versioned input/forecast records in the existing local database, shared per-game
 stat distributions, league-specific rescoring, and static report delivery. No
 proposed table, adapter, model, or scheduled job has been added.
+
+### Season badge persistence
+
+`badge_store.py` adds two tables to `data/lockin.sqlite3`:
+
+| Table | Key | Purpose |
+| --- | --- | --- |
+| `badge_days` | season, formula fingerprint, game date | Input fingerprint and observed/forecast coverage |
+| `badge_awards` | season, formula fingerprint, game date, player ID, badge key | Unique earned awards and public player identity |
+
+The engine shares a sync per formula/season during real live refreshes. A prefix
+hash includes previous observed nights so an earlier correction invalidates
+later streak calculations. Unchanged days skip award computation; changed days
+replace their awards together in one transaction. The current rule version,
+context, birthdays, and saved forecasts participate in cache invalidation.
+Only past game nights within October–September season boundaries count.
+Completed leagues read saved ledgers; provider errors retain dated saved totals.
+
+The public report's allowlisted `season_badges` contains coverage and per-player
+counts, totals, negative/milestone counts, and variety. It exports no birthdays,
+private account information, or database. `seasonBadgeLeaders()` applies current
+roster versus NBA scope and competition ranks in the browser. No new service,
+website database, or scheduled job is needed. See [Badge race](SEASON_REVIEW.md#season-badge-race).

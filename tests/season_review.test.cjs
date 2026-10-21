@@ -25,3 +25,22 @@ test('new daily indicators have accessible stat labels and expire normally', () 
   assert.match(b[3].label,/Double-double.*double-doubles/);
   assert.equal(dailyBadges(p,'2026-10-22').length,0);
 });
+
+test('season badge leaderboard filters current roster without changing NBA-earned totals', () => {
+  const {seasonBadgeLeaders} = require('../web/insights.js');
+  const t = {results:[{player_id:'2',player:'Current name',nba_team:'BOS'},{player_id:'3',player:'Three'}],season_badges:{players:[
+    {player_id:'1',player:'Outside',total:12,negative:1,variety:6,milestones:2,counts:{sniper:4}},
+    {player_id:'2',player:'Two',total:10,negative:5,variety:4,milestones:3,counts:{sniper:3}},
+    {player_id:'3',player:'Three',total:10,negative:0,variety:4,milestones:3,counts:{sniper:3}},
+    {player_id:'4',player:'Four',total:8,negative:1,variety:2,milestones:0,counts:{sniper:1}},
+  ]}};
+  const before=JSON.stringify(t);
+  assert.deepEqual(seasonBadgeLeaders(t).map(p=>p.rank),[1,1]);
+  assert.equal(seasonBadgeLeaders(t)[0].player,'Current name');
+  assert.deepEqual(seasonBadgeLeaders(t,'total','nba').map(p=>p.rank),[1,2,2,4]);
+  assert.equal(seasonBadgeLeaders(t,'sniper')[0].count,3);
+  assert.equal(seasonBadgeLeaders(t,'negative').length,1);
+  assert.deepEqual(seasonBadgeLeaders(t,'unknown'),[]);
+  assert.equal(JSON.stringify(t),before);
+  assert.deepEqual(seasonBadgeLeaders({results:[]}),[]);
+});
