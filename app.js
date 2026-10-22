@@ -768,24 +768,24 @@ async function changeRoster(action, player) {
     toast(e.message);
   }
 }
-// Native dialog backdrops target the dialog itself. Check bounds so empty space
-// inside the card stays interactive, and dragging out of the card cannot close it.
+// Close player details when a mouse press or touch starts outside the card.
 const playerDialog = $("#player-dialog");
-let playerBackdropPress = false;
-function outsidePlayerCard(e) {
+
+document.addEventListener("pointerdown", (e) => {
+  if (!playerDialog.open || e.button !== 0) return;
+
   const rect = playerDialog.getBoundingClientRect();
-  return e.target === playerDialog &&
-    (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom);
-}
-playerDialog.addEventListener("pointerdown", e => {
-  playerBackdropPress = e.button === 0 && outsidePlayerCard(e);
-});
-playerDialog.addEventListener("pointercancel", () => { playerBackdropPress = false; });
-playerDialog.addEventListener("close", () => { playerBackdropPress = false; });
-playerDialog.addEventListener("click", e => {
-  if (playerBackdropPress && outsidePlayerCard(e)) playerDialog.close();
-  playerBackdropPress = false;
-});
+  const outside =
+    e.clientX < rect.left ||
+    e.clientX > rect.right ||
+    e.clientY < rect.top ||
+    e.clientY > rect.bottom;
+
+  if (outside) {
+    e.preventDefault();
+    playerDialog.close();
+  }
+}, true);
 document.addEventListener("click", (e) => {
   let b = e.target.closest("[data-test-action]");
   if (b) {
