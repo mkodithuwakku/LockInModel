@@ -184,6 +184,28 @@
         return {...b, icon, name, label: `${name} · ${rank}${scope} · ${value} ${stat}${comparison}${coverage}${average} · ${b.date}`};
       });
   }
+  function badgePlayer(team, playerId) {
+    if (playerId == null || playerId === "") return null;
+    const matches = p => p.player_id != null && String(p.player_id) === String(playerId);
+    // Use only this league's details: another team may have different scoring.
+    const roster = (team.results || []).find(matches);
+    if (roster) return roster;
+    const awards = (team.season_badges?.players || []).find(matches);
+    if (!awards) return null;
+    const details = (team.pickups || []).find(matches) || (team.available_players || []).find(matches);
+    return {...awards, ...details, badge_profile: true};
+  }
+  function playerSeasonBadges(team, playerId) {
+    const review = team.season_badges;
+    const available = ["ready", "saved", "empty"].includes(review?.status) && playerId != null && playerId !== "";
+    const player = available ? (review.players || []).find(p => String(p.player_id) === String(playerId)) : null;
+    const earned = badgeGuide().filter(b => Number.isFinite(player?.counts?.[b.key]) && player.counts[b.key] > 0)
+      .map(b => ({...b, count: player.counts[b.key]}))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    return {available, earned, total: available ? player?.total ?? 0 : null,
+      negative: available ? player?.negative ?? 0 : null, milestones: available ? player?.milestones ?? 0 : null,
+      variety: available ? player?.variety ?? 0 : null};
+  }
   function seasonBadgeLeaders(team, metric = "total", scope = "roster") {
     const roster = new Map((team.results || []).map((p, index) => ({...p, index})).filter(p => p.player_id).map(p => [String(p.player_id), p]));
     const aggregate = new Set(["total", "negative", "milestones", "variety"]);
@@ -209,7 +231,7 @@
       .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
     return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
   }
-  const helpers = { seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
+  const helpers = { badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);
