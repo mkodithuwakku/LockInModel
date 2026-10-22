@@ -30,8 +30,8 @@ def settings(cfg):
     config = {
         "remote": "origin",
         "branch": "gh-pages",
-        "hour": 12,
-        "minute": 17,
+        "hour": 7,
+        "minute": 0,
         "timezone": "America/Edmonton",
         **cfg.get("publication", {}),
     }
@@ -327,7 +327,7 @@ def launch_agent(root, python, home):
         "RunAtLoad": True,
         # Calendar events missed during sleep coalesce into a run after wake.
         # Check every 15 minutes; run() performs work only when due or retrying.
-        "StartCalendarInterval": [{"Minute": minute} for minute in (2, 17, 32, 47)],
+        "StartCalendarInterval": [{"Minute": minute} for minute in (0, 15, 30, 45)],
         "ProcessType": "Background",
         "StandardOutPath": str(root / "logs/publication.log"),
         "StandardErrorPath": str(root / "logs/publication-error.log"),

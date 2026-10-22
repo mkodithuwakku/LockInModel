@@ -86,6 +86,6 @@ timezone: America/Edmonton
 publication:
   remote: origin
   branch: gh-pages
-  hour: 12
-  minute: 17
+  hour: 7
+  minute: 0
   timezone: America/Edmonton

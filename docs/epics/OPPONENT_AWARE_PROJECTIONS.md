@@ -6,6 +6,11 @@
 **Scope of this change:** research and documentation only. No model, database,
 provider, scheduler, UI, or publication behavior changes.
 
+**Development plan:** evaluation and opponent factoring will be implemented on a
+separate branch later, at the user’s direction. No branch is created now. The
+[backend evaluation epic](MODEL_EVALUATION.md) expands OPP-04 and OPP-11 into shared
+per-game and weekly-lock scorecards, plus operational benchmarks.
+
 ## 1. Outcome and recommendation
 
 Produce a separate forecast for each player and upcoming NBA game, using the

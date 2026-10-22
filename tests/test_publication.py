@@ -3,6 +3,7 @@ import datetime as dt
 from pathlib import Path
 import plistlib
 import subprocess
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -45,17 +46,32 @@ def publisher(tmp_path, monkeypatch):
 def test_slot_handles_sleep_overnight_and_multiple_missed_days():
     cfg = publication.settings({})
     assert (
-        publication.due_slot(dt.datetime(2026, 10, 20, 18, 16, tzinfo=UTC), cfg)
+        publication.due_slot(dt.datetime(2026, 10, 20, 12, 59, tzinfo=UTC), cfg)
         == "2026-10-19"
     )
     assert (
-        publication.due_slot(dt.datetime(2026, 10, 20, 18, 17, tzinfo=UTC), cfg)
+        publication.due_slot(dt.datetime(2026, 10, 20, 13, 0, tzinfo=UTC), cfg)
         == "2026-10-20"
     )
     assert (
-        publication.due_slot(dt.datetime(2026, 10, 23, 16, tzinfo=UTC), cfg)
+        publication.due_slot(dt.datetime(2026, 10, 23, 12, tzinfo=UTC), cfg)
         == "2026-10-22"
     )
+
+
+@pytest.mark.parametrize("day", ["2026-10-21", "2026-12-21"])
+def test_seven_am_slot_tracks_edmonton_timezone(day):
+    config = publication.settings({})
+    date = dt.date.fromisoformat(day)
+    at_seven = dt.datetime.combine(
+        date, dt.time(7), tzinfo=ZoneInfo("America/Edmonton")
+    ).astimezone(UTC)
+    assert publication.due_slot(at_seven - dt.timedelta(seconds=1), config) == str(
+        date - dt.timedelta(days=1)
+    )
+    assert publication.due_slot(at_seven, config) == day
+    # Waking later the same day catches up the morning slot.
+    assert publication.due_slot(at_seven + dt.timedelta(hours=4), config) == day
 
 
 def test_success_is_verified_then_skipped_without_network(publisher, monkeypatch):
@@ -119,7 +135,7 @@ def test_launch_agent_uses_calendar_catchup_and_absolute_venv_paths(tmp_path):
     config = publication.launch_agent(root, root / ".venv/bin/python", tmp_path)
     assert plistlib.loads(plistlib.dumps(config)) == config
     assert config["RunAtLoad"]
-    assert config["StartCalendarInterval"] == [{"Minute": m} for m in (2, 17, 32, 47)]
+    assert config["StartCalendarInterval"] == [{"Minute": m} for m in (0, 15, 30, 45)]
     assert config["ProgramArguments"] == [
         str(root / ".venv/bin/python"),
         str(root / "publication.py"),

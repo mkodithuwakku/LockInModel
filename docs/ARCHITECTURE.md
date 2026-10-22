@@ -215,6 +215,13 @@ scores; see [metric definitions and limitations](SEASON_REVIEW.md).
 
 ## Proposed future architecture
 
+The [backend evaluation proposal](epics/MODEL_EVALUATION.md) describes separate
+modules for game forecasts, sequential weekly locks, calibration experiments,
+and operational/data-quality scorecards. It shares the opponent epic’s future
+archive contracts. Both are documentation-only and reserved for a separate
+development branch later; no evaluation pipeline or training job is installed.
+
+
 [Opponent-aware projections](epics/OPPONENT_AWARE_PROJECTIONS.md) is a research
 and kickoff proposal, separate from the implemented contracts above. It proposes
 versioned input/forecast records in the existing local database, shared per-game

@@ -6,7 +6,7 @@ The Mac owns the game database and generates the daily report. GitHub Pages serv
 
 ## Daily flow
 
-1. The local scheduler checks whether the 12:17 PM America/Edmonton publication is due.
+1. The local scheduler checks whether the 7:00 AM America/Edmonton publication is due.
 2. `publication.py` refreshes Sleeper rosters and the shared analysis engine. Current league scoring is imported each time.
 3. `data/lockin.sqlite3` retains player-game history across refreshes. Daily downloads overlap the last saved game by seven days, and a weekly full-season download reconciles older corrections. Season/game/player keys prevent duplicate observations. Failed refreshes retain saved data.
 4. `pages.py` exports an explicit allowlist of report fields, HTML, JavaScript, CSS, icons, and available portraits. Team avatar URLs are explicitly included; images load directly from Sleeper’s CDN with an initials fallback. Private configuration, raw caches, database files, and credentials are excluded.
@@ -17,7 +17,7 @@ The former `.github/workflows/pages.yml` cloud refresh has been removed. The rem
 
 ## Wake catch-up and retries
 
-`publication.py install` installs a macOS LaunchAgent named `com.lockin.publish`. It checks at minutes 02, 17, 32, and 47, plus login. Calendar events missed during sleep are coalesced by macOS into a run after wake. The Python command computes the latest scheduled daily slot, so waking after several days produces one current report instead of replaying each missed day. Codex and Flask do not need to remain open.
+`publication.py install` installs a macOS LaunchAgent named `com.lockin.publish`. It checks at minutes 00, 15, 30, and 45, plus login. Calendar events missed during sleep are coalesced by macOS into a run after wake. The Python command computes the latest scheduled daily slot, so waking after several days produces one current report instead of replaying each missed day. Codex and Flask do not need to remain open.
 
 A filesystem lock prevents overlapping publisher processes. `state/publication.json` records the successful slot, pending upload, published commit, and retry status. After success, further checks exit without network work. Failures retry after 15, 30, 60, 120, 240, then at most 360 minutes. The next check can confirm an already-uploaded report without repeating a successful data refresh. A partial/error report can be published to show the failure, but it does not mark the daily slot successful.
 
@@ -68,7 +68,7 @@ Back up `data/lockin.sqlite3` while no refresh is running, together with private
 
 The browser and local dashboard suppress actionable results after 26 hours: one daily publication interval plus two hours of delay allowance. Midnight within the same fantasy week does not expire the report; a previous week expires when the next Monday begins. Invalid/future timestamps also suppress recommendations. The website checks every minute and when a hidden tab becomes visible. Expired player details close, while completed/drafting/upcoming statuses remain visible. The original snapshot date/time stays visible, and device clock accuracy affects browser expiry.
 
-An explicit refresh includes confirmed same-day finals, including opening night. NBA Stats outages or missing recent games use reconciled Sleeper / Sportradar final box scores. A forced publication reruns this fetch even if an earlier refresh succeeded that day. The scheduler still publishes once daily around 12:17 PM; it does not automatically republish after every game.
+An explicit refresh includes confirmed same-day finals, including opening night. NBA Stats outages or missing recent games use reconciled Sleeper / Sportradar final box scores. A forced publication reruns this fetch even if an earlier refresh succeeded that day. The scheduler still publishes once daily around 7:00 AM; it does not automatically republish after every game.
 
 Statistics and schedule failures preserve independent roster/schedule information without inventing a lock call. Missing performances suppress decisions and pickups. Unknown scoring rules still produce scoring gaps; omitted fouls and approximated rebound splits produce informational notes. Milestone bonuses are computed per league from observations.
 

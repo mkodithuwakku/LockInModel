@@ -72,9 +72,9 @@ Sleeper imports preserve the ordered starter slots from `roster_positions` and `
 
 ## Local publication
 
-The optional `publication` mapping defaults to `remote: origin`, `branch: gh-pages`, `hour: 12`, `minute: 17`, and `timezone: America/Edmonton`. An optional HTTPS `url` supports a custom Pages domain; otherwise it is derived from the GitHub origin. Source branches `main`/`master` cannot be publication targets. GitHub credentials come from the existing OS Git credential helper, never from YAML or a generated website file.
+The optional `publication` mapping defaults to `remote: origin`, `branch: gh-pages`, `hour: 7`, `minute: 0`, and `timezone: America/Edmonton`. An optional HTTPS `url` supports a custom Pages domain; otherwise it is derived from the GitHub origin. Source branches `main`/`master` cannot be publication targets. GitHub credentials come from the existing OS Git credential helper, never from YAML or a generated website file.
 
-The macOS agent checks at minutes 02, 17, 32, and 47 and after login/wake. The ledger permits one successful publication per scheduled date. For other configured minutes, the next check after the configured time performs the run (at most 15 minutes later while awake). Failures retry after 15, 30, 60, 120, 240, then 360 minutes; subsequent failures remain capped at six hours. See [Hosting](HOSTING.md).
+The macOS agent checks at minutes 00, 15, 30, and 45 and after login/wake. The ledger permits one successful publication per scheduled date. For other configured minutes, the next check after the configured time performs the run (at most 15 minutes later while awake). Failures retry after 15, 30, 60, 120, 240, then 360 minutes; subsequent failures remain capped at six hours. See [Hosting](HOSTING.md).
 
 ## Daily lineup slots
 

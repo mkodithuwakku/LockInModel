@@ -288,7 +288,7 @@ def main():
                 raise ValueError("Saved dashboard could not be loaded.")
             report = response.get_json()
         report["notice"] = (
-            "Saved report preview. The Mac publishes daily around 12:17 PM America/Edmonton, with catch-up after wake."
+            "Saved report preview. The Mac publishes daily around 7:00 AM America/Edmonton, with catch-up after wake."
         )
     export_site(report, ROOT / args.output)
 

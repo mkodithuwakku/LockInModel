@@ -6,7 +6,7 @@ Python · Flask · SQLite · pandas · NumPy · vanilla JavaScript · pytest · 
 
 One local SQLite database retains live game history and separate pregame forecasts for every league. A daily Mac job refreshes that history, computes league-specific reports, and publishes static files to GitHub Pages. The website needs no database or application server; historical practice uses separate, checksum-verified fixtures.
 
-**[Open the daily dashboard](https://mkodithuwakku.github.io/LockInModel/)** — a public, read-only report published from the local Mac around 12:17 PM America/Edmonton, with catch-up after wake. Browse teams, player details, and league-specific pickup signals from any device. [Hosting and refresh details](docs/HOSTING.md).
+**[Open the daily dashboard](https://mkodithuwakku.github.io/LockInModel/)** — a public, read-only report published from the local Mac around 7:00 AM America/Edmonton, with catch-up after wake. Browse teams, player details, and league-specific pickup signals from any device. [Hosting and refresh details](docs/HOSTING.md).
 
 ## Screenshots and demo
 
@@ -277,7 +277,7 @@ After connecting Sleeper locally and configuring authenticated Git access to you
 .venv/bin/python publication.py run --force
 ```
 
-The default daily slot is 12:17 PM America/Edmonton. The agent checks every 15 minutes and catches up after wake/login; Codex and Flask need not be open. Pushing source to `main` runs CI but does not deploy the website. Publication uses the local checkout's code and assets, so another machine's source changes must be pulled locally before publication. `--force` bypasses the publication ledger and fetches game updates again, including on the same day; provider cooldowns still apply. The scheduled cadence remains daily, not after every game. See [Hosting](docs/HOSTING.md) for prerequisites, retry behavior, public fields, and recovery.
+The default daily slot is 7:00 AM America/Edmonton. The agent checks every 15 minutes and catches up after wake/login; Codex and Flask need not be open. Pushing source to `main` runs CI but does not deploy the website. Publication uses the local checkout's code and assets, so another machine's source changes must be pulled locally before publication. `--force` bypasses the publication ledger and fetches game updates again, including on the same day; provider cooldowns still apply. The scheduled cadence remains daily, not after every game. See [Hosting](docs/HOSTING.md) for prerequisites, retry behavior, public fields, and recovery.
 
 ## Limitations and next improvements
 
@@ -285,7 +285,7 @@ The default daily slot is 12:17 PM America/Edmonton. The agent checks every 15 m
 
 - **Credential history:** previous project documentation records a committed email credential. The delivery guard checks a local blocked-password hash; it is not a general secret scanner. Confirm revocation and public-history cleanup before showcasing the repository. This README does not establish their current external status.
 - **Opponent-aware projections — proposed, not implemented:** a [future epic](docs/epics/OPPONENT_AWARE_PROJECTIONS.md) explores player-style/opponent interactions, data-source options, versioned pregame inputs, per-stat modeling, league rescoring, and measured rollout gates. The current app still repeats its per-player baseline across upcoming opponents.
-- **Evaluation:** no measured win-rate or calibration result exists. Compare policies across held-out weeks against simple baselines before making effectiveness claims.
+- **Evaluation — proposed, not implemented:** a [backend evaluation epic](docs/epics/MODEL_EVALUATION.md) specifies separate per-game projection and sequential weekly-lock scorecards, immutable prediction/decision archives, ML calibration experiments, and data-quality/runtime/reliability checks. Evaluation and opponent factoring are reserved for a separate development branch later; neither is implemented by the planning documents. No measured win-rate or calibration result exists.
 - **Live/scoring fidelity:** provider availability varies; unknown scoring rules still withhold decisions, while the approved foul/rebound approximations permit estimated recommendations. Sleeper lock selections are not imported, and ownership reflects the latest snapshot rather than guaranteed claimability.
 - **Historical fidelity:** replay uses finalized schedules, last observed team assignments, and sample/current rosters. It lacks timestamped injuries, transactions, exact lock deadlines, and opponent simulation.
 - **Concurrency and scale:** configuration updates have no cross-process transaction lock; job status and dashboard cache live in memory. Multiple Flask workers/users would need transactional persistence, durable jobs, and authentication. The hosted site avoids server mutations by publishing static reports.
@@ -315,6 +315,7 @@ The default daily slot is 12:17 PM America/Edmonton. The agent checks every 15 m
 | [Historical replay](docs/HISTORICAL_REPLAY.md) | Capture and evaluation caveats |
 | [Walkthrough](docs/WALKTHROUGH.md) | Product workflow |
 | [Known issues](docs/KNOWN_ISSUES.md) | Follow-up work and earlier security notes |
+| [Model evaluation epic](docs/epics/MODEL_EVALUATION.md) | Proposed projection/weekly-lock evaluation, ML experiments, operational benchmarks, and later-branch rollout |
 | [Opponent-aware projection epic](docs/epics/OPPONENT_AWARE_PROJECTIONS.md) | Proposed architecture, source research, evaluation and kickoff backlog; no implementation |
 
 **Keep this README current with code changes.** [AGENTS.md](AGENTS.md) requires a documentation review for every implementation, dependency, configuration, or workflow change, with affected README sections, linked guides, and screenshots updated in the same change. The pull request template records that review. If documented behavior is unchanged, record why no README edit is needed; do not add filler or a running changelog here.

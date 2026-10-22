@@ -52,7 +52,7 @@ The configured app password was found in public Git history. A local hash guard 
 
 The requested schedule is noon in America/Edmonton. The Codex automation runs the daily CLI command locally; the computer and local execution environment must be available. It should remain quiet when all leagues are completed or the day was already processed, and surface actionable failures without repeated unchanged notifications. It must not bypass the exposed-credential guard or launch historical capture.
 
-Website publication is separate: a native macOS LaunchAgent targets 12:17 PM America/Edmonton, checks every 15 minutes, and catches up after wake/login. It requires neither Codex nor Flask to remain open. Both paths reuse the same successful daily SQLite refresh. The publisher sends no email; its retry/completion ledger is separate from email delivery suppression.
+Website publication is separate: a native macOS LaunchAgent targets 7:00 AM America/Edmonton, checks every 15 minutes, and catches up after wake/login. It requires neither Codex nor Flask to remain open. Both paths reuse the same successful daily SQLite refresh. The publisher sends no email; its retry/completion ledger is separate from email delivery suppression.
 
 ## Troubleshooting
 

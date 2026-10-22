@@ -65,3 +65,8 @@ data/
 This week is a repeatable engineering fixture, not evidence of model quality. Before reporting performance, define the exact sequential lock policy, what happens after missed final opportunities/DNPs, and whether decisions happen at noon or after every game.
 
 Evaluate across multiple independent weeks and compare retained FP, regret against the hindsight best eligible score, and coverage against simple first-game/final-game policies. Keep tuning and held-out weeks separate. Assess raw model probability calibration separately from the heuristic-adjusted lock score.
+
+The [proposed evaluation backend](epics/MODEL_EVALUATION.md) expands this milestone
+into separate per-game and weekly-lock scorecards, frozen evidence contracts,
+chronological validation, and reliability benchmarks. Implementation belongs
+with opponent factoring on a separate development branch later.
