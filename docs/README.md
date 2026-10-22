@@ -26,3 +26,5 @@ The [screenshot notes](screenshots/README.md) distinguish the captured generic l
 ## Future epic proposals
 
 - [Opponent-aware player projections](epics/OPPONENT_AWARE_PROJECTIONS.md): planning only. Audits existing data, investigates additional sources, proposes stat-level player/opponent interactions, and defines sustainable ingestion, evaluation gates, and an implementation backlog. It does not enable matchup adjustments or authorize data subscriptions.
+
+- [Static export efficiency](epics/STATIC_EXPORT_EFFICIENCY.md): implementation-ready planning for shared player identities, on-demand resources, safe caching and compact JSON; includes measurements, ordered tickets, acceptance criteria and rollout/rollback. No export changes are implemented by this document.

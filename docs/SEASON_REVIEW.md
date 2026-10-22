@@ -88,6 +88,24 @@ The leaderboard selector also includes every individual badge. Competition ranks
 preserve ties; the first ten places are shown, including ties at tenth. Expand
 **Leaders for all 44 badges** for a category-by-category view.
 
+Every player name in the race opens a player card, including players on other
+fantasy rosters. Leaderboard rows and highlight cards include NBA portraits with
+an initials fallback if the image cannot load. The category disclosure keeps
+clickable names without repeating portraits. Cards use details from the selected
+league where available; players with only badge history show their identity and
+season awards, with an explicit note that game-by-game performance is not included.
+They are not labeled as pickup recommendations.
+
+All player cards include a compact **Season badges** section: total awards,
+chaos (negative indicators), milestones, and variety (distinct types). Expand
+**Earned badges** for each earned type and its repeat count. Counts use the same
+league/season ledger as the race and include games before joining the roster.
+Unavailable history displays an unavailable message rather than zero; a covered
+player with no awards displays zero. Saved totals retain their date and label.
+Click or tap outside the card to close it at any scroll position; Escape and the
+close button also work. Clicking inside or dragging from inside to outside keeps
+the card open.
+
 Each badge counts once per player per night, regardless of its daily rank.
 A player can earn several different badges on the same night. Milestones include
 double-/triple-doubles and the highest qualifying tier for each stat; repeat
@@ -111,3 +129,12 @@ a season ledger. The static website receives only aggregate public counts.
 labels with the stored opening-night results. Ledger tests cover idempotency,
 corrections, streak invalidation, date/formula isolation, forecasts, and export
 privacy; frontend tests cover roster scope, metrics, and tied ranks.
+
+
+[Desktop player badges](screenshots/player-season-badges-desktop.png) and
+[phone player badges](screenshots/player-season-badges-mobile.png) show an
+NBA-wide player outside the sample roster with the earned-badge list expanded.
+Browser checks cover roster/highlight/category links, keyboard activation and
+focus return, backdrop dismissal after scrolling, and no horizontal overflow at
+320px, 390px, and 1280px. Node tests cover identity resolution, league isolation,
+repeat counts, and zero versus unavailable histories.

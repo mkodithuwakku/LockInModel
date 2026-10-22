@@ -112,3 +112,19 @@ Both use generic team and league labels, no team photos/account details, and rea
 stored October 20, 2026 results. Small samples and missing form windows are
 intentional. Totals describe current-roster production, not Sleeper locked points.
 The roster remains the first/default view; Season review is a separate tab.
+
+
+## Season badge cards
+
+- `season-badge-race-desktop.png` and `season-badge-race-mobile.png`: NBA-wide
+  Chaos leaderboard with player portraits and clickable highlight/leader names.
+- `player-season-badges-desktop.png` and `player-season-badges-mobile.png`: OG
+  Anunoby's card outside the illustrative roster, with four compact season counts
+  and the earned-badge list expanded. The disclosure is collapsed when first opened.
+
+These use generic sample team labels and stored October 20, 2026 awards. They
+show the selected league's saved totals, not a new provider refresh. NBA portraits
+load from the NBA CDN with initials if unavailable. For these captures, the
+headless browser’s CDN transport was bridged through the HTTP request client
+using real image responses; separate checks verified the fallback state. Older player-card screenshots
+predate the Season badges section; use these captures for its current layout.
