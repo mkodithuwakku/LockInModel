@@ -47,3 +47,40 @@ Validate this hierarchy at phone and desktop widths when changing the layout.
 Use a charcoal base with a subtle plum undertone and muted purple accents.
 Reserve soft gold for small details; avoid yellow highlights and saturated plum
 across large application surfaces.
+
+## Agent quick context & token efficiency
+
+To maximize agent effectiveness and minimize unnecessary token expenditure:
+- **Python Runtime:** Always use `.venv/bin/python` from the `LockInModel/` directory. System Python or Anaconda Python will fail due to missing dependencies (`nba_api`, `pytest`, etc.).
+- **Detailed Agent Maps:**
+  - Architecture, modules, and SQLite schemas: `docs/agents/ARCHITECTURE_MAP.md`
+  - Test suites, verification commands, and workflows: `docs/agents/WORKFLOWS_AND_TESTING.md`
+
+### Where to look (file routing)
+
+Do not read entire multi-thousand line files speculatively. Consult this index:
+- **Lock / Wait decision heuristics:** `decide.py`, `model.py`
+- **Prior-season history blending (<10 games):** `season_history.py`
+- **Daily lineup optimizer (Hungarian algorithm):** `lineup.py`
+- **External Sleeper forecasts & Poisson bonuses:** `projections.py`
+- **Daily badges (15 stat + 4 fantasy leaders):** `daily_badges.py`
+- **Milestones & contextual awards (Butterfingers, streaks):** `badge_awards.py`
+- **Season badge ledger in SQLite:** `badge_store.py`
+- **Season Review aggregations & key players:** `season_review.py`
+- **Waiver pickup screening (On the Rise):** `pickups.py`
+- **Sleeper import & fallback box scores:** `sleeper.py`, `sleeper_stats.py`
+- **SQLite game persistence & upserts:** `game_store.py`, `forecast_store.py`
+- **Schedule caching & remaining games:** `schedule.py`
+- **Static export & daily GitHub Pages publication:** `pages.py`, `publication.py`
+- **Offline Test Week practice simulator:** `simulation.py`
+- **Client-side presentation & derived form:** `web/insights.js`, `web/app.js`
+
+### Verification commands
+
+```bash
+# Run before completing any code change:
+.venv/bin/python -m pytest -q
+.venv/bin/python -m black --check *.py tests
+node --test tests/*.test.cjs
+```
+

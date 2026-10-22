@@ -77,13 +77,13 @@ Website publication is separate: a native macOS LaunchAgent targets 7:00 AM Amer
 ## Verification
 
 ```bash
-python -m pytest -q
-python -m black --check *.py tests
+.venv/bin/python -m pytest -q
+.venv/bin/python -m black --check *.py tests
 # Node 20+ is needed only for these frontend policy tests.
 node --test tests/*.test.cjs
 ```
 
-Tests prohibit sockets and cover normalization, generic bonus thresholds, foul/rebound fallbacks, sparse histories, future-data exclusion, failure cooldowns, import atomicity, roster editing, pickup signals, and email guards. Store tests cover correction upserts and failed-refresh retention; publisher tests cover daily slots, retries, pending deployment confirmation, and exported files pushed to a temporary local Git remote. Node checks cover hosted report policies. Real-fixture tests skip on a clean checkout until capture has run. Manual browser checks are separate; CI does not include an automated browser suite or a physical sleep/wake test.
+Tests prohibit sockets and cover normalization, generic bonus thresholds, foul/rebound fallbacks, sparse histories, future-data exclusion, failure cooldowns, import atomicity, roster editing, pickup signals, and email guards. Store tests cover correction upserts, failed-refresh retention, forecast snapshots, and season badge award ledgers. Publisher tests cover daily slots, retries, pending deployment confirmation, and exported files pushed to a temporary local Git remote. Node checks cover hosted report policies, recent form deltas, performance colour baselines, and Season Review aggregates. Real-fixture tests skip on a clean checkout until capture has run. Manual browser checks are separate; CI does not include an automated browser suite or a physical sleep/wake test.
 
 The Flask app binds only to loopback and is intended for one local user. The separately hosted [GitHub Pages dashboard](HOSTING.md) serves static reports without exposing Flask or allowing edits.
 

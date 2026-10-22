@@ -20,6 +20,13 @@
 - Historical capture and offline replay exist, with explicit time and prior policies.
 - Repeated email attempts are suppressed, including uncertain SMTP delivery outcomes.
 - Constant/tiny rarity variance no longer creates artificial extreme rarity signals.
+- Season review dashboard aggregates full current-roster season production, box-score sums, weekly FP per appearance, and sample-gated key player cards.
+- Season Badge race tracks 44 badge categories across the season with roster and NBA-wide views, total awards, chaos leader, milestones, and badge variety.
+- Expanded player card includes a season badge section with repeat counts, earned-badge breakdown, and outside-tap backdrop dismissal.
+- Player performance colours share a consistent personal recent-baseline comparison across player cards, weekly schedule tiles, and roster rows.
+- Daily contextual and milestone badges cover 44 indicators with a compact badge guide modal and SQLite pregame forecast comparison archive.
+- Observed-history bootstrap blends prior-season games into sparse current projections and weekly lock baselines without duplicate shrinkage.
+- Validated Sleeper / Sportradar game-level box-score fallback recovers finals when NBA Stats is unavailable or misses recent games.
 
 ## Credential and Git history handling
 

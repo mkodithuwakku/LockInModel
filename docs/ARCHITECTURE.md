@@ -6,6 +6,7 @@
 | --- | --- |
 | `app.py` | Flask routes, same-origin protection, background refresh jobs, dashboard cache |
 | `web/` | Responsive interface, team navigation, player details, roster editing, import UI |
+| `daily_badges.py` | NBA-wide stat and league-scored badges, saved-forecast comparisons, and tie handling |
 | `badge_awards.py` | Previous-night per-game milestones, assist/turnover lows, season streaks and league-scored contextual leaders; cached birthdays and confirmed game results |
 | `badge_store.py` | Cached season award ledger in the existing SQLite file, correction replacement, formula isolation, and public aggregate counts |
 | `season_review.py` | Full-season current-roster production, weekly aggregates, and descriptive player metrics; see [Season review](SEASON_REVIEW.md) |
@@ -17,12 +18,16 @@
 | `fetch_data.py` | NBA adapters, name matching, strict normalization, dates, bonuses |
 | `sleeper_stats.py` | Reconciled, final-only Sleeper / Sportradar fallback observations |
 | `game_store.py` | SQLite player-game history, daily overlap upserts, weekly full reconciliation |
+| `forecast_store.py` | SQLite pregame forecast snapshots for next-day above/below expectation badges |
 | `publication.py` | Local static publication, deployment verification, retry ledger, macOS wake catch-up |
 | `transport.py` | Persistent response cache, request serialization/pacing, cooldown circuit |
 | `scoring.py` | Validated league weights, generic milestone bonuses, foul/rebound fallback policy, FP calculation |
 | `pages.py` | Live report generation, public field allowlist, static asset export |
 | `decide.py` | One player's weekly result and failure states |
 | `model.py` | Weighted baseline, variance guards, rarity, future-score probability |
+| `season_history.py` | Observed-history bootstrap blending prior-season games into sparse current projections and lock baselines |
+| `lineup.py` | Daily pregame projections and exact maximum-weight slot assignment using the Hungarian algorithm |
+| `projections.py` | Validated Sleeper / RotoWire per-game forecasts, expected milestone bonuses via Poisson approximation |
 | `pickups.py` | Separate-window improvement screening, roster fit, and history-independent available-player directory |
 | `sleeper.py` | Read-only roster/scoring import, ordered lineup slots, NBA team/injury metadata, complete ownership snapshot |
 | `schedule.py` | Validated, cached full-season schedule; weekly opponents and remaining-game counts |
@@ -212,23 +217,7 @@ selects leaders without changing roster order. Home remains roster-first. These
 are current-roster observed totals, not historical ownership or Sleeper locked
 scores; see [metric definitions and limitations](SEASON_REVIEW.md).
 
-
-## Proposed future architecture
-
-The [backend evaluation proposal](epics/MODEL_EVALUATION.md) describes separate
-modules for game forecasts, sequential weekly locks, calibration experiments,
-and operational/data-quality scorecards. It shares the opponent epic’s future
-archive contracts. Both are documentation-only and reserved for a separate
-development branch later; no evaluation pipeline or training job is installed.
-
-
-[Opponent-aware projections](epics/OPPONENT_AWARE_PROJECTIONS.md) is a research
-and kickoff proposal, separate from the implemented contracts above. It proposes
-versioned input/forecast records in the existing local database, shared per-game
-stat distributions, league-specific rescoring, and static report delivery. No
-proposed table, adapter, model, or scheduled job has been added.
-
-### Season badge persistence
+## Season badge persistence
 
 `badge_store.py` adds two tables to `data/lockin.sqlite3`:
 
@@ -250,3 +239,26 @@ counts, totals, negative/milestone counts, and variety. It exports no birthdays,
 private account information, or database. `seasonBadgeLeaders()` applies current
 roster versus NBA scope and competition ranks in the browser. No new service,
 website database, or scheduled job is needed. See [Badge race](SEASON_REVIEW.md#season-badge-race).
+
+## Proposed future architecture
+
+- The [backend evaluation proposal](epics/MODEL_EVALUATION.md) describes separate
+  modules for game forecasts, sequential weekly locks, calibration experiments,
+  and operational/data-quality scorecards. It shares the opponent epic’s future
+  archive contracts. Both are documentation-only and reserved for a separate
+  development branch later; no evaluation pipeline or training job is installed.
+
+- [Opponent-aware projections](epics/OPPONENT_AWARE_PROJECTIONS.md) is a research
+  and kickoff proposal, separate from the implemented contracts above. It proposes
+  versioned input/forecast records in the existing local database, shared per-game
+  stat distributions, league-specific rescoring, and static report delivery. No
+  proposed table, adapter, model, or scheduled job has been added.
+
+- [Static export efficiency](epics/STATIC_EXPORT_EFFICIENCY.md) proposes shared
+  player identities, on-demand directory/history assets, version-aware caching,
+  and compact JSON exports without adding a database to GitHub Pages; planning only.
+
+## Agent and developer references
+
+- [Agent Architecture & Data Map](agents/ARCHITECTURE_MAP.md): complete module responsibility index, SQLite schemas, and data boundaries.
+- [Agent Workflows & Testing](agents/WORKFLOWS_AND_TESTING.md): verification suite commands, offline test rules, and publication workflows.

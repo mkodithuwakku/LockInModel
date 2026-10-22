@@ -63,3 +63,19 @@ The optimizer can promote bench players and move flexible players between eligib
 The date and Snapshot details identify when the plan was saved. Midnight does not erase it, and a failed refresh retains the older dated plan; freshness notices still apply to lock/pickup decisions. After adding or dropping players in Sleeper, refresh and publish from your Mac. Reload on the hosted site only reads that publication. The display never changes the actual Sleeper lineup. Check existing locks and tipoffs there before acting.
 
 NBA team abbreviations in roster cards include a small decorative team logo (14px, or 12px on phones). Logos load from the NBA CDN; unknown/free-agent teams and failed images retain text only.
+
+## Season review and badge race
+
+Switch to **Season review** in the main navigation to see every published team's season production, scored under that league's formula. Select a team card for its detailed breakdown:
+- **Production summaries:** Roster FP, FP per player appearance, coverage, top-3 contributor share, and aggregate box-score shooting percentages.
+- **Key players:** Season anchor (highest total FP), per-game leader (highest average), form leader (largest recent 5-game vs preceding 5-game change), and biggest swings (largest FP standard deviation).
+- **Season Badge race:** Tracks cumulative awards for all 44 badges across the season. Switch between **My roster** and **NBA-wide** views, review category leaders, or expand individual badge categories. Selecting any player opens their expanded card with season award counts and repeat counts.
+
+## Badge guide
+
+Select **Badge guide** in the top bar to inspect all 44 daily indicators in a scrollable reference dialog. The guide covers:
+- **Single-game milestones:** 30–70 points, 10–20 assists, 10–20 rebounds, 5–10 threes, 10 steals, and 10 blocks (highest qualifying tier awarded per stat).
+- **NBA-wide leaders:** Top-3 finishes in threes, field goals, boards, steals, blocks, minutes, assists, free throws, turnovers, and missed shots, plus double-doubles (☕) and triple-doubles (🎩).
+- **Contextual fantasy leaders:** League-scored leaders in wins/losses, home/away, ages 32+ and 23-and-younger, 3-game heater/cold-spell streaks, and assist-to-turnover margins (Butterfingers).
+- **League-scored projection surprises:** Above/below expectation comparisons powered by archived pregame forecasts.
+

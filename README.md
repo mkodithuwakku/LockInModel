@@ -128,15 +128,15 @@ flowchart TD
 | Files | Responsibility |
 | --- | --- |
 | [season_review.py](season_review.py) | Full-season team/player production, weekly summaries, and honest sample coverage |
-| [daily_badges.py](daily_badges.py) | NBA-wide stat and league-scored badges, saved-forecast comparisons, and tie handling |
+| [daily_badges.py](daily_badges.py), [badge_awards.py](badge_awards.py) | NBA-wide stat and league-scored badges, single-game milestones, contextual awards, and tie handling |
 | [app.py](app.py), [web/](web/) | HTTP boundary, jobs, interface state, rendering, and user actions; [insights.js](web/insights.js) derives observed team form |
 | [engine.py](engine.py), [providers.py](providers.py), [schedule.py](schedule.py) | Shared orchestration, live/replay policies, and cached weekly schedule |
 | [fetch_data.py](fetch_data.py), [scoring.py](scoring.py) | Identity/date normalization, box-score validation, bonus flags, fantasy points |
-| [decide.py](decide.py), [model.py](model.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, rising-player screening |
+| [decide.py](decide.py), [model.py](model.py), [season_history.py](season_history.py), [pickups.py](pickups.py) | Weekly decisions, statistical heuristics, sparse-history blending, rising-player screening |
 | [simulation.py](simulation.py), [storage.py](storage.py) | Practice transitions, config validation, atomic file replacement |
 | [lineup.py](lineup.py), [projections.py](projections.py) | History-based and validated Sleeper forecasts, projected box scores, and exact positional assignment |
 | [game_store.py](game_store.py), [forecast_store.py](forecast_store.py), [badge_store.py](badge_store.py) | SQLite observations, incremental upserts, pregame forecast snapshots, and season badge awards |
-| [sleeper.py](sleeper.py), [transport.py](transport.py), [capture.py](capture.py) | League import, cached/paced requests, historical capture |
+| [sleeper.py](sleeper.py), [sleeper_stats.py](sleeper_stats.py), [transport.py](transport.py), [capture.py](capture.py) | League import, fallback box-score reconciliation, cached/paced requests, historical capture |
 | [pages.py](pages.py), [publication.py](publication.py), [web/pages.js](web/pages.js) | Allowlisted export, local daily publication, wake catch-up, browser expiry |
 | [main.py](main.py), [notify.py](notify.py) | Reports, delivery ledger, pickup cooldowns, SMTP |
 | [tests/](tests/), [docs/](docs/) | Regression checks and implementation guides |
@@ -311,11 +311,18 @@ The default daily slot is 7:00 AM America/Edmonton. The agent checks every 15 mi
 | [Configuration](docs/CONFIGURATION.md) | Settings and league-scoring coverage |
 | [Operations](docs/OPERATIONS.md) | Commands, delivery, troubleshooting |
 | [Hosting](docs/HOSTING.md) | GitHub Pages, scheduled refresh, publication boundary, recovery |
+| [Season review](docs/SEASON_REVIEW.md) | All-team production summaries, weekly breakdowns, key player cards, and full-season Badge race |
+| [Daily badges](docs/DAILY_BADGES.md) | Icon meanings, 44 indicators, NBA-wide ranking, ties, date expiry, and forecast archive |
+| [Projections](docs/PROJECTIONS.md) | Full-roster forecast coverage, source precedence, stat normalization, and expected milestone bonuses |
+| [Performance colours](docs/PERFORMANCE_COLOURS.md) | Personal-average comparisons for completed games, roster tiles, and expanded player cards |
 | [Test Week](docs/TEST_WEEK.md) | Practice controls and constraints |
 | [Historical replay](docs/HISTORICAL_REPLAY.md) | Capture and evaluation caveats |
 | [Walkthrough](docs/WALKTHROUGH.md) | Product workflow |
 | [Known issues](docs/KNOWN_ISSUES.md) | Follow-up work and earlier security notes |
+| [Agent architecture & data map](docs/agents/ARCHITECTURE_MAP.md) | Module map, SQLite schemas, and data boundaries for AI agents |
+| [Agent workflows & testing](docs/agents/WORKFLOWS_AND_TESTING.md) | Test commands, development rules, and verification pipelines for AI agents |
 | [Model evaluation epic](docs/epics/MODEL_EVALUATION.md) | Proposed projection/weekly-lock evaluation, ML experiments, operational benchmarks, and later-branch rollout |
 | [Opponent-aware projection epic](docs/epics/OPPONENT_AWARE_PROJECTIONS.md) | Proposed architecture, source research, evaluation and kickoff backlog; no implementation |
+| [Static export efficiency epic](docs/epics/STATIC_EXPORT_EFFICIENCY.md) | Proposed shared identities, on-demand resources, caching, and compact JSON export; planning only |
 
 **Keep this README current with code changes.** [AGENTS.md](AGENTS.md) requires a documentation review for every implementation, dependency, configuration, or workflow change, with affected README sections, linked guides, and screenshots updated in the same change. The pull request template records that review. If documented behavior is unchanged, record why no README edit is needed; do not add filler or a running changelog here.

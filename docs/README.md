@@ -11,6 +11,7 @@ The project-level [README](../README.md) is the portfolio overview and technical
 7. [Test Week](TEST_WEEK.md): practice morning/night decisions with banked scores and isolated rosters.
 8. [Historical replay](HISTORICAL_REPLAY.md): understand immutable fixtures and their separation from live history.
 9. [Known issues](KNOWN_ISSUES.md): review unresolved limitations honestly.
+10. [Season review](SEASON_REVIEW.md): all-team production summaries, weekly production per appearance, key player highlights, full-season Badge race, and player season badge cards.
 
 The historical fixture was captured from an immutable third-party archive of NBA API responses after one direct NBA bulk request timed out. Sleeper NBA league import was verified against the user's account. Local tests prohibit network access. No test email was sent; the previously exposed credential is blocked locally.
 
@@ -18,13 +19,17 @@ When changing model or scoring behavior, update the reference and regression tes
 
 The [screenshot notes](screenshots/README.md) distinguish the captured generic layout from new scoring/publication behavior that those images do not demonstrate.
 
-[Projections](PROJECTIONS.md) documents full-roster forecast coverage, source precedence, stat normalization, and expected milestone bonuses.
-
+- [Projections](PROJECTIONS.md): documents full-roster forecast coverage, source precedence, stat normalization, and expected milestone bonuses.
 - [Performance colours](PERFORMANCE_COLOURS.md): personal-average comparisons for completed games, roster tiles, and expanded player cards.
-- [Daily badges](DAILY_BADGES.md): icon meanings, NBA-wide ranking, ties, date expiry, and screenshot scope.
+- [Daily badges](DAILY_BADGES.md): icon meanings, 44 indicators, NBA-wide ranking, ties, date expiry, and screenshot scope.
+
+## Agent and developer references
+
+- [Agent Architecture & Data Map](agents/ARCHITECTURE_MAP.md): module map, SQLite schema definitions, and data contracts.
+- [Agent Workflows & Testing](agents/WORKFLOWS_AND_TESTING.md): test suite execution, code conventions, and verification steps.
 
 ## Future epic proposals
 
+- [Model evaluation](epics/MODEL_EVALUATION.md): proposed projection error measurement, sequential weekly-lock policy evaluation, ML calibration experiments, and isolated evaluation datasets; planning only.
 - [Opponent-aware player projections](epics/OPPONENT_AWARE_PROJECTIONS.md): planning only. Audits existing data, investigates additional sources, proposes stat-level player/opponent interactions, and defines sustainable ingestion, evaluation gates, and an implementation backlog. It does not enable matchup adjustments or authorize data subscriptions.
-
 - [Static export efficiency](epics/STATIC_EXPORT_EFFICIENCY.md): implementation-ready planning for shared player identities, on-demand resources, safe caching and compact JSON; includes measurements, ordered tickets, acceptance criteria and rollout/rollback. No export changes are implemented by this document.
