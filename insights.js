@@ -240,9 +240,12 @@
     const validDay = /^\d{4}-\d{2}-\d{2}$/.test(game.date || "") &&
       /^\d{4}-\d{2}-\d{2}$/.test(projection?.as_of || "") && game.date >= projection.as_of;
     if (player.schedule_state === "verified" && ["pre_game", "in_progress"].includes(game.status) &&
-        validDay && Number.isFinite(projection?.projected_fp)) {
-      return {kind: "projection", label: "Proj", value: projection.projected_fp,
-        description: `Projected ${projection.projected_fp.toFixed(1)} fantasy points · per-game estimate when active, not opponent-adjusted · as of ${projection.as_of}`};
+        validDay && (Number.isFinite(game.proj_fp) || Number.isFinite(projection?.projected_fp))) {
+      const value = Number.isFinite(game.proj_fp) ? game.proj_fp : projection.projected_fp;
+      const description = Number.isFinite(game.proj_fp)
+        ? `Projected ${value.toFixed(1)} FP vs ${game.opponent} · opponent-adjusted`
+        : `Projected ${value.toFixed(1)} fantasy points · per-game estimate when active, not opponent-adjusted · as of ${projection.as_of}`;
+      return {kind: "projection", label: "Proj", value, description};
     }
     return {kind: "unavailable", label: "Proj", value: null, description: "Projection unavailable for this game"};
   }
