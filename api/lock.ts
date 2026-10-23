@@ -60,10 +60,12 @@ function originAllowed(req: LockRequest): boolean {
 }
 
 function repo(): {repo: string; branch: string; token: string} {
-  const repo = process.env.GITHUB_REPO || "";
-  const token = process.env.GITHUB_TOKEN || "";
-  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) || !token)
-    throw Object.assign(new Error("Server is not configured."), {status: 500});
+  const repo = (process.env.GITHUB_REPO || "").trim();
+  const token = (process.env.GITHUB_TOKEN || "").trim();
+  if (!repo) throw new Error("Missing GITHUB_REPO env var.");
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo))
+    throw new Error(`GITHUB_REPO has unexpected format: "${repo}"`);
+  if (!token) throw new Error("Missing GITHUB_TOKEN env var.");
   return {repo, token, branch: process.env.GITHUB_BRANCH || "main"};
 }
 
