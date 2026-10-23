@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-23T02:14:21.474Z",
+  "updated_at": "2026-10-23T02:14:25.542Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -33,6 +33,16 @@
           "locked_fp": 31.5,
           "game_date": "2026-10-21",
           "locked_at": "2026-10-23T02:14:21.474Z"
+        },
+        "1717": {
+          "player_id": "1717",
+          "player_name": "Fred VanVleet",
+          "canonical_name": "fred vanvleet",
+          "roster_slot": "G",
+          "slot_index": 2,
+          "locked_fp": 26,
+          "game_date": "2026-10-21",
+          "locked_at": "2026-10-23T02:14:25.542Z"
         },
         "2055": {
           "player_id": "2055",
