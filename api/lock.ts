@@ -4,6 +4,7 @@
 //   GITHUB_TOKEN     fine-grained PAT, Contents: Read and write on the repo (required)
 //   GITHUB_REPO      e.g. "mkodithuwakku/LockInModel" (required)
 //   GITHUB_BRANCH    defaults to "main"
+//   LOCKIN_ORIGIN    allowed CORS origin; defaults to "https://<owner>.github.io"
 
 import {timingSafeEqual} from "node:crypto";
 import {applyLock, emptyDocument, validatePayload} from "./locks-core.mjs";
@@ -20,6 +21,24 @@ interface LockRequest {
 interface LockResponse {
   status(code: number): LockResponse;
   json(payload: unknown): LockResponse;
+  setHeader(name: string, value: string): LockResponse;
+  end(): LockResponse;
+}
+
+function corsOrigin(): string {
+  if (process.env.LOCKIN_ORIGIN) return process.env.LOCKIN_ORIGIN;
+  const owner = (process.env.GITHUB_REPO || "/").split("/")[0];
+  return `https://${owner}.github.io`;
+}
+
+function setCors(res: LockResponse): void {
+  res.setHeader("Access-Control-Allow-Origin", corsOrigin());
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, x-lockin-passcode",
+  );
 }
 
 function authorized(header: string | string[] | undefined): boolean {
@@ -77,6 +96,8 @@ export default async function handler(
   req: LockRequest,
   res: LockResponse,
 ): Promise<LockResponse> {
+  setCors(res); // The Pages origin is cross-site; answer the CORS preflight.
+  if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method === "GET") {
     // The published site reads this to show phone-made locks before the next
     // daily publish; the same records are already allowlisted in report.json.

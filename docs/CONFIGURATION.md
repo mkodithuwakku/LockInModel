@@ -102,6 +102,7 @@ The local Flask app accepts `POST /api/lock` with the same payload the serverles
 | `GITHUB_TOKEN` | Fine-grained token scoped to this repository with **Contents: Read and write**; it must live only in the function's env, never in the static page |
 | `GITHUB_REPO` | `owner/name` of this repository |
 | `GITHUB_BRANCH` | Target branch; defaults to `main` |
+| `LOCKIN_ORIGIN` | Allowed cross-origin caller; defaults to `https://<repo-owner>.github.io` — set it only if Pages serves a custom domain |
 
 The function commits `state/locks.json` to `main` with a short backoff retry on concurrent-write conflicts. Point the published site at it by setting the `lockin-lock-endpoint` meta tag in `web/index.html` to the function's full URL. With no endpoint configured — or before deployment — toggles still work as device-local optimistic flags; they just never reach the repo or the Mac. The Mac's `publication.py` fast-forwards `main` before analysis so phone-written locks are in the file it reads.
 
