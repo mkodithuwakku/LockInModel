@@ -1,8 +1,8 @@
 # Season review
 
-Open **Season review** to see every published team's season production, then
-select a team card for its breakdown. The default **My teams** view still opens
-on the recommended roster sheet.
+Open **Season review** to see the selected team's season production; switch
+teams with the usual team selector at the top. The default **My teams** view
+still opens on the recommended roster sheet.
 
 ## What the numbers mean
 
@@ -80,9 +80,10 @@ cards, contributor details, weekly disclosure, and returning to the roster.
 
 ## Season Badge race
 
-Below the contributors, **Badge race** counts awards across the selected league's
-season through the previous night. Switch between **My roster** (current players,
-including awards before joining) and **NBA-wide**. Four compact cards show total
+**Badge race** lives in its own tab and counts awards across the selected
+league's season through the previous night. It opens on the **NBA-wide** pool,
+with a **My roster** toggle (current players, including awards before joining).
+Four compact cards show total
 badges, negative badges (Chaos leader), milestones, and distinct badge types.
 The leaderboard selector also includes every individual badge. Competition ranks
 preserve ties; the first ten places are shown, including ties at tenth. Expand
@@ -97,7 +98,8 @@ season awards, with an explicit note that game-by-game performance is not includ
 They are not labeled as pickup recommendations.
 
 All player cards include a compact **Season badges** section: total awards,
-chaos (negative indicators), milestones, and variety (distinct types). Expand
+chaos (negative indicators), milestones, and variety (distinct types, shown as
+earned out of the 44 badge types). Expand
 **Earned badges** for each earned type and its repeat count. Counts use the same
 league/season ledger as the race and include games before joining the roster.
 Unavailable history displays an unavailable message rather than zero; a covered

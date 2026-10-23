@@ -62,6 +62,137 @@ def test_candidates_and_scoring_are_specific_to_each_league():
     )  # Same player, different scoring, below lift threshold.
 
 
+class _Calendar:
+    def __init__(self, games):
+        self.games = games
+
+    def for_team(self, team, week):
+        return [
+            g
+            for g in self.games
+            if g["team"] == team and week[0] <= g["date"] <= week[1]
+        ]
+
+
+def _game(date, team, status="pre_game"):
+    return {
+        "date": date,
+        "team": team,
+        "status": status,
+        "opponent": "BOS",
+        "home": True,
+    }
+
+
+def test_suggest_swap_pairs_tonights_pickup_with_a_gameness_drop():
+    from pickups import suggest_swap
+
+    calendar = _Calendar([_game("2026-10-25", "LAC")])
+    rows = [
+        {
+            "player": "Star",
+            "positions": ["SF"],
+            "roster_slot": "SF",
+            "is_locked": True,
+            "projection": {"projected_fp": 45},
+            "remaining_games_est": 0,
+            "week_games": [],
+        },
+        {
+            "player": "Bench17",
+            "positions": ["SG", "SF"],
+            "roster_slot": "BN",
+            "projection": {"projected_fp": 17},
+            "remaining_games_est": 0,
+            "week_games": [],
+        },
+    ]
+    pickups = [
+        {
+            "player": "Waiver",
+            "player_id": "1",
+            "nba_team": "LAC",
+            "positions": ["SG"],
+            "projected_fp": 20,
+            "availability": "Unrostered at latest Sleeper sync",
+        }
+    ]
+    result = suggest_swap(
+        rows, pickups, calendar, "2026-10-25", ["2026-10-19", "2026-10-25"]
+    )
+    assert result["status"] == "suggest"
+    assert result["add"]["player"] == "Waiver" and result["add"]["plays_today"]
+    # The locked starter is never the drop, even though it is worth more.
+    assert result["drop"]["player"] == "Bench17"
+    assert result["net_fp"] > 0
+
+
+def test_suggest_swap_holds_when_the_long_run_cost_beats_the_spot_start():
+    from pickups import suggest_swap
+
+    calendar = _Calendar([_game("2026-10-25", "LAC")])
+    rows = [
+        {
+            "player": "Bench17",
+            "positions": ["SG", "SF"],
+            "roster_slot": "BN",
+            "projection": {"projected_fp": 17},
+            "remaining_games_est": 0,
+            "week_games": [],
+        }
+    ]
+    pickups = [
+        {
+            "player": "Waiver",
+            "player_id": "1",
+            "nba_team": "LAC",
+            "positions": ["SG"],
+            "projected_fp": 9.5,
+        }
+    ]
+    result = suggest_swap(
+        rows, pickups, calendar, "2026-10-25", ["2026-10-19", "2026-10-25"]
+    )
+    # One game of ~9.5 FP cannot justify keeping the worse player next week.
+    assert result["status"] == "hold" and result["net_fp"] < 0
+
+
+def test_suggest_swap_holds_midweek_when_the_drop_still_has_games():
+    from pickups import suggest_swap
+
+    calendar = _Calendar([_game("2026-10-22", "LAC")])
+    rows = [
+        {
+            "player": "Bench17",
+            "positions": ["SG"],
+            "roster_slot": "BN",
+            "projection": {"projected_fp": 17},
+            "remaining_games_est": 3,
+            "week_games": [_game("2026-10-22", "NYK")],
+        }
+    ]
+    pickups = [
+        {
+            "player": "Waiver",
+            "player_id": "1",
+            "nba_team": "LAC",
+            "positions": ["SG"],
+            "projected_fp": 20,
+        }
+    ]
+    result = suggest_swap(
+        rows, pickups, calendar, "2026-10-22", ["2026-10-19", "2026-10-25"]
+    )
+    assert result["status"] == "hold"
+    assert (
+        suggest_swap(rows, [], calendar, "2026-10-22", ["2026-10-19", "2026-10-25"])[
+            "status"
+        ]
+        == "hold"
+    )
+    assert suggest_swap(rows, pickups, None, "2026-10-22", None) is None
+
+
 def test_available_directory_without_history_excludes_full_league_ownership():
     from pickups import available_players
 

@@ -174,6 +174,19 @@ test("badge guide covers every new award, all tiers, and exact trigger rules", (
   }
   assert.match(guide.find(b=>b.key==="unc").rule,/fantasy points.*32/);
   assert.match(guide.find(b=>b.key==="careless").rule,/−5/);
+  assert.match(guide.find(b=>b.key==="shield").rule,/one steal AND one block/);
+});
+
+test("variety cap reflects mutually exclusive age badges and known birthdays", () => {
+  const {varietyCap, badgeGuide} = require("../web/insights.js");
+  assert.equal(badgeGuide().length, 44);
+  assert.equal(varietyCap({counts: {unc: 2}}), 43);
+  assert.equal(varietyCap({counts: {new_gen: 1}}), 43);
+  assert.equal(varietyCap({counts: {}, age: 20}), 43);
+  assert.equal(varietyCap({counts: {}, age: 33}), 43);
+  assert.equal(varietyCap({counts: {}, age: 27}), 42);
+  assert.equal(varietyCap({counts: {}}), 42);
+  assert.equal(varietyCap(null), 42);
 });
 test("signed awards render, milestones have no fake ranking, streak explains average", () => {
   const {dailyBadges} = require("../web/insights.js");
@@ -211,4 +224,32 @@ test("historical comparisons use observed history, exclude future rows and never
   assert.equal(performanceScore(p,40,"2026-10-21").tone,"good");
   assert.equal(performanceScore({projection:p.projection},40).tone,"unknown");
   assert.equal(performanceScore({history:[{date:"2025-01-01",fp:9}]},9).tone,"unknown");
+});
+test("gamesToWatch ranks today's matchups by unique rostered players across teams", () => {
+  const {gamesToWatch} = require("../web/insights.js");
+  const day = "2026-10-22";
+  const g = (over = {}) => ({date: day, status: "pre_game", opponent: "BOS", home: true, ...over});
+  const p = (name, team, over = {}) => ({player: name, player_id: name, nba_team: team, positions: ["PG"], week_games: [g()], ...over});
+  const teams = [
+    {id: "a", team_name: "Alpha", results: [
+      p("One", "LAL"), p("Two", "LAL"), p("Shared", "LAL"),
+      p("Other", "NYK", {week_games: [g({opponent: "MIA", home: false})]}),
+      p("Yesterday", "CHI", {week_games: [g({date: "2026-10-21"})]}),
+    ]},
+    {id: "b", team_name: "Beta", results: [
+      p("Shared", "LAL"), p("Three", "BOS", {week_games: [g({opponent: "LAL", home: false})]}),
+      p("Four", "MIA", {week_games: [g({opponent: "NYK", home: true, status: "in_progress"})]}),
+    ]},
+  ];
+  const games = gamesToWatch(teams, day);
+  // BOS@LAL: One, Two, Shared (deduped across both rosters), Three = 4 players.
+  assert.equal(games[0].key, "BOS@LAL");
+  assert.equal(games[0].players.length, 4);
+  assert.deepEqual(games[0].players.find(x => x.player === "Shared").teams, ["Alpha", "Beta"]);
+  // NYK@MIA is second with 2 players and carries the live status through.
+  assert.equal(games[1].key, "NYK@MIA");
+  assert.equal(games[1].players.length, 2);
+  assert.equal(games[1].status, "in_progress");
+  // Yesterday's game is excluded entirely.
+  assert.equal(games.length, 2);
 });

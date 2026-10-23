@@ -21,7 +21,7 @@ PLAYER_FIELDS = (
     "player player_id sleeper_id status decision note reason starter positions nba_team week "
     "last_game_date last_game_fp remaining_games_est fp_mean_recent fp_std_recent "
     "sample_size baseline_source baseline_current_season_games baseline_prior_season_games baseline_window_games p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state history_source "
-    "is_locked locked_fp lock_game_date"
+    "is_locked locked_fp lock_game_date age"
 ).split()
 HISTORY_FIELDS = "date fp minutes pts reb ast stl blk tov".split()
 PICKUP_FIELDS = (
@@ -30,7 +30,7 @@ PICKUP_FIELDS = (
     "games_baseline risks replacement team_gain availability ownership_as_of scoring_complete"
 ).split()
 LINEUP_FIELDS = "date status reason total_projected_fp filled_slots pinned_slots eligible_players missing_inputs".split()
-LINEUP_PLAYER_FIELDS = "player player_id positions current_slot injury_status slot slot_index projected_fp projection_source sample_size current_season_games prior_season_games projection_window_games last_played opponent home reason is_pinned is_locked locked_fp lineup_reason lock_game_date".split()
+LINEUP_PLAYER_FIELDS = "player player_id positions current_slot injury_status slot slot_index projected_fp projection_source sample_size current_season_games prior_season_games projection_window_games last_played opponent home reason is_pinned is_locked locked_fp lineup_reason lock_game_date off_day".split()
 SAVED = ROOT / "state/pages-report.json"
 
 
@@ -161,6 +161,17 @@ def public_report(report):
                 item["recommended_lineup"][field] = [
                     select(p, LINEUP_PLAYER_FIELDS) for p in daily.get(field, [])
                 ]
+        if team.get("swap_suggestion"):
+            swap = team["swap_suggestion"]
+            item["swap_suggestion"] = select(
+                swap, "status explanation net_fp week_gain".split()
+            )
+            for side in ("add", "drop"):
+                if isinstance(swap.get(side), dict):
+                    item["swap_suggestion"][side] = select(
+                        swap[side],
+                        "player player_id nba_team positions projected_fp value remaining_games plays_today availability".split(),
+                    )
         out["teams"].append(item)
     out["alerts"] = [
         select(alert, ["severity", "team", "message"])

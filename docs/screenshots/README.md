@@ -17,6 +17,11 @@ Earlier screenshots below predate the restrained plum palette and weekly tile fo
 and most also predate the integrated lineup. Their separate lineup
 cards and synced-starter ordering are historical feature examples.
 
+All roster captures predate the recolored position slots (PG/SG/G/SF/PF/F/C/UTIL
+now use distinct hues), the off-day placeholder rows, and the add/drop waiver
+card that can appear between the recommended lineup and the bench. A refreshed
+roster capture showing the new slot palette and the swap card is outstanding.
+
 ## Earlier visual identity
 
 - `identity-desktop.png`: generic sample roster, with the interlocking LI logo,

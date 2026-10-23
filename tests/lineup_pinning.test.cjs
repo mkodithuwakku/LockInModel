@@ -64,14 +64,51 @@ test("repinLineup blocks the slot even when the locked player has no game today"
   assert.equal(daily.status, "ready");
 });
 
-test("repinLineup leaves teams unchanged when no valid locks exist", () => {
+test("repinLineup fills idle roster players into open slots on a no-game day", () => {
+  const results = [
+    row("Locked", ["PG"], { roster_slot: "PG", lineup_order: 0, week_games: [], projection: { projected_fp: 90 } }),
+    row("IdleGuard", ["SG"], { week_games: [], projection: { projected_fp: 40 } }),
+    row("IdleBig", ["C"], { week_games: [], projection: { projected_fp: 30 } }),
+  ];
+  const daily = repinLineup(team(results, { Locked: lock("Locked") }, ["PG", "SG", "UTIL", "BN"])).recommended_lineup;
+  assert.equal(daily.slots[0].player, "Locked");
+  assert.equal(daily.slots[0].projected_fp, 62.5);
+  assert.deepEqual(daily.slots.slice(1).map((s) => s.player), ["IdleGuard", "IdleBig"]);
+  assert.ok(daily.slots[1].off_day && daily.slots[2].off_day);
+  // Idle fills never count toward the projected total or filled slots.
+  assert.equal(daily.filled_slots, 1);
+  assert.equal(daily.total_projected_fp, 62.5);
+  assert.equal(daily.bench.length, 0);
+});
+
+test("repinLineup fills open slots with played or unscheduled players too", () => {
+  const results = [
+    row("Playing", ["PG"], { roster_slot: "PG", lineup_order: 0, projection: { projected_fp: 50 } }),
+    row("Started", ["C"], { week_games: [game({ status: "in_progress" })], projection: { projected_fp: 30 } }),
+    row("NoSchedule", ["SG"], { schedule_state: "stale", week_games: [], projection: { projected_fp: 20 } }),
+    row("Out", ["SF"], { injury_status: "Out", week_games: [], projection: { projected_fp: 40 } }),
+    row("Reserve", ["PF"], { roster_slot: "IR", week_games: [], projection: { projected_fp: 35 } }),
+  ];
+  const daily = repinLineup(team(results, { Playing: lock("Playing") }, ["PG", "SG", "C", "BN"])).recommended_lineup;
+  assert.deepEqual(daily.slots.map((s) => s.player), ["Playing", "NoSchedule", "Started"]);
+  assert.ok(daily.slots[1].off_day && daily.slots[2].off_day);
+  // Injured and reserve players never hold a slot.
+  assert.deepEqual(daily.bench.map((p) => p.player).sort(), ["Out", "Reserve"]);
+});
+
+test("repinLineup re-derives the lineup even without locks", () => {
   const results = [row("A", ["PG"], { roster_slot: "PG", lineup_order: 0, projection: { projected_fp: 40 } })];
   const t = team(results, {});
-  assert.equal(repinLineup(t), t);
-  const stale = team(results, { Z: lock("Z") });
-  const daily = repinLineup(stale).recommended_lineup;
+  const daily = repinLineup(t).recommended_lineup;
+  // No locks still gets a fresh optimizer pass; the saved team is not mutated.
   assert.equal(daily.pinned_slots, 0);
   assert.equal(daily.slots[0].player, "A");
+  assert.equal(daily.filled_slots, 1);
+  assert.equal(t.recommended_lineup.filled_slots, undefined);
+  const stale = team(results, { Z: lock("Z") });
+  const repinned = repinLineup(stale).recommended_lineup;
+  assert.equal(repinned.pinned_slots, 0);
+  assert.equal(repinned.slots[0].player, "A");
 });
 
 test("repinLineup drops pinned players from the candidate pool and optimizes the rest", () => {

@@ -15,7 +15,7 @@ This document is a high-density reference for agents navigating the backend, dat
 | `decide.py` | Evaluates whether to LOCK or WAIT for a player's latest score in the fantasy week | `per_player_week_decision()`, `evaluate_player_lock()` |
 | `model.py` | Recency-weighted baseline (exponential decay), career/prior shrinkage, variance floors, normal beat probability, rarity adjustment | `rolling_baseline()`, `probability_future_beats_current()`, `rarity_score()` |
 | `season_history.py` | Blends prior-season games into sparse current-season projections and lock baselines (default 10-game window) | `blend_seasons()` |
-| `lineup.py` | Daily pregame forecasts and Hungarian algorithm optimizer for maximum-weight positional lineup assignment; locked players pin to their synced slot before the solver sees the pool | `recommend_lineup()`, `project_players()`, `active_slots()`, `lock_match()`, `locked_score()` |
+| `lineup.py` | Daily pregame forecasts and Hungarian algorithm optimizer for maximum-weight positional lineup assignment; locked players pin to their synced slot before the solver sees the pool; leftover slots fill with idle roster players as zero-projection off-day placeholders | `recommend_lineup()`, `project_players()`, `active_slots()`, `lock_match()`, `locked_score()` |
 | `projections.py` | Validates and parses Sleeper/RotoWire per-game external forecasts; derives Poisson-approximated milestone expectations | `fetch_forecasts()`, `parse_forecasts()`, `forecast_profile()` |
 | `game_store.py` | Local SQLite player-game store; daily overlap upserts (7-day window) and weekly full-season reconciliation | `GameStore`, `games` table, `refresh_status` table |
 | `forecast_store.py` | SQLite pregame forecast snapshots by formula fingerprint, date, and player ID | `ForecastStore`, `formula_key()`, `forecast_snapshots` table |
@@ -23,7 +23,7 @@ This document is a high-density reference for agents navigating the backend, dat
 | `badge_awards.py` | Computes 15 single-game stat milestones, 10 contextual awards (streaks, age, outcome, assist-to-turnover margin) | `raw_awards()`, `fantasy_awards()`, `MILESTONES`, `EXTRA_KEYS` |
 | `badge_store.py` | Manages season badge ledger in SQLite; idempotency, streak recalculation, formula isolation, and aggregate counts | `BadgeStore`, `badge_days` and `badge_awards` tables |
 | `season_review.py` | Aggregates current-roster observed season production, box-score sums, weekly FP/appearance, and key player highlights | `season_review()` |
-| `pickups.py` | Screens unrostered waiver players using 5 recent vs 8–20 baseline games; consistency, sustainability, and roster compatibility | `find_pickups()`, `analyze_player()`, `available_player_directory()` |
+| `pickups.py` | Screens unrostered waiver players using 5 recent vs 8–20 baseline games; consistency, sustainability, and roster compatibility; schedule-aware add/drop swap suggestion weighs this week plus a next-week horizon | `find_pickups()`, `analyze_player()`, `available_player_directory()`, `suggest_swap()` |
 | `sleeper.py` | Read-only import of Sleeper leagues, teams, rosters, scoring settings, and ownership metadata | `import_sleeper()`, `fetch_user_leagues()` |
 | `sleeper_stats.py` | Validated Sleeper/Sportradar fallback box scores when NBA Stats fails or misses recent finals | `parse_games()`, `fetch_sleeper_games()` |
 | `schedule.py` | Full-season regular schedule cache; determines remaining weekly game opportunities | `season_schedule()`, `remaining_games()` |
@@ -36,7 +36,7 @@ This document is a high-density reference for agents navigating the backend, dat
 | `api/lock.ts` | Optional Vercel serverless bridge: validates `x-lockin-passcode`, commits `state/locks.json` to `main` via the GitHub Contents API, retries conflicts | `handler()` |
 | `api/locks-core.mjs` | Shared pure lock-document logic for the endpoint (payload validation, lock/unlock, week expiry) | `validatePayload()`, `applyLock()`, `emptyDocument()` |
 | `web/app.js` | Frontend presentation controller; routing, dialogs, team switching, rendering, player modals, dismiss handlers, lock toggle with optimistic POST and passcode prompt | DOM rendering, event listeners, `toggleLock()`, `postLock()` |
-| `web/insights.js` | Pure client-side calculations: recent form deltas, sparklines, performance colour baselines, badge formatting, roster sheet order, client-side lineup re-pinning | `rosterSheet()`, `repinLineup()`, `performanceScore()`, `performanceBaseline()`, `formScore()` |
+| `web/insights.js` | Pure client-side calculations: recent form deltas, sparklines, performance colour baselines, badge formatting, roster sheet order, client-side lineup re-derivation (locks + placeholder fill) | `rosterSheet()`, `repinLineup()`, `performanceScore()`, `performanceBaseline()`, `formScore()` |
 
 ---
 

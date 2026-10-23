@@ -17,7 +17,7 @@ from daily_badges import (
 )
 from forecast_store import ForecastStore, formula_key
 
-RULES_VERSION = 1
+RULES_VERSION = 2
 BADGE_KEYS = tuple(CATEGORIES) + tuple(FANTASY_CATEGORIES) + tuple(EXTRA_KEYS)
 NEGATIVE_KEYS = frozenset(
     {

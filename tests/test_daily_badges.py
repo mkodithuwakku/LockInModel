@@ -58,6 +58,25 @@ def test_all_categories_use_observations_and_misses_are_attempts_minus_makes():
     assert previous_night_badges(frame, "2025-12-27") == {}
 
 
+def test_shield_requires_at_least_one_steal_and_one_block():
+    frame = pd.DataFrame(
+        [
+            game("steals_only", STL=5, BLK=0),
+            game("blocks_only", STL=0, BLK=4),
+            game("stocks", STL=1, BLK=1),
+            game("big_stocks", STL=3, BLK=2),
+        ]
+    )
+    awards = previous_night_badges(frame, "2025-12-26")
+    shield = {
+        pid: next((b for b in awards.get(pid, []) if b["key"] == "shield"), None)
+        for pid in ("steals_only", "blocks_only", "stocks", "big_stocks")
+    }
+    assert shield["steals_only"] is None and shield["blocks_only"] is None
+    assert shield["big_stocks"]["value"] == 5 and shield["big_stocks"]["rank"] == 1
+    assert shield["stocks"]["value"] == 2
+
+
 def test_competition_ranks_include_ties_at_third_not_three_distinct_scores():
     frame = pd.DataFrame(
         [game(str(i), FG3M=n) for i, n in enumerate([9, 7, 5, 5, 4, 0])]

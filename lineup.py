@@ -284,6 +284,20 @@ def locked_score(record):
     return value if type(value) in (int, float) and math.isfinite(value) else None
 
 
+# Bench reasons that may hold an open slot as a zero-FP placeholder: healthy
+# roster players who simply cannot start right now. Reserve, out/injured and
+# actively-playing candidates stay on the bench.
+PLACEHOLDER_REASONS = frozenset(
+    {
+        "No game today",
+        "Game already started or finished",
+        "Game postponed or unconfirmed",
+        "Schedule unavailable",
+        "Projection unavailable",
+    }
+)
+
+
 def unavailable_lineup(reference, reason):
     return {
         "date": str(reference),
@@ -474,6 +488,41 @@ def recommend_lineup(
             )
         )
     filled = len(chosen) + len(pinned)
+    # Placeholder fill: healthy benched players hold open slots so the sheet
+    # never renders an empty lineup. They add nothing to the projected total.
+    vacant = [i for i, entry in enumerate(merged) if entry["player"] is None]
+    idle = [p for p in bench if p["reason"] in PLACEHOLDER_REASONS]
+    if vacant and idle:
+        pool = [
+            dict(
+                p,
+                projected_fp=(
+                    p["projected_fp"]
+                    if isinstance(p.get("projected_fp"), (int, float))
+                    and math.isfinite(p["projected_fp"])
+                    else 0
+                ),
+            )
+            for p in idle
+        ]
+        placement = optimal_assignment([merged[i]["slot"] for i in vacant], pool)
+        used = set()
+        for j, pick in enumerate(placement):
+            if pick is None:
+                continue
+            i = vacant[j]
+            used.add(id(idle[pick]))
+            merged[i] = dict(
+                slot=merged[i]["slot"],
+                slot_index=i,
+                **idle[pick],
+                off_day=True,
+                lineup_reason=(
+                    f"{idle[pick]['reason']} — holding the slot so your roster stays visible"
+                ),
+            )
+        if used:
+            bench = [p for p in bench if id(p) not in used]
     # All unknown projections is not a credible zero-point recommendation.
     status = (
         "partial"

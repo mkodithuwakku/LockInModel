@@ -169,6 +169,135 @@ def find_pickups(games, team, cfg, reference, positions=None):
     )[:30]
 
 
+NEXT_WEEK_GAMES = 3.5  # Roughly one more NBA week for the long-run term.
+
+
+def _remaining_games(calendar, nba_team, week, reference):
+    try:
+        games = calendar.for_team(nba_team, week)
+    except DataUnavailable:
+        return None
+    today = str(reference)
+    playable = [
+        g for g in games if g["date"] >= today and g.get("status") == "pre_game"
+    ]
+    return {
+        "count": len(playable),
+        "plays_today": any(g["date"] == today for g in playable),
+    }
+
+
+def suggest_swap(rows, candidates, calendar, reference, week):
+    """Pair the best On the Rise add with the weakest compatible drop.
+
+    This week's remaining games are netted against roughly one more week of
+    per-game value, so a late-week spot start never wins when it strands the
+    roster with the worse player next week.
+    """
+    if calendar is None or not week:
+        return None
+    today = str(reference)
+    drops = []
+    for row in rows:
+        if row.get("is_locked") or row.get("roster_slot") in {"IR", "TAXI"}:
+            continue
+        value = (row.get("projection") or {}).get("projected_fp")
+        if not isinstance(value, (int, float)) or not math.isfinite(value):
+            value = row.get("fp_mean_recent")
+        if not isinstance(value, (int, float)) or not math.isfinite(value):
+            continue
+        remaining = row.get("remaining_games_est")
+        if not isinstance(remaining, int):
+            remaining = sum(
+                g["date"] >= today and g.get("status") == "pre_game"
+                for g in row.get("week_games", [])
+            )
+        drops.append(
+            {
+                "player": row["player"],
+                "positions": row.get("positions", []),
+                "value": float(value),
+                "remaining": int(remaining),
+                "plays_today": any(
+                    g["date"] == today and g.get("status") == "pre_game"
+                    for g in row.get("week_games", [])
+                ),
+            }
+        )
+    if not drops:
+        return None
+    best = None
+    for candidate in candidates or []:
+        pg = candidate.get("projected_fp")
+        if not isinstance(pg, (int, float)) or not math.isfinite(pg):
+            continue
+        sched = _remaining_games(calendar, candidate.get("nba_team"), week, reference)
+        if sched is None:
+            continue
+        for drop in drops:
+            if not positions_compatible(candidate.get("positions"), drop["positions"]):
+                continue
+            week_gain = pg * sched["count"] - drop["value"] * drop["remaining"]
+            net = week_gain + (pg - drop["value"]) * NEXT_WEEK_GAMES
+            score = (net, sched["plays_today"], pg)
+            if best is None or score > best[0]:
+                best = (score, candidate, drop, sched, week_gain, net)
+    if best is None:
+        return {
+            "status": "hold",
+            "explanation": "No position-compatible waiver candidate has a verified schedule this week.",
+        }
+    _, add, drop, sched, week_gain, net = best
+    pg = float(add["projected_fp"])
+    games_left = (
+        f"{sched['count']} game{'s' if sched['count'] != 1 else ''} left this week"
+    )
+    detail = {
+        "add": {
+            "player": add["player"],
+            "player_id": add.get("player_id"),
+            "nba_team": add.get("nba_team"),
+            "positions": add.get("positions", []),
+            "projected_fp": round(pg, 2),
+            "remaining_games": sched["count"],
+            "plays_today": sched["plays_today"],
+            "availability": add.get("availability"),
+        },
+        "drop": {
+            "player": drop["player"],
+            "positions": drop["positions"],
+            "value": round(drop["value"], 2),
+            "remaining_games": drop["remaining"],
+            "plays_today": drop["plays_today"],
+        },
+        "net_fp": round(net, 1),
+        "week_gain": round(week_gain, 1),
+    }
+    summary = (
+        f"{add['player']} ({add.get('nba_team') or 'NBA'} · ~{pg:.1f} FP/game"
+        f"{', plays tonight' if sched['plays_today'] else ''}, {games_left})"
+        f" for {drop['player']} (~{drop['value']:.1f} FP/game, "
+        f"{drop['remaining']} left)"
+    )
+    if net <= 0:
+        return {
+            "status": "hold",
+            **detail,
+            "explanation": (
+                f"Closest option: {summary} nets {net:+.1f} FP across this week "
+                "and next — the short-term gain does not cover the downgrade."
+            ),
+        }
+    return {
+        "status": "suggest",
+        **detail,
+        "explanation": (
+            f"Add {summary}. Nets {net:+.1f} FP across this week and next at "
+            "current estimates; projections are heuristics, not guarantees."
+        ),
+    }
+
+
 def available_players(team, directory, games=None, cfg=None):
     """A verified ownership directory, independent of history or rising signals."""
     if not team.get("ownership_complete"):

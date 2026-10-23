@@ -7,6 +7,7 @@
   };
   const OUT_STATUSES = new Set(["OUT", "O", "IR", "INJURED_RESERVE", "SUSPENDED", "SUSP", "INACTIVE"]);
   const PLAYABLE = new Set(["pre_game", "in_progress", "complete", "final", "post_game"]);
+  const PLACEHOLDER_REASONS = new Set(["No game today", "Game already started or finished", "Game postponed or unconfirmed", "Schedule unavailable", "Projection unavailable"]);
   // Python's round() is banker's rounding; cents keep parity with lineup.py.
   const cents = (v) => {
     const x = v * 100, f = Math.floor(x), d = x - f;
@@ -69,12 +70,11 @@
     const name = String(record.player_name ?? "");
     return name.length > 0 && canon(row.player) === canon(name);
   };
-  function repinLineup(team) {
+  function repinLineup(team, active = true) {
     // Re-derives the daily lineup with pinned players, mirroring recommend_lineup.
     const daily = team?.recommended_lineup;
-    const locks = team?.locks;
-    if (!daily || !Array.isArray(daily.slots) || !locks || typeof locks !== "object" || !Object.keys(locks).length)
-      return team;
+    if (!active || !daily || !Array.isArray(daily.slots)) return team;
+    const locks = team?.locks && typeof team.locks === "object" ? team.locks : {};
     const date = daily.date;
     const rows = team.results || [];
     const slots = daily.slots.map((s) => s.slot);
@@ -156,6 +156,25 @@
       const pick = assignment[cursor++];
       merged.push({slot, slot_index: i, ...(pick != null ? candidates[pick] : {player: null, projected_fp: null})});
     });
+    // Placeholder fill: healthy benched players hold open slots so the sheet
+    // never renders an empty lineup. They add nothing to the projected total.
+    const idle = bench.filter((p) => PLACEHOLDER_REASONS.has(p.reason));
+    const open = merged.map((s, i) => (s.player == null ? i : -1)).filter((i) => i >= 0);
+    if (idle.length && open.length) {
+      const pool = idle.map((p) => ({...p, projected_fp: Number.isFinite(p.projected_fp) ? p.projected_fp : 0}));
+      const placement = optimalAssignment(open.map((i) => merged[i].slot), pool);
+      const used = new Set();
+      placement.forEach((pick, j) => {
+        if (pick == null) return;
+        const i = open[j];
+        used.add(idle[pick]);
+        merged[i] = {
+          slot: merged[i].slot, slot_index: i, ...idle[pick], off_day: true,
+          lineup_reason: `${idle[pick].reason} — holding the slot so your roster stays visible`,
+        };
+      });
+      if (used.size) bench.splice(0, bench.length, ...bench.filter((p) => !used.has(p)));
+    }
     const filled = chosen.size + pinned.size;
     const pinnedTotal = [...pinned.keys()].reduce((sum, i) => sum + (Number.isFinite(merged[i].projected_fp) ? merged[i].projected_fp : 0), 0);
     const chosenTotal = [...chosen].reduce((sum, i) => sum + candidates[i].projected_fp, 0);
@@ -317,6 +336,7 @@
       [icon, `${threshold}+ ${label}`, label];
   }
   const badgeRules = {
+    shield: "Top 3 steals plus blocks; only games with at least one steal AND one block count.",
     creator: "Top 3 assists minus turnovers; only games with 5+ assists count, and the margin must be positive.",
     coffee: "10+ in any two of points, rebounds, assists, steals and blocks in one game. Triple-doubles also qualify.",
     magician: "10+ in any three of points, rebounds, assists, steals and blocks in one game.",
@@ -377,6 +397,46 @@
     const details = (team.pickups || []).find(matches) || (team.available_players || []).find(matches);
     return {...awards, ...details, badge_profile: true};
   }
+  function gamesToWatch(teams, date) {
+    // Today's matchups ranked by how many rostered players are involved,
+    // across every loaded team. A player rostered on two leagues counts once.
+    const matchups = new Map();
+    for (const team of teams || []) {
+      (team.results || []).forEach((row, index) => {
+        for (const g of row.week_games || []) {
+          if (g.date !== date || !row.nba_team || !g.opponent) continue;
+          const away = g.home ? g.opponent : row.nba_team;
+          const home = g.home ? row.nba_team : g.opponent;
+          const key = `${away}@${home}`;
+          if (!matchups.has(key))
+            matchups.set(key, {key, away, home, status: g.status, players: new Map(), spots: 0});
+          const m = matchups.get(key);
+          m.spots += 1;
+          const rank = {in_progress: 2, pre_game: 0};
+          if ((rank[g.status] ?? 1) > (rank[m.status] ?? 1)) m.status = g.status;
+          const pid = String(row.player_id ?? row.player);
+          if (!m.players.has(pid))
+            m.players.set(pid, {player: row.player, player_id: row.player_id, nba_team: row.nba_team,
+              positions: row.positions || [], teams: [], fp: null, team_id: team.id, index});
+          const p = m.players.get(pid);
+          if (!p.teams.includes(team.team_name)) p.teams.push(team.team_name);
+          if (Number.isFinite(g.fp)) p.fp = g.fp;
+        }
+      });
+    }
+    return [...matchups.values()]
+      .map(m => ({...m, players: [...m.players.values()]}))
+      .sort((a, b) => b.players.length - a.players.length || b.spots - a.spots || a.key.localeCompare(b.key));
+  }
+  function varietyCap(p) {
+    // 44 badge types exist; the two age badges are mutually exclusive, so the
+    // ceiling is 43. Players 24-31 or with an unknown birth date reach 42.
+    const counts = p?.counts || {};
+    if ((counts.unc || 0) > 0 || (counts.new_gen || 0) > 0) return 43;
+    const age = p?.age;
+    if (Number.isFinite(age)) return age <= 23 || age >= 32 ? 43 : 42;
+    return 42;
+  }
   function playerSeasonBadges(team, playerId) {
     const review = team.season_badges;
     const available = ["ready", "saved", "empty"].includes(review?.status) && playerId != null && playerId !== "";
@@ -386,7 +446,8 @@
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     return {available, earned, total: available ? player?.total ?? 0 : null,
       negative: available ? player?.negative ?? 0 : null, milestones: available ? player?.milestones ?? 0 : null,
-      variety: available ? player?.variety ?? 0 : null};
+      variety: available ? player?.variety ?? 0 : null,
+      variety_cap: available ? varietyCap(player) : null};
   }
   function seasonBadgeLeaders(team, metric = "total", scope = "roster") {
     const roster = new Map((team.results || []).map((p, index) => ({...p, index})).filter(p => p.player_id).map(p => [String(p.player_id), p]));
@@ -396,7 +457,7 @@
       .map(p => {
         const current = roster.get(String(p.player_id));
         return {...p, player: current?.player || p.player, nba_team: current?.nba_team || p.nba_team,
-          index: current?.index, count: aggregate.has(metric) ? p[metric] : p.counts?.[metric]};
+          index: current?.index, age: current?.age, count: aggregate.has(metric) ? p[metric] : p.counts?.[metric]};
       }).filter(p => Number.isFinite(p.count) && p.count > 0)
       .sort((a,b) => b.count - a.count || a.player.localeCompare(b.player) || String(a.player_id).localeCompare(String(b.player_id)));
     const ranks = new Map(), ties = new Map();
@@ -413,7 +474,7 @@
       .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
     return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
   }
-  const helpers = { badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, repinLineup, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
+  const helpers = { badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, repinLineup, teamForm, sparkline, dailyBadges, previousDate, badgeGuide, varietyCap, lockMatches, gamesToWatch };
   helpers._test = {optimalAssignment, eligibleSlot, lockMatches};
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;

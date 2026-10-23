@@ -77,6 +77,17 @@ export default async function handler(
   req: LockRequest,
   res: LockResponse,
 ): Promise<LockResponse> {
+  if (req.method === "GET") {
+    // The published site reads this to show phone-made locks before the next
+    // daily publish; the same records are already allowlisted in report.json.
+    try {
+      const {branch} = repo();
+      const {doc} = await readFile(branch);
+      return res.status(200).json(doc);
+    } catch {
+      return res.status(500).json({error: "Could not load locks."});
+    }
+  }
   if (req.method !== "POST")
     return res.status(405).json({error: "Method not allowed."});
   if (!authorized(req.headers["x-lockin-passcode"]))

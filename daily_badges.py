@@ -55,7 +55,8 @@ def previous_night_badges(games, reference):
             if (scores < 0).any():
                 continue
         if key == "shield":
-            scores = values.sum(axis=1)
+            # Stocks need at least one steal AND one block in the same game.
+            scores = values.sum(axis=1).where((values >= 1).all(axis=1), 0)
         elif key == "creator":
             scores = (values.AST - values.TOV).where(values.AST >= 5, 0)
         elif key in {"magician", "coffee"}:

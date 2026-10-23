@@ -1364,7 +1364,8 @@ dialog label {
     color: #c7ccbd;
     font-size: 10px;
     line-height: 1.2;
-    white-space: nowrap;
+    white-space: normal;
+    text-align: center;
   }
   .nav .nav-number {
     display: none;
@@ -1613,11 +1614,19 @@ dialog label {
     background: var(--panel);
   }
   .player-row[data-status="LOCK"] {
-    border-left: 4px solid var(--mint);
+    border-left: 4px solid #4f8a64;
+    padding-left: 13px;
+  }
+  .player-row[data-status="LOCKED"] {
+    border-left: 4px solid #5a83ad;
     padding-left: 13px;
   }
   .player-row[data-status="WAIT"] {
-    border-left: 4px solid var(--purple);
+    border-left: 4px solid #c9a25e;
+    padding-left: 13px;
+  }
+  .player-row[data-status="WAIT_LOW"] {
+    border-left: 4px solid #c26a6a;
     padding-left: 13px;
   }
   .player-row > .player-ident {
@@ -2094,20 +2103,29 @@ h1 {
 .player-row:hover {
   background: #2d2933;
 }
-.player-row[data-status="LOCK"],
+.player-row[data-status="LOCK"] {
+  border-color: #4a7557;
+  background: #252a26;
+}
+.player-row[data-status="LOCKED"] {
+  border-color: #41617e;
+  background: #252a30;
+}
 .player-row[data-status="BANKED"] {
   border-color: #5e5145;
   background: #28252a;
 }
 .player-row[data-status="WAIT"] {
-  border-color: #51465f;
+  border-color: #6b5a38;
 }
-.player-row .roster-slot {
-  grid-column: 1;
-  grid-row: 1;
-  display: grid;
+.player-row[data-status="WAIT_LOW"] {
+  border-color: #7a4444;
+}
+.roster-slot {
+  display: inline-grid;
   place-items: center;
   align-self: center;
+  flex: 0 0 auto;
   width: 36px;
   min-height: 25px;
   border-radius: 5px;
@@ -2115,26 +2133,30 @@ h1 {
   color: #191b1c;
   font: 800 10px var(--font);
 }
+.player-row .roster-slot {
+  grid-column: 1;
+  grid-row: 1;
+}
 .roster-slot[data-slot="PG"] {
-  background: #b79bb2;
+  background: #8fa6d2;
 }
 .roster-slot[data-slot="SG"] {
-  background: #b5a0c9;
+  background: #a58fd0;
 }
 .roster-slot[data-slot="G"] {
-  background: #bda8c6;
+  background: #9a9ed6;
 }
 .roster-slot[data-slot="SF"] {
-  background: #b9a88e;
+  background: #97b68f;
 }
 .roster-slot[data-slot="PF"] {
-  background: #a38cb7;
+  background: #c4a684;
 }
 .roster-slot[data-slot="F"] {
-  background: #c4b49c;
+  background: #ada986;
 }
 .roster-slot[data-slot="C"] {
-  background: #bca1b7;
+  background: #cf9091;
 }
 .roster-slot[data-slot="UTIL"],
 .roster-slot[data-slot="START"] {
@@ -2214,14 +2236,24 @@ h1 {
   white-space: nowrap;
 }
 .status.lock {
-  border-color: #5e5145;
-  color: #cbb592;
-  background: #302b29;
+  border-color: #4f7a5f;
+  color: #9fd4b0;
+  background: #253129;
+}
+.status.locked-in {
+  border-color: #4a6a8a;
+  color: #9cc3e8;
+  background: #232e3a;
 }
 .status.wait {
-  border-color: #5c4e69;
-  color: #cdbfdd;
-  background: #322b3b;
+  border-color: #7a6440;
+  color: #dcc08a;
+  background: #322b20;
+}
+.status.wait-low {
+  border-color: #8a4f4f;
+  color: #e8a3a3;
+  background: #372525;
 }
 .status.review {
   border-color: #66584f;
@@ -2594,7 +2626,7 @@ dialog::backdrop {
     border-width: 1px;
     border-radius: 7px;
   }
-  .player-row .roster-slot {
+  .roster-slot {
     width: 27px;
     min-height: 23px;
     font-size: 8px;
@@ -2690,7 +2722,7 @@ dialog::backdrop {
     grid-template-columns: 25px 26px minmax(0, 1fr) 67px;
     gap: 3px 4px;
   }
-  .player-row .roster-slot {
+  .roster-slot {
     width: 25px;
   }
   .player-row .player-name {
@@ -2765,7 +2797,7 @@ dialog::backdrop {
 .insight-trend { display: block; color: #a8b4bc; text-align: center; }
 .insight-trend svg { display: block; width: 100%; }
 .insight-trend polyline { stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
-.insight-trend circle { fill: #c5b5d3; }
+.insight-trend circle { fill: currentColor; }
 .insight-trend .spark-guide { stroke: #434c52; stroke-width: 1; }
 .insight-value { text-align: right; font-variant-numeric: tabular-nums; }
 .insight-value strong { display: block; font: 600 17px/1.2 var(--font); }
@@ -2918,6 +2950,51 @@ button.lineup-name:hover strong { color: #c6b3d6; }
 .roster-empty-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 18px; }
 .roster-empty-slots small { color: var(--muted); font-size: 10px; }
 
+/* Add/drop waiver card inside the roster sheet. */
+.swap-card { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px 12px; align-items: center; padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 9px; background: #242228; }
+.swap-card[data-status="suggest"] { border-color: #5e5145; }
+.swap-card[data-status="hold"] { display: block; }
+.swap-side { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.swap-side > small { color: var(--muted); font-size: 9px; letter-spacing: .05em; text-transform: uppercase; }
+.swap-side .swap-name { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--ink); font: 600 13px var(--font); text-align: left; cursor: pointer; }
+.swap-side .swap-name:hover { color: var(--accent); text-decoration: underline; }
+.swap-side > span { font-size: 10px; color: var(--muted); }
+.swap-arrow { color: var(--muted); font-size: 15px; }
+.swap-note { grid-column: 1 / -1; margin: 2px 0 0; font-size: 10px; color: var(--muted); line-height: 1.55; }
+.swap-note b { color: var(--ink); }
+@media (max-width: 740px) {
+  .swap-card { grid-template-columns: 1fr; }
+  .swap-arrow { display: none; }
+}
+
+/* Games to watch: matchups ranked by rostered-player involvement. */
+.watch-card { margin-bottom: 10px; border: 1px solid var(--line); border-radius: 10px; background: #242228; overflow: hidden; }
+.watch-card-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.watch-rank { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: #332d3c; color: var(--accent); font: 800 11px var(--mono); flex: 0 0 auto; }
+.watch-teams { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; min-width: 0; }
+.watch-at { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+.watch-status { margin-left: auto; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font: 600 9px var(--font); text-transform: uppercase; letter-spacing: .04em; flex: 0 0 auto; }
+.watch-status[data-status="in_progress"] { border-color: #7a6440; color: #dcc08a; }
+.watch-count { margin-left: 8px; color: var(--accent); font-size: 13px; white-space: nowrap; }
+.watch-count small { color: var(--muted); font-weight: 400; font-size: 9px; }
+.watch-players { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.watch-player { display: flex; align-items: center; gap: 9px; padding: 8px 12px 8px 9px; border: 0; border-left: 3px solid var(--team-accent, transparent); background: none; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.watch-player + .watch-player { border-top: 1px solid #2e2a34; }
+.watch-player:hover { background: #2d2933; }
+.watch-player .portrait { width: 26px; height: 30px; border-radius: 4px; border-bottom-color: var(--team-accent, #b5b9a6); }
+.watch-player .portrait img { width: 44px; height: 32px; left: -9px; }
+.watch-player .portrait .initials { font-size: 15px; }
+.watch-player-id { display: flex; flex-direction: column; min-width: 0; }
+.watch-player-id strong { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.watch-player-id small { color: var(--muted); font-size: 9px; display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.watch-fp { margin-left: auto; font-size: 12px; color: var(--ink); white-space: nowrap; }
+.watch-fp small { color: var(--muted); font-weight: 400; font-size: 8px; }
+@media (max-width: 740px) {
+  .watch-players { grid-template-columns: 1fr; }
+  .watch-card-head { flex-wrap: wrap; row-gap: 6px; }
+  .watch-count { margin-left: 0; }
+}
+
 /* Roster-first hierarchy: compact context above, all supporting panels below. */
 .workspace { padding-top: 12px; }
 .edition-line, .court-stamp, .sheet-heading .section-label { display: none; }
@@ -2968,17 +3045,6 @@ button.lineup-name:hover strong { color: #c6b3d6; }
 
 /* Season review: restrained surfaces, readable totals, compact player identities. */
 .season-review { padding-top: 18px; }
-.review-teams { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
-.review-team { padding:15px; min-width:0; text-align:left; border:1px solid var(--line); border-radius:10px; background:var(--panel); color:var(--ink); cursor:pointer; }
-.review-team.selected { border-color:var(--purple); box-shadow:inset 3px 0 var(--purple); }
-.review-team-heading { display:flex; gap:10px; align-items:center; }
-.review-team-heading>span:last-child { min-width:0; }
-.review-team-heading strong { display:block; font-size:13px; overflow-wrap:anywhere; }
-.review-team-heading small { display:block; font-size:10px; color:var(--muted); margin-top:2px; }
-.review-team .team-symbol { width:30px; height:30px; flex:0 0 30px; font-size:10px; }
-.review-team-score { display:block; font:600 30px var(--display); margin:12px 0 6px; font-variant-numeric:tabular-nums; }
-.review-team-score small { font:11px var(--font); color:var(--muted); }
-.review-team-footer { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:10px; }
 .review-section-heading { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; margin:26px 0 12px; }
 .review-section-heading h3 { font:600 24px var(--display); margin:0; }
 .review-section-heading>span, .review-section-heading small { font:11px var(--font); color:var(--muted); }
@@ -3023,14 +3089,6 @@ button.lineup-name:hover strong { color: #c6b3d6; }
 @media(max-width:1100px) { .review-highlights { grid-template-columns:repeat(2,1fr); } }
 @media(max-width:740px) {
   .nav { white-space:normal; text-align:center; }
-  .review-teams { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-  .review-team { padding:12px; }
-  .review-team-heading { align-items:flex-start; gap:7px; }
-  .review-team-heading strong { font-size:11px; }
-  .review-team-heading small { font-size:9px; }
-  .review-team-score { font-size:25px; }
-  .review-team-footer { font-size:9px; }
-  .review-team .team-symbol { width:24px; height:24px; flex-basis:24px; }
   .review-metrics { grid-template-columns:repeat(2,1fr); gap:18px; }
   .review-stats { grid-template-columns:repeat(3,1fr); gap:14px; }
   .review-highlight { padding:12px; }
@@ -3044,7 +3102,8 @@ button.lineup-name:hover strong { color: #c6b3d6; }
   .review-section-heading h3 { font-size:22px; }
   .review-chart { height:110px; }
 }
-@media(max-width:360px) { .review-teams, .review-highlights { grid-template-columns:1fr; } }
+@media(max-width:360px) { .review-highlights { grid-template-columns:1fr; } }
+
 
 /* Secondary reference: no new navigation tab or content above the roster. */
 #badge-guide-open { font-size: 11px; color: var(--muted); white-space: nowrap; }

@@ -131,11 +131,81 @@ def test_daily_plan_includes_bench_players_and_reports_exclusions():
     assert "started" in reasons["G"] and "postponed" in reasons["H"]
 
 
+def test_idle_players_hold_open_slots_without_scoring():
+    rows = [row("A"), row("B", ["SG"]), row("C", ["C"]), row("D", ["SG"])]
+    for r in rows:
+        r["week_games"] = []
+    profiles = {r["player_id"]: {"projected_fp": 10} for r in rows}
+    result = recommend_lineup(
+        {"roster_positions": ["PG", "SG", "UTIL"]}, rows, profiles, DATE
+    )
+    assert result["status"] == "no_games" and result["filled_slots"] == 0
+    assert [s["player"] for s in result["slots"]] == ["A", "B", "C"]
+    assert all(s["off_day"] for s in result["slots"])
+    assert all("No game today" in s["lineup_reason"] for s in result["slots"])
+    # Idle players contribute nothing to the projected total.
+    assert result["total_projected_fp"] == 0
+    assert [(p["player"], p["reason"]) for p in result["bench"]] == [
+        ("D", "No game today")
+    ]
+
+
+def test_off_day_fill_respects_positions_and_counts_only_playing_players():
+    rows = [
+        row("Playing", ["PG"]),
+        row("Idle", ["C"]),
+        row("IdleGuard", ["PG"]),
+    ]
+    rows[1]["week_games"] = []
+    rows[2]["week_games"] = []
+    profiles = {r["player_id"]: {"projected_fp": 30} for r in rows}
+    result = recommend_lineup({"roster_positions": ["PG", "C"]}, rows, profiles, DATE)
+    pg, c = result["slots"]
+    assert pg["player"] == "Playing" and not pg.get("off_day")
+    assert c["player"] == "Idle" and c["off_day"]
+    assert result["filled_slots"] == 1 and result["total_projected_fp"] == 30
+    # A guard cannot hold the center slot; it stays benched.
+    assert {p["player"] for p in result["bench"]} == {"IdleGuard"}
+
+
+def test_placeholder_fill_uses_played_or_unscheduled_but_never_out_or_reserve():
+    playing = row("Playing", ["PG"])
+    started = row("Started", ["C"])
+    started["week_games"] = [{"date": DATE, "status": "in_progress"}]
+    no_sched = row("NoSchedule", ["SG"])
+    no_sched["schedule_state"] = "stale"
+    no_sched["week_games"] = []
+    out = row("Out", ["SF"], injury_status="Out")
+    out["week_games"] = []
+    reserve = row("Reserve", ["PF"])
+    reserve["roster_slot"] = "IR"
+    reserve["week_games"] = []
+    rows = [playing, started, no_sched, out, reserve]
+    profiles = {r["player_id"]: {"projected_fp": 20} for r in rows}
+    result = recommend_lineup(
+        {"roster_positions": ["PG", "SG", "C"]}, rows, profiles, DATE
+    )
+    assert [s["player"] for s in result["slots"]] == [
+        "Playing",
+        "NoSchedule",
+        "Started",
+    ]
+    assert result["slots"][1]["off_day"] and result["slots"][2]["off_day"]
+    assert "started or finished" in result["slots"][2]["lineup_reason"]
+    # Only the playing player counts toward filled slots and the total.
+    assert result["filled_slots"] == 1 and result["total_projected_fp"] == 20
+    assert {p["player"] for p in result["bench"]} == {"Out", "Reserve"}
+
+
 def test_missing_data_is_not_a_zero_projection():
     team = {"roster_positions": ["PG"]}
     result = recommend_lineup(team, [row()], {}, DATE)
     assert result["status"] == "partial" and result["total_projected_fp"] is None
-    assert result["slots"][0]["player"] is None
+    # A playing player without a projection holds the slot as a placeholder,
+    # but never gains an invented projected score.
+    slot = result["slots"][0]
+    assert slot["player"] == "A" and slot["off_day"]
+    assert slot.get("projected_fp") is None
     no_game = row()
     no_game["week_games"] = []
     assert recommend_lineup(team, [no_game], {}, DATE)["status"] == "no_games"

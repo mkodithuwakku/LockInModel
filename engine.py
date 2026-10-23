@@ -13,7 +13,7 @@ from storage import (
 from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
 from decide import per_player_week_decision
-from pickups import find_pickups, available_players
+from pickups import find_pickups, available_players, suggest_swap
 from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import (
@@ -378,6 +378,24 @@ def build_dashboard(
                 "START" if row["starter"] else "BN"
             )
             row["sleeper_id"] = meta.get("sleeper_id")
+            try:
+                born = dt.date.fromisoformat(
+                    str(
+                        (sleeper_players.get(str(meta.get("sleeper_id"))) or {}).get(
+                            "birth_date"
+                        )
+                        or ""
+                    )
+                )
+                age = (
+                    reference.year
+                    - born.year
+                    - ((reference.month, reference.day) < (born.month, born.day))
+                )
+                if 16 <= age <= 60:
+                    row["age"] = age
+            except (ValueError, TypeError):
+                pass
             row["lineup_order"] = meta.get("lineup_order", team["players"].index(name))
             row["injury_status"] = meta.get("injury_status") if mode == "live" else None
             if mode == "live":
@@ -564,6 +582,20 @@ def build_dashboard(
             alerts.append(
                 {"severity": "warning", "team": team["name"], "message": warning}
             )
+        try:
+            swap_suggestion = (
+                suggest_swap(
+                    rows,
+                    candidates,
+                    provider.calendar,
+                    reference,
+                    provider.calendar.display_week(reference),
+                )
+                if mode == "live" and getattr(provider, "calendar", None)
+                else None
+            )
+        except (DataUnavailable, ValueError, KeyError):
+            swap_suggestion = None
         results.append(
             {
                 "id": team["id"],
@@ -595,6 +627,7 @@ def build_dashboard(
                 "recommended_lineup": daily_lineup,
                 "locks": team_locks,
                 "pickups": candidates,
+                "swap_suggestion": swap_suggestion,
                 "available_players": (
                     available_players(
                         team,

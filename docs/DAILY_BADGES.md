@@ -17,7 +17,7 @@ fantasy-point badges use each league's own formula across the NBA player pool.
 | 🥪 | Meatball sub | Turnovers |
 | 🧾 | Free-throw merchant | Made free throws (FTM), not attempts |
 | 💔 | Oh my goodness Valentine | Missed threes (FG3A − FG3M) |
-| 📈 | Stock Expert | Steals + blocks |
+| 📈 | Stock Expert | Steals + blocks; requires at least one steal and one block |
 | 🧠 | Clean creator | Assists minus turnovers, with at least 5 assists per game and a positive margin |
 | ☕ | Double-double | Number of games with 10+ in at least two of PTS/REB/AST/STL/BLK |
 | 🎩 | Triple-double magic | Number of games with 10+ in at least three of PTS/REB/AST/STL/BLK |
