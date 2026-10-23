@@ -1,6 +1,7 @@
 """Shared dashboard/report analysis; no delivery side effects."""
 
 import datetime as dt
+import math
 import pandas as pd
 from zoneinfo import ZoneInfo
 from storage import (
@@ -19,7 +20,6 @@ from transport import DataUnavailable
 from lineup import (
     project_players,
     apply_opponent_model,
-    opponent_targets,
     recommend_lineup,
     unavailable_lineup,
     lock_match,
@@ -195,6 +195,29 @@ def build_dashboard(
     season_badge_cache = {}
     fantasy_badge_cache = {}
     projection_cache = {}
+    tile_cache = {}
+    league_games = None
+    team_schedule = None
+    if not getattr(provider, "stats_error", None):
+        league_games = (
+            pd.concat([observed, fallback], ignore_index=True)
+            if fallback is not None and not fallback.empty
+            else observed
+        )
+        if mode == "live" and getattr(provider, "calendar", None):
+            team_schedule = pd.DataFrame(
+                [
+                    (g["date"], g[side])
+                    for g in provider.calendar.games
+                    for side in ("home", "away")
+                ],
+                columns=["GAME_DATE", "TEAM_ABBREVIATION"],
+            )
+        elif getattr(provider, "schedule", None) is not None and {
+            "TEAM_ABBREVIATION",
+            "GAME_DATE",
+        }.issubset(provider.schedule.columns):
+            team_schedule = provider.schedule[["GAME_DATE", "TEAM_ABBREVIATION"]]
     week_key = fantasy_week_key(provider, reference) if mode == "live" else None
     locks_doc = load_locks() if mode == "live" else {}
     for team in cfg["teams"]:
@@ -465,23 +488,27 @@ def build_dashboard(
                 reference,
             )
             if not getattr(provider, "stats_error", None):
-                targets = opponent_targets(provider, rows, reference, mode)
-                if targets:
-                    league_games = (
-                        pd.concat([observed, fallback], ignore_index=True)
-                        if fallback is not None and not fallback.empty
-                        else observed
-                    )
-                    apply_opponent_model(
-                        projection_cache[projection_key],
-                        targets,
-                        league_games,
-                        pid_positions,
-                        weights,
-                        cfg,
-                        reference,
-                    )
+                tile_cache[projection_key] = apply_opponent_model(
+                    rows,
+                    projection_cache[projection_key],
+                    league_games,
+                    pid_positions,
+                    weights,
+                    cfg,
+                    reference,
+                    schedule=team_schedule,
+                )
         profiles = dict(projection_cache[projection_key])
+        tile_map = tile_cache.get(projection_key) or {}
+        for row in rows:
+            pid = str(row.get("player_id") or "")
+            baseline = (profiles.get(pid) or {}).get("projected_fp")
+            for game in row.get("week_games") or []:
+                if game.get("status") not in ("pre_game", "scheduled"):
+                    continue
+                value = tile_map.get((pid, str(game["date"])), baseline)
+                if isinstance(value, (int, float)) and math.isfinite(value):
+                    game["proj_fp"] = round(float(value), 1)
         from projections import forecast_profile
 
         for row in rows:

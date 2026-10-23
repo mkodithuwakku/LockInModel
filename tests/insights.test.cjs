@@ -136,6 +136,25 @@ test("missing forecasts, invalid values, dates and unknown schedules remain unav
   assert.equal(gameFantasy(forecastPlayer(),{status:"pre_game"}).kind,"unavailable");
   assert.equal(gameFantasy(forecastPlayer(),{...game,status:"unknown"}).kind,"unavailable");
 });
+test("opponent-adjusted per-game projections take precedence over the repeated baseline", () => {
+  const p=forecastPlayer();
+  const weds=gameFantasy(p,{date:"2026-10-21",status:"pre_game",fp:null,opponent:"CHA",proj_fp:48.2});
+  const fri=gameFantasy(p,{date:"2026-10-24",status:"pre_game",fp:null,opponent:"BOS",proj_fp:61.9});
+  assert.equal(weds.kind,"projection");
+  assert.equal(weds.value,48.2);
+  assert.match(weds.description,/vs CHA · opponent-adjusted/);
+  assert.equal(fri.value,61.9);
+  assert.match(fri.description,/vs BOS · opponent-adjusted/);
+  assert.notEqual(weds.value,fri.value);
+});
+test("tiles fall back to the per-game baseline when proj_fp is absent or invalid", () => {
+  const p=forecastPlayer();
+  for(const proj_fp of [undefined,null,NaN,Infinity,"55.8"]){
+    const s=gameFantasy(p,{date:"2026-10-21",status:"pre_game",fp:null,opponent:"NYK",proj_fp});
+    assert.equal(s.value,55.8);
+    assert.match(s.description,/not opponent-adjusted/);
+  }
+});
 test("zero forecasts remain valid projections and in-progress games retain the saved estimate", () => {
   const p=forecastPlayer();p.projection.projected_fp=0;
   assert.equal(gameFantasy(p,{date:"2026-10-21",status:"in_progress"}).value,0);

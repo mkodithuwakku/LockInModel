@@ -90,8 +90,11 @@ class FeatureBuilder:
     games on/after the cutoff is legitimately pregame information.
     """
 
-    def __init__(self, games, positions=None, window=15, decay=0.92, lookback=10):
+    def __init__(
+        self, games, positions=None, window=15, decay=0.92, lookback=10, schedule=None
+    ):
         self.window, self.decay, self.lookback = window, decay, lookback
+        self._schedule = schedule
         games = games.copy()
         games["GAME_DATE"] = pd.to_datetime(games.GAME_DATE)
         games["PLAYER_ID"] = games.PLAYER_ID.astype(str)
@@ -249,6 +252,14 @@ class FeatureBuilder:
             t: np.sort(b.GAME_DATE.to_numpy())
             for t, b in self.team_games.groupby("team")
         }
+        if self._schedule is not None and len(self._schedule):
+            # Scheduled-but-unplayed dates count toward rest: a Friday target
+            # must see Wednesday's game even though no box score exists yet.
+            extra = self._schedule.copy()
+            extra["GAME_DATE"] = pd.to_datetime(extra.GAME_DATE)
+            for t, block in extra.groupby("TEAM_ABBREVIATION"):
+                base = self._team_dates.get(t, np.array([], dtype="datetime64[ns]"))
+                self._team_dates[t] = np.union1d(base, block.GAME_DATE.to_numpy())
 
     # -- shared lookup helpers ---------------------------------------------------
 

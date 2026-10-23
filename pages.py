@@ -135,7 +135,7 @@ def public_report(report):
                 for badge in player.get("daily_badges", [])
             ]
             row["week_games"] = [
-                select(g, ["date", "opponent", "home", "status", "fp"])
+                select(g, ["date", "opponent", "home", "status", "fp", "proj_fp"])
                 for g in player.get("week_games", [])
             ]
             if player.get("projection"):

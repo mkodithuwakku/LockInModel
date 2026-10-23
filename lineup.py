@@ -243,114 +243,81 @@ def project_players(games, fallback, weights, cfg, reference):
     return profiles
 
 
-def opponent_targets(provider, rows, reference, mode):
-    """{player_id: target} for rostered players with a verified game today.
-
-    Live mode resolves tonight's matchup from the cached season schedule;
-    replay uses the fixture schedule. Only unplayed/scheduled games qualify —
-    a completed game never receives a new pregame forecast.
-    """
-    ref = str(pd.Timestamp(reference).date())
-    targets = {}
-    team_games = {}
-    if mode == "live":
-        calendar = getattr(provider, "calendar", None)
-        if calendar is None:
-            return {}
-        week = calendar.display_week(pd.Timestamp(reference).date())
-        for team in {r.get("nba_team") for r in rows} - {None, ""}:
-            try:
-                for game in calendar.for_team(team, week):
-                    if game["date"] == ref and game["status"] not in (
-                        "complete",
-                        "final",
-                        "post_game",
-                    ):
-                        team_games[team] = (game["opponent"], bool(game["home"]))
-            except DataUnavailable:
-                continue
-    else:
-        schedule = getattr(provider, "schedule", None)
-        if (
-            schedule is None
-            or schedule.empty
-            or not {"TEAM_ABBREVIATION", "MATCHUP"}.issubset(schedule.columns)
-        ):
-            return {}
-        day = pd.Timestamp(reference).normalize()
-        for _, r in schedule[schedule.GAME_DATE == day].iterrows():
-            from game_store import split_matchup
-
-            home, opp = split_matchup(r.MATCHUP)
-            if opp:
-                team_games[str(r.TEAM_ABBREVIATION)] = (opp, bool(home))
-    for row in rows:
-        pid = str(row.get("player_id") or "")
-        team = row.get("nba_team")
-        if pid and team in team_games:
-            opp, home = team_games[team]
-            targets[pid] = {
-                "PLAYER_ID": pid,
-                "GAME_DATE": ref,
-                "TEAM_ABBREVIATION": team,
-                "OPP": opp,
-                "HOME": int(home),
-            }
-    return targets
-
-
 def apply_opponent_model(
+    rows,
     profiles,
-    targets,
     league_games,
     positions,
     weights,
     cfg,
     reference,
+    schedule=None,
     min_games=5,
 ):
-    """Overlay opponent-aware Ridge projections on baseline profiles.
+    """Opponent-aware Ridge projections for every unplayed ``week_games`` tile.
 
+    Returns ``{(player_id, 'YYYY-MM-DD'): fp}`` for eligible tiles and overlays
+    tonight's matching profiles with ``projection_source: "opponent_ridge"``.
     Eligible players need a verified target game and at least ``min_games``
     prior observations; training uses every league game, not just roster rows.
     Any failure (sparse data, unconfirmed opponent, fitting errors) leaves the
-    existing baseline profile untouched — the fallback is never a zero forecast.
+    baseline profile untouched — the fallback is never a zero forecast.
     """
-    if not profiles or not targets or league_games is None or len(league_games) == 0:
-        return profiles
+    ref = str(pd.Timestamp(reference).date())
+    targets = []
+    for row in rows:
+        pid = str(row.get("player_id") or "")
+        team = row.get("nba_team")
+        if not pid or not team:
+            continue
+        for game in row.get("week_games") or []:
+            if game.get("status") not in ("pre_game", "scheduled") or not game.get(
+                "opponent"
+            ):
+                continue
+            targets.append(
+                {
+                    "PLAYER_ID": pid,
+                    "GAME_DATE": str(game["date"]),
+                    "TEAM_ABBREVIATION": team,
+                    "OPPONENT": game["opponent"],
+                    "IS_HOME": int(bool(game.get("home"))),
+                }
+            )
+    if not targets or league_games is None or len(league_games) == 0:
+        return {}
     try:
         from features import FeatureBuilder
         from model_ml import ComponentRidge
-        from logger import get_logger
 
         reference = pd.Timestamp(reference)
         counts = league_games.groupby(league_games.PLAYER_ID.astype(str)).size()
-        eligible = {
-            str(pid): target
-            for pid, target in targets.items()
-            if counts.get(str(pid), 0) >= min_games
-            and target.get("OPP")
-            and target.get("TEAM_ABBREVIATION")
-        }
+        eligible = [
+            t
+            for t in targets
+            if counts.get(t["PLAYER_ID"], 0) >= min_games
+            and t.get("OPPONENT")
+            and t.get("TEAM_ABBREVIATION")
+        ]
         if not eligible:
-            return profiles
-        builder = FeatureBuilder(league_games, positions=positions)
+            return {}
+        builder = FeatureBuilder(league_games, positions=positions, schedule=schedule)
         matrix = builder.training_matrix()
         matrix["GAME_DATE"] = pd.to_datetime(matrix.GAME_DATE)
-        # Strictly pregame: same-day observations never train or inform a
-        # tonight forecast, matching the baseline's pregame contract.
+        # Strictly pregame: same-day observations never train a forecast,
+        # matching the baseline's pregame contract.
         train = matrix[matrix.GAME_DATE < reference]
         if len(train) < 100:
-            return profiles
-        # Weights are only needed for FP residuals (lock probabilities); this
-        # overlay rescores via each league's formula, so fit components only.
+            return {}
+        # Weights are only needed for FP residuals (lock probabilities); tiles
+        # rescore via each league's formula, so fit components only.
         model = ComponentRidge().fit(train)
         if not model.betas:
-            return profiles
-        frame = pd.DataFrame([dict(t, PLAYER_ID=pid) for pid, t in eligible.items()])
-        feats = builder.features_for(frame, cutoff=reference)
+            return {}
+        feats = builder.features_for(pd.DataFrame(eligible))
         stats = model.predict_components(feats)
-        for index, (_, target) in enumerate(eligible.items()):
+        tile_map = {}
+        for index, target in enumerate(eligible):
             pid = str(target["PLAYER_ID"])
             profile = profiles.get(pid)
             if profile is None:
@@ -366,7 +333,7 @@ def apply_opponent_model(
                         for stat in stats.columns
                     }
                 )
-                row = pd.DataFrame(
+                scored = pd.DataFrame(
                     [
                         dict(
                             merged,
@@ -375,23 +342,26 @@ def apply_opponent_model(
                         )
                     ]
                 )
-                value = float(add_fantasy_points(row, weights).FP.iloc[0])
+                value = float(add_fantasy_points(scored, weights).FP.iloc[0])
                 if not math.isfinite(value):
                     continue
-                profile = dict(profile)
-                profile.update(
-                    projected_fp=round(value, 2),
-                    projected_stats=merged,
-                    projection_source="opponent_ridge",
-                )
-                profiles[pid] = profile
+                tile_map[(pid, target["GAME_DATE"])] = round(value, 2)
+                if target["GAME_DATE"] == ref:
+                    profile = dict(profile)
+                    profile.update(
+                        projected_fp=round(value, 2),
+                        projected_stats=merged,
+                        projection_source="opponent_ridge",
+                    )
+                    profiles[pid] = profile
             except (ValueError, KeyError, TypeError, AttributeError):
                 continue
+        return tile_map
     except Exception as exc:  # baseline profiles always remain serviceable
         from logger import get_logger
 
         get_logger(__name__).warning("Opponent model unavailable: %s", exc)
-    return profiles
+        return {}
 
 
 def lock_match(row, record):
