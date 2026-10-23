@@ -24,7 +24,7 @@ let state = {
   csrf: "",
   busy: false,
   insightsExpanded: false,
-  badgeScope: "roster",
+  badgeScope: "nba",
   badgeMetric: "total",
 };
 const statuses = {
@@ -86,6 +86,11 @@ const nbaTeamAccents = {
   OKC: "#62b7de", ORL: "#64abe0", PHI: "#669fdb", PHX: "#cb96dc", POR: "#dc717b",
   SAC: "#a68ac9", SAS: "#bec7cb", TOR: "#df7582", UTA: "#9a91d2", WAS: "#7b9bbf",
 };
+const nbaTeamAliases = {GS: "GSW", NY: "NYK", NO: "NOP", SA: "SAS", PHO: "PHX", BRK: "BKN"};
+function teamAccent(value) {
+  const code = String(value || "").trim().toUpperCase();
+  return nbaTeamAccents[nbaTeamAliases[code] || code] || "#b39acb";
+}
 function playerPerformance(p, value) {
   return LockInInsights.performanceScore(p, value, state.data.observation_cutoff || state.data.date);
 }
@@ -126,9 +131,18 @@ function attachImageFallback() {
     }
   });
 }
+function rowStatus(p) {
+  if (p.is_locked) return "LOCKED";
+  if (p.status === "WAIT" && p.last_game_fp != null &&
+      playerPerformance(p, p.last_game_fp).tone === "bad") return "WAIT_LOW";
+  return p.status;
+}
 function badge(p) {
-  let [label, cls] = statuses[p.status] || ["REVIEW", "review"];
-  return `<span class="status ${cls}">${p.status === "LOCK" ? "✓ " : p.status === "WAIT" ? "↗ " : ""}${label}</span>`;
+  if (p.is_locked)
+    return `<span class="status locked-in" title="You marked this player locked in Sleeper">LOCKED</span>`;
+  const [label, cls] = statuses[p.status] || ["REVIEW", "review"];
+  const tone = rowStatus(p) === "WAIT_LOW" ? "wait wait-low" : cls;
+  return `<span class="status ${tone}">${p.status === "LOCK" ? "✓ " : p.status === "WAIT" ? "↗ " : ""}${label}</span>`;
 }
 function toast(message) {
   $("#toast").textContent = message;
@@ -198,6 +212,7 @@ async function load() {
     state.data = data;
     state.team = team()?.id;
     render();
+    syncLocks();
   } catch (e) {
     if (requestId !== state.request) return;
     state.data = null;
@@ -262,17 +277,29 @@ function render() {
       ? "The waiver wire."
       : state.view === "alerts"
         ? "Check the tape."
-        : t.team_name;
+        : state.view === "games"
+          ? "Games to watch."
+          : state.view === "badges"
+            ? "Season awards."
+            : t.team_name;
   $("#sheet-title").innerHTML =
     state.view === "review" ? "Season review<span>.</span>" : state.view === "rise"
       ? "On the rise<span>.</span>"
       : state.view === "alerts"
         ? "Data report<span>.</span>"
-        : "Roster sheet<span>.</span>";
+        : state.view === "games"
+          ? "Tonight's slate<span>.</span>"
+          : state.view === "badges"
+            ? "Badge race<span>.</span>"
+            : "Roster sheet<span>.</span>";
   $(".sheet-instruction").textContent =
     state.view === "review" ? "Every team. The players behind the numbers." : state.view === "alerts"
       ? "Check your inputs before making a call"
-      : state.view === "rise" ? "Search all available players" : "Select a player for the full read ↗";
+      : state.view === "games"
+        ? "Ranked by how many of your players are involved"
+        : state.view === "badges"
+          ? "Season-long awards · switch teams to compare leagues"
+          : state.view === "rise" ? "Search all available players" : "Select a player for the full read ↗";
   $("#edition-date").textContent = new Date(state.data.date + "T12:00:00")
     .toLocaleDateString("en-US", {
       month: "short",
@@ -287,13 +314,21 @@ function render() {
       ? `Candidates for ${t.team_name}, scored under this league’s rules.`
       : state.view === "alerts"
         ? "A missing input should never become a confident recommendation."
-        : `${t.results.length} players · ${sheetView().rows.filter(({p}) => p.starter && !p.vacant).length} ${sheetView().recommended ? "recommended starters" : state.mode === "test" ? "starters" : "synced starters"} · ${state.mode === "test" ? "Practicing with saved performances" : "Your latest saved analysis"}`;
+        : state.view === "games"
+          ? "Today's matchups involving your rostered players, across every team."
+          : state.view === "badges"
+            ? `Season awards scored under ${t.team_name}’s rules.`
+            : `${t.results.length} players · ${sheetView().rows.filter(({p}) => p.starter && !p.vacant).length} ${sheetView().recommended ? "recommended starters" : state.mode === "test" ? "starters" : "synced starters"} · ${state.mode === "test" ? "Practicing with saved performances" : "Your latest saved analysis"}`;
   $("#breadcrumb").textContent =
     state.view === "review" ? "Season review" : state.view === "rise"
       ? "On the rise"
       : state.view === "alerts"
         ? "Data alerts"
-        : "My teams";
+        : state.view === "games"
+          ? "Games to watch"
+          : state.view === "badges"
+            ? "Badge race"
+            : "My teams";
   $("#breadcrumb").textContent =
     (state.mode === "test" ? "Test Week / " : "") +
     $("#breadcrumb").textContent;
@@ -353,8 +388,12 @@ function render() {
       ),
     );
   $(".tabs").hidden = state.view !== "team";
-  $(".sheet-heading .section-label").textContent = state.view === "review" ? "THE SEASON /" : "YOUR LINEUP";
-  $(".panel-toolbar").hidden = state.view === "review";
+  $(".sheet-heading .section-label").textContent =
+    state.view === "review" ? "THE SEASON /"
+    : state.view === "games" ? "THE SLATE /"
+    : state.view === "badges" ? "THE RACE /"
+    : "YOUR LINEUP";
+  $(".panel-toolbar").hidden = state.view === "review" || state.view === "badges";
   $("#edit-roster").hidden = hosted || state.view !== "team";
   $("#edit-roster").textContent =
     t.source === "sleeper" ? "Synced roster" : "Edit roster";
@@ -377,16 +416,16 @@ function seasonBadgePanel(t) {
   const name = (p, withPortrait = true) => `<button class="badge-race-player" data-badge-player="${esc(p.player_id)}" aria-label="View ${esc(p.player)} player card">${withPortrait ? portrait(p, true) : ""}<span>${esc(p.player)}</span></button>`;
   const rows = leaders(metric).filter(p => p.rank <= 10);
   const metricName = summary.find(([key]) => key === metric)?.[2] || guide.find(b => b.key === metric)?.name || "Badges";
-  return `<div class="review-section-heading"><h3 id="badge-race-title">Badge race</h3><span>${esc(review.season || t.season || "Season")} · season totals</span></div>
+  return `<div class="review-section-heading"><h3 id="badge-race-title">Leaderboards</h3><span>${esc(review.season || t.season || "Season")} · season totals</span></div>
     <p class="review-scope">${scope === "roster" ? "Current roster’s season awards, including games before joining." : "All observed NBA players, using this league’s scoring."} One count per badge earned per game night; ties count equally.</p>
     <div class="badge-race-controls"><label>Players<select id="badge-race-scope"><option value="roster" ${scope === "roster" ? "selected" : ""}>My roster</option><option value="nba" ${scope === "nba" ? "selected" : ""}>NBA-wide</option></select></label><label>Leaderboard<select id="badge-race-metric"><optgroup label="Season totals">${summary.map(([key,icon,title])=>`<option value="${key}" ${metric===key ? "selected" : ""}>${icon} ${title}</option>`).join("")}</optgroup><optgroup label="Each badge">${guide.map(b=>`<option value="${b.key}" ${metric===b.key ? "selected" : ""}>${b.icon} ${esc(b.name)}</option>`).join("")}</optgroup></select></label></div>
     ${review.status === "saved" || state.data.stale || state.data.refresh_status === "failed" ? '<p class="review-pending">Saved award totals. Waiting for a successful refresh.</p>' : ""}
     <div class="badge-race-highlights">${summary.map(([key,icon,title])=>{
       const all=leaders(key), first=all[0], tied=all.filter(p=>p.rank===1);
-      return `<article><span class="review-kicker">${icon} ${title}</span>${first ? `<div>${name(first)}</div><b>${first.count} <small>${key === "variety" ? "different badges" : first.count === 1 ? "award" : "awards"}</small></b>${tied.length>1 ? `<small title="${esc(tied.map(p=>p.player).join(", "))}">Tied with ${tied.length-1} ${tied.length===2 ? "player" : "players"}</small>` : ""}` : '<p>No awards yet</p>'}</article>`;
+      return `<article><span class="review-kicker">${icon} ${title}</span>${first ? `<div>${name(first)}</div><b>${key === "variety" ? `${first.count}/${LockInInsights.varietyCap(first)}` : first.count} <small>${key === "variety" ? "different badges" : first.count === 1 ? "award" : "awards"}</small></b>${tied.length>1 ? `<small title="${esc(tied.map(p=>p.player).join(", "))}">Tied with ${tied.length-1} ${tied.length===2 ? "player" : "players"}</small>` : ""}` : '<p>No awards yet</p>'}</article>`;
     }).join("")}</div>
     <div class="badge-race-heading"><h4>${esc(metricName)}</h4><span>Top 10 places · ties included</span></div>
-    <ol class="badge-race-list">${rows.map(p=>`<li><span class="badge-race-rank">${p.tied ? "T" : ""}${p.rank}</span><div>${name(p)}<small>${nbaTeamLabel(p.nba_team)} · ${p.total} total · ${p.variety} ${p.variety === 1 ? "type" : "types"}</small></div><b>${p.count}<small>${metric === "variety" ? "types" : p.count === 1 ? "award" : "awards"}</small></b></li>`).join("")}</ol>
+    <ol class="badge-race-list">${rows.map(p=>`<li><span class="badge-race-rank">${p.tied ? "T" : ""}${p.rank}</span><div>${name(p)}<small>${nbaTeamLabel(p.nba_team)} · ${p.total} total · ${p.variety}/${LockInInsights.varietyCap(p)} ${p.variety === 1 ? "type" : "types"}</small></div><b>${metric === "variety" ? `${p.count}/${LockInInsights.varietyCap(p)}` : p.count}<small>${metric === "variety" ? "types" : p.count === 1 ? "award" : "awards"}</small></b></li>`).join("")}</ol>
     ${!rows.length ? `<p class="review-pending">${review.status === "unavailable" ? "Badge history is unavailable in this report." : "No qualifying awards recorded for this selection yet."}</p>` : ""}
     <details class="badge-race-categories"><summary>Leaders for all ${guide.length} badges</summary>${guide.map(b=>{
       const top=leaders(b.key).filter(p=>p.rank===1);
@@ -409,10 +448,6 @@ function renderSeasonReview(t) {
   const points = weeks.map((w, i) => [weeks.length === 1 ? 300 : 12 + i * 576 / (weeks.length - 1), y(w.average_fp)]);
   const chart = `<svg class="review-chart" viewBox="0 0 600 144" role="img" aria-label="Weekly fantasy points per player appearance. Exact values in weekly details below."><path class="review-chart-guide" d="M0 ${y(0)}H600"/><polyline points="${points.map(p => p.join(",")).join(" ")}"/>${points.map(([x, py], i) => `<circle cx="${x}" cy="${py}" r="4"><title>${esc(date(weeks[i].date))}: ${number(weeks[i].average_fp)} FP per appearance, ${weeks[i].games} appearances</title></circle>`).join("")}</svg>`;
   $("#content").innerHTML = `<div class="season-review">
-    <div class="review-teams" aria-label="All team season summaries">${state.data.teams.map(team => {
-      const summary = team.season_review || {};
-      return `<button class="review-team ${team.id === t.id ? "selected" : ""}" data-team="${esc(team.id)}" aria-pressed="${team.id === t.id}"><span class="review-team-heading">${teamPicture(team)}<span><strong>${esc(team.team_name)}</strong><small>${esc(summary.season || team.season || "Season")} · ${esc(team.league_name)}</small></span></span><span class="review-team-score">${number(summary.total_fp)} <small>roster FP</small></span><span class="review-team-footer"><span>${number(summary.fp_per_game)} FP / appearance</span><span>${summary.covered_players || 0}/${summary.roster_count ?? team.results.length} players</span></span></button>`;
-    }).join("")}</div>
     <div class="review-section-heading"><h3>${esc(t.team_name)}</h3><span>${esc(r.season || t.season || "Season")} · through ${esc(date(r.as_of))}</span></div>
     <p class="review-scope">Current roster’s observed season production, including games before joining. Not Sleeper locked scores or standings. Each team uses its own scoring formula.</p>
     ${r.status !== "ready" ? `<div class="review-empty">${r.status === "unavailable" ? "Season statistics are unavailable in this report." : "No season games recorded for this roster yet."} Players remain listed below; the next successful refresh fills their numbers.</div>` : ""}
@@ -422,19 +457,173 @@ function renderSeasonReview(t) {
     <div class="review-highlights">${highlight("Season anchor", highlights.anchor, number(highlights.anchor?.total_fp) + " FP", `${number(highlights.anchor?.share)}% of positive roster FP · ${gamesLabel(highlights.anchor?.games)}`, "A completed game starts the season totals.")}${highlight("Per-game leader", highlights.scorer, number(highlights.scorer?.average_fp) + " FP / game", `${gamesLabel(highlights.scorer?.games)}${highlights.scorer?.games < 5 ? " · early sample" : ""}`, "No observed performances yet.")}${highlight("Form leader", highlights.mover, (highlights.mover?.change > 0 ? "+" : "") + number(highlights.mover?.change) + " FP", "Last 5 average vs previous 5", "Needs 10 season games to compare two five-game windows.")}${highlight("Biggest swings", highlights.swing, number(highlights.swing?.spread) + " FP spread", `Game-to-game standard deviation · ${gamesLabel(highlights.swing?.games)}`, "Needs 5 season games to measure variability.")}</div>
     <section class="review-weekly" aria-labelledby="review-weekly-title"><div class="review-section-heading"><h3 id="review-weekly-title">Weekly production</h3><span>FP / player appearance</span></div>${weeks.length ? `${chart}<div class="review-chart-labels"><span>${esc(date(weeks[0].date))}</span><span>${weeks.length === 1 ? "One observed week" : esc(date(weeks.at(-1).date))}</span></div><details><summary>Weekly details · ${weeks.length} ${weeks.length === 1 ? "week" : "weeks"}</summary><div class="review-week-table"><table><thead><tr><th>Week of</th><th>Roster FP</th><th>FP / app.</th><th>Apps.</th></tr></thead><tbody>${weeks.map(w => `<tr><th>${esc(date(w.date))}</th><td>${number(w.total_fp)}</td><td>${number(w.average_fp)}</td><td>${w.games}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="review-pending">Weekly history will appear as season games are recorded.</p>`}</section>
     <div class="review-section-heading"><h3>Season contributors <small>${players.length}</small></h3><span>Sorted by total fantasy points</span></div>
-    <div class="review-contributors">${players.map(p => `<article class="review-contributor">${person(p)}<div class="review-player-metrics">${metric("Total FP", number(p.total_fp))}${metric("FP / game", number(p.average_fp))}${metric(`Last ${p.recent_games || "5"}`, number(p.recent_fp))}${metric("Games", p.games ? number(p.games, 0) : "—")}</div><div class="review-contribution"><span style="width:${Math.max(0, Math.min(100, p.share || 0))}%"></span></div></article>`).join("")}</div>
-    <p class="review-footnote">Bars show each player’s share of positive fantasy-point totals. — means no observed data. Last 5 averages use up to five season games; prior-season projection history is excluded.</p>
-    <section id="season-badge-board" class="season-badge-board" aria-labelledby="badge-race-title">${seasonBadgePanel(t)}</section>
+    <div class="review-contributors">${players.map(p => `<article class="review-contributor">${person(p)}<div class="review-player-metrics">${metric("Total FP", number(p.total_fp))}${metric("FP / game", number(p.average_fp))}${metric(`Last ${p.recent_games || "5"}`, number(p.recent_fp))}${metric("Games", p.games ? number(p.games, 0) : "—")}</div><div class="review-contribution"><span style="width:${Math.max(0, Math.min(100, p.share || 0))}%;background:${teamAccent(p.nba_team)}"></span></div></article>`).join("")}</div>
+    <p class="review-footnote">Bars show each player’s share of positive fantasy-point totals. — means no observed data. Last 5 averages use up to five season games; prior-season projection history is excluded. The badge race has its own tab.</p>
   </div>`;
 }
 
 function sheetView() {
-  return LockInInsights.rosterSheet(team() || {}, state.mode !== "test");
+  return LockInInsights.rosterSheet(
+    LockInInsights.repinLineup(team() || {}, state.mode !== "test"),
+    state.mode !== "test",
+  );
+}
+const lockIcon =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+function lockEndpoint() {
+  const configured = document
+    .querySelector('meta[name="lockin-lock-endpoint"]')
+    ?.content?.trim();
+  return configured || (hosted ? null : "/api/lock");
+}
+
+function canLock(p, i) {
+  const t = team();
+  const row = t?.results?.[i];
+  return state.mode === "live" && t?.source === "sleeper" && row?.starter === true && !p.vacant;
+}
+function lockButton(p, i) {
+  if (!canLock(p, i)) return "";
+  const locked = Boolean(p.is_locked);
+  return `<button class="lock-toggle${locked ? " is-locked" : ""}" data-lock="${i}" aria-pressed="${locked}" title="${locked ? "Locked in Sleeper — tap to remove the flag" : "Mark locked in Sleeper"}" aria-label="${locked ? "Remove lock flag" : "Mark locked"}: ${esc(p.player)}">${lockIcon}${locked ? '<span class="lock-chip">LOCKED</span>' : ""}</button>`;
+}
+async function postLock(endpoint, passcode, payload) {
+  const headers = {"Content-Type": "application/json"};
+  if (endpoint.startsWith("/")) headers["X-CSRF-Token"] = state.csrf;
+  else if (passcode) headers["x-lockin-passcode"] = passcode;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data.error || "Could not save the lock. Try again.");
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+async function toggleLock(i) {
+  const t = team();
+  const row = t?.results?.[i];
+  if (!row || !canLock(row, i)) return;
+  const locking = !row.is_locked;
+  const key = String(row.sleeper_id || row.player_id || row.player);
+  const lastGame = [...(row.week_games || [])].reverse().find(g => Number.isFinite(g.fp));
+  const player = {
+    player_id: row.sleeper_id ? String(row.sleeper_id) : null,
+    player_name: row.player,
+    roster_slot: row.roster_slot,
+    slot_index: Number.isInteger(row.lineup_order) ? row.lineup_order : null,
+    locked_fp: locking && lastGame ? lastGame.fp : null,
+    game_date: locking && lastGame ? lastGame.date : null,
+  };
+  // hosted render() rebuilds state.data from publishedSource, so both layers
+  // carry the optimistic flag; snapshots restore on failure.
+  const targets = [t];
+  const sourceTeam = hosted
+    ? publishedSource?.teams?.find((x) => x.id === t.id)
+    : null;
+  if (sourceTeam) targets.push(sourceTeam);
+  const snapshots = targets.map((x) => ({team: x, locks: x.locks ? {...x.locks} : {}, locked: x.results?.[i]?.is_locked}));
+  for (const x of targets) {
+    const locks = {...(x.locks || {})};
+    if (locking) locks[key] = player;
+    else delete locks[key];
+    x.locks = locks;
+    if (x.results?.[i]) x.results[i].is_locked = locking;
+  }
+  render();
+  const revert = () => {
+    for (const {team: x, locks, locked} of snapshots) {
+      x.locks = locks;
+      if (x.results?.[i]) x.results[i].is_locked = locked;
+    }
+    render();
+  };
+  const endpoint = lockEndpoint();
+  if (!endpoint) {
+    toast(locking ? "Marked locked on this device only." : "Lock flag removed on this device.");
+    return;
+  }
+  const payload = {
+    league_id: t.league_id,
+    schedule_week: state.data?.locks_week,
+    action: locking ? "lock" : "unlock",
+    player,
+  };
+  try {
+    // Open endpoints never need a passcode; a 401 means one is configured.
+    try {
+      await postLock(endpoint, localStorage.getItem("lockin_passcode") || "", payload);
+    } catch (e) {
+      if (e.status !== 401) throw e;
+      const passcode =
+        window.prompt("Enter your LockIn passcode to sync this lock:")?.trim() || "";
+      if (!passcode) {
+        revert();
+        return;
+      }
+      localStorage.setItem("lockin_passcode", passcode);
+      try {
+        await postLock(endpoint, passcode, payload);
+      } catch (retry) {
+        if (retry.status === 401) localStorage.removeItem("lockin_passcode");
+        throw retry;
+      }
+    }
+    toast(locking ? "Locked in — pinned for this week." : "Lock flag removed.");
+  } catch (e) {
+    revert();
+    toast(e.message || "Could not save the lock. Change reverted.");
+  }
+}
+// Pull the latest committed lock document so phone-made locks appear on
+// every device before the next daily publish, without waiting for it.
+async function syncLocks() {
+  const endpoint = lockEndpoint();
+  if (!hosted || state.mode !== "live" || !endpoint || endpoint.startsWith("/"))
+    return;
+  let doc;
+  try {
+    const response = await fetch(endpoint, { cache: "no-store" });
+    if (!response.ok) return;
+    doc = await response.json();
+  } catch {
+    return;
+  }
+  const leagues = doc?.leagues;
+  if (!leagues || typeof leagues !== "object") return;
+  const week = state.data?.locks_week;
+  let changed = false;
+  for (const t of state.data?.teams || []) {
+    const record = leagues[String(t.league_id)];
+    const remoteLocks =
+      record && String(record.schedule_week) === String(week)
+        ? { ...(record.locks || {}) }
+        : {};
+    if (JSON.stringify(remoteLocks) === JSON.stringify(t.locks || {})) continue;
+    const targets = new Set([
+      t,
+      publishedSource?.teams?.find((x) => x.id === t.id),
+    ]);
+    targets.delete(undefined);
+    for (const target of targets) {
+      target.locks = { ...remoteLocks };
+      for (const row of target.results || [])
+        row.is_locked = Object.values(remoteLocks).some((r) =>
+          LockInInsights.lockMatches(row, r),
+        );
+    }
+    changed = true;
+  }
+  if (changed) render();
 }
 function renderLineup() {
   $("#practice-lineup").hidden = state.mode !== "test" || state.view !== "team";
   if (!$("#practice-lineup").hidden) renderPracticeLineup();
-  const t = team(), daily = t?.recommended_lineup;
+  const t = team(), daily = LockInInsights.repinLineup(t || {}, state.mode !== "test").recommended_lineup;
   const target = $("#recommended-lineup");
   target.hidden = state.view !== "team" || state.mode === "test";
   if (!t || target.hidden) { target.innerHTML = ""; return; }
@@ -495,16 +684,76 @@ function renderInsights() {
       const sample = p.scores.length ? `${p.scores.length} game${p.scores.length === 1 ? "" : "s"}` : "No history";
       return `<button class="insight-player" data-player="${p.index}" aria-label="${esc(p.player.player)}: ${p.average === null ? "no observed scores" : `${fmt(p.average)} average fantasy points over ${sample}`}. Open player details.">
         <span class="insight-name"><strong title="${esc(p.player.player)}">${esc(p.player.player)}</strong><small>${esc(p.player.roster_slot || (p.player.starter ? "START" : "BN"))} · ${sample} · ${p.player.history_source === "prior_season" ? "Prior season" : remaining}</small></span>
-        <span class="insight-trend" aria-hidden="true">${LockInInsights.sparkline(p.scores)}</span>
+        <span class="insight-trend" aria-hidden="true" style="color:${teamAccent(p.player.nba_team)}">${LockInInsights.sparkline(p.scores)}</span>
         <span class="insight-value"><strong>${fmt(p.average)}</strong><small class="${tone}" title="Change in average FP versus the previous five games">${change}</small></span></button>`;
     }).join("") || '<p class="insights-empty">No players on this roster.</p>'}</div>
     <footer class="insights-footer"><span>Δ vs previous 5${count ? "" : " · awaiting scores"}</span>${players.length > 5 ? `<button data-insights-toggle aria-expanded="${state.insightsExpanded}" aria-controls="insight-players">${state.insightsExpanded ? "Show fewer ↑" : `All ${players.length} players ↓`}</button>` : ""}</footer>`;
+}
+function renderGames() {
+  const games = LockInInsights.gamesToWatch(state.data?.teams || [], state.data?.date);
+  const search = state.search.trim().toLowerCase();
+  const shown = games
+    .map((m) => ({
+      ...m,
+      players: m.players.filter(
+        (p) =>
+          !search ||
+          p.player.toLowerCase().includes(search) ||
+          String(p.nba_team || "").toLowerCase().includes(search) ||
+          p.teams.some((name) => String(name || "").toLowerCase().includes(search)),
+      ),
+    }))
+    .filter((m) => m.players.length);
+  const rostered = games.reduce((n, m) => n + m.players.length, 0);
+  const dateLabel = /^\d{4}-\d{2}-\d{2}$/.test(state.data?.date || "")
+    ? new Date(state.data.date + "T12:00:00").toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      })
+    : "Today";
+  $("#content").innerHTML = `<div class="watch-board">
+    <div class="review-section-heading"><h3>Games to watch</h3><span>${esc(dateLabel)} · ${games.length} ${games.length === 1 ? "matchup" : "matchups"} · ${rostered} rostered players</span></div>
+    <p class="review-scope">Today's games ranked by how many of your players are involved, across every loaded team. A player rostered on multiple teams counts once. Schedules come from the latest report; tip-off times are unavailable.</p>
+    ${
+      shown.length
+        ? shown
+            .map(
+              (m, rank) => `<article class="watch-card">
+      <div class="watch-card-head">
+        <span class="watch-rank">${rank + 1}</span>
+        <div class="watch-teams">${nbaTeamLabel(m.away)}<span class="watch-at">at</span>${nbaTeamLabel(m.home)}</div>
+        <span class="watch-status" data-status="${esc(m.status)}">${esc(gameStatus(m.status))}</span>
+        <b class="watch-count">${m.players.length}<small> ${m.players.length === 1 ? "player" : "players"}</small></b>
+      </div>
+      <div class="watch-players">${m.players
+        .map(
+          (p) => `<button class="watch-player" data-watch="${esc(p.team_id)}:${p.index}" style="--team-accent:${teamAccent(p.nba_team)}">${portrait(p)}<span class="watch-player-id"><strong>${esc(p.player)}</strong><small>${esc((p.positions || []).join("/") || "NBA")} · ${nbaTeamLabel(p.nba_team)}${p.teams.length ? ` · ${esc(p.teams.join(" · "))}` : ""}</small></span>${p.fp != null ? `<b class="watch-fp">${fmt(p.fp)}<small> FP</small></b>` : ""}</button>`,
+        )
+        .join("")}</div>
+    </article>`,
+            )
+            .join("")
+        : `<div class="empty">${
+            games.length
+              ? "No players match that search."
+              : "<strong>No games to watch.</strong><p>No rostered players are scheduled today. Matchups appear here on days your players take the floor.</p>"
+          }</div>`
+    }
+  </div>`;
+  attachImageFallback();
 }
 function renderContent() {
   let t = team();
   if (!t) return;
   const search = state.search.trim().toLowerCase();
   if (state.view === "review") { renderSeasonReview(t); return; }
+  if (state.view === "badges") {
+    $("#content").innerHTML = `<div class="season-review"><section id="season-badge-board" class="season-badge-board" aria-labelledby="badge-race-title">${seasonBadgePanel(t)}</section></div>`;
+    attachImageFallback();
+    return;
+  }
+  if (state.view === "games") { renderGames(); return; }
   if (state.view === "alerts") {
     $("#content").innerHTML =
       state.data.alerts
@@ -575,14 +824,16 @@ function renderContent() {
         day: "numeric",
       })
     : "Schedule";
+  const sections = groups
+    .filter(([, group]) => group.length)
+    .map(
+      ([label, group]) =>
+        `<section class="roster-group" aria-label="${label}"><div class="roster-group-title"><h3>${label} <span>${group.filter(({p}) => !p.vacant).length}${group.some(({p}) => p.vacant) ? "/" + group.length : ""}</span></h3><span>${esc(weekLabel)} <small>· FP · @ away</small></span></div>${group.every(({p}) => p.vacant) ? `<div class="roster-empty-slots" aria-label="Unfilled lineup slots">${group.map(({p}) => `<span class="roster-slot" data-slot="${esc(p.roster_slot)}">${esc(p.roster_slot)}</span>`).join("")}<small>No eligible starts in this snapshot</small></div>` : group.map(({ p, i }) => rosterRow(p, i, week)).join("")}</section>`,
+    );
+  const swap = swapCard(t);
+  if (swap) sections.splice(sections.length ? 1 : 0, 0, swap);
   $("#content").innerHTML =
-    groups
-      .filter(([, group]) => group.length)
-      .map(
-        ([label, group]) =>
-          `<section class="roster-group" aria-label="${label}"><div class="roster-group-title"><h3>${label} <span>${group.filter(({p}) => !p.vacant).length}${group.some(({p}) => p.vacant) ? "/" + group.length : ""}</span></h3><span>${esc(weekLabel)} <small>· FP · @ away</small></span></div>${group.every(({p}) => p.vacant) ? `<div class="roster-empty-slots" aria-label="Unfilled lineup slots">${group.map(({p}) => `<span class="roster-slot" data-slot="${esc(p.roster_slot)}">${esc(p.roster_slot)}</span>`).join("")}<small>No eligible starts in this snapshot</small></div>` : group.map(({ p, i }) => rosterRow(p, i, week)).join("")}</section>`,
-      )
-      .join("") ||
+    sections.join("") ||
     `<div class="empty">${!t.results.length && t.league_status === "pre_draft" ? "<strong>Waiting for the draft.</strong><p>Your roster appears after the next sync.</p>" : "No players in this view."}</div>`;
   attachImageFallback();
 }
@@ -647,7 +898,31 @@ function rosterRow(p, i, week) {
       `<span class="game-matchup"><small>${weekday}</small><b>${game.home ? "" : "@"}${esc(game.opponent)}</b></span><em class="game-score" data-kind="${score.kind}" data-performance="${score.kind === "actual" ? playerPerformance(p, score.value).tone : "unknown"}"><span>${score.label}</span> ${fmt(score.value)}</em>`).join("") ||
       `<span class="game-matchup"><small>${weekday}</small><b>${known ? "—" : "?"}</b></span>`}</span>`;
   }).join("");
-  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.lineup_fp ?? p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}${p.lineup_reason ? `<div class="roster-bench-reason">${esc(p.lineup_reason)}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${performanceNumber(p, p.last_game_fp, " <small>FP</small>")}</strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games and fantasy points">${games}</div></div>`;
+  return `<div class="player-row" data-status="${esc(rowStatus(p))}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.lineup_fp ?? p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}${p.lineup_reason ? `<div class="roster-bench-reason">${esc(p.lineup_reason)}</div>` : ""}</div><div class="player-call">${lockButton(p, i)}${badge(p)}${p.last_game_fp != null ? `<strong>${performanceNumber(p, p.last_game_fp, " <small>FP</small>")}</strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games and fantasy points">${games}</div></div>`;
+}
+function swapCard(t) {
+  const swap = t?.swap_suggestion;
+  if (!swap) return "";
+  const heading = `<section class="roster-group" aria-label="Add and drop suggestion"><div class="roster-group-title"><h3>Add / drop</h3><span>Waiver check · this week + next</span></div>`;
+  if (swap.status === "suggest" && swap.add && swap.drop) {
+    const pickupIndex = (t.pickups || []).findIndex(
+      (p) => swap.add.player_id && String(p.player_id) === String(swap.add.player_id),
+    );
+    const dropIndex = (t.results || []).findIndex((r) => r.player === swap.drop.player);
+    const addName = pickupIndex >= 0
+      ? `<button class="swap-name" data-pickup="${pickupIndex}">${esc(swap.add.player)}</button>`
+      : `<strong>${esc(swap.add.player)}</strong>`;
+    const dropName = dropIndex >= 0
+      ? `<button class="swap-name" data-player="${dropIndex}">${esc(swap.drop.player)}</button>`
+      : `<strong>${esc(swap.drop.player)}</strong>`;
+    return `${heading}<article class="swap-card" data-status="suggest">
+      <div class="swap-side"><small>ADD · On the Rise</small>${addName}<span>${nbaTeamLabel(swap.add.nba_team)} ${esc((swap.add.positions || []).join("/"))} · ~${fmt(swap.add.projected_fp)} FP/g</span><small>${swap.add.remaining_games} left this week${swap.add.plays_today ? " · plays tonight" : ""}</small></div>
+      <span class="swap-arrow" aria-hidden="true">⇄</span>
+      <div class="swap-side"><small>DROP</small>${dropName}<span>~${fmt(swap.drop.value)} FP/g · ${esc((swap.drop.positions || []).join("/"))}</span><small>${swap.drop.remaining_games} left this week${swap.drop.plays_today ? " · plays tonight" : ""}</small></div>
+      <p class="swap-note"><b>Net ${swap.net_fp > 0 ? "+" : ""}${fmt(swap.net_fp)} FP</b> · ${esc(swap.explanation)}${swap.add.availability ? ` ${esc(swap.add.availability)}.` : ""}</p>
+    </article></section>`;
+  }
+  return `${heading}<article class="swap-card" data-status="hold"><p class="swap-note"><b>Hold your roster.</b> ${esc(swap.explanation || "No waiver move clears the long-run bar in this snapshot.")}</p></article></section>`;
 }
 function playerDailyBadges(p) {
   if (state.data?.stale || state.data?.refresh_status === "failed") return [];
@@ -667,20 +942,18 @@ function dailyBadgeDetails(p) {
 function playerBadgeSection(p) {
   const review = team().season_badges || {};
   const badges = LockInInsights.playerSeasonBadges(team(), p.player_id);
-  const totals = [["total", "Total", "All awards earned"], ["negative", "Chaos", "Negative indicators"], ["milestones", "Milestones", "Double-doubles, triple-doubles and stat thresholds"], ["variety", "Variety", "Distinct badge types"]];
+  const totals = [["total", "Total", "All awards earned"], ["negative", "Chaos", "Negative indicators"], ["milestones", "Milestones", "Double-doubles, triple-doubles and stat thresholds"], ["variety", "Variety", "Distinct badge types earned, out of the types this player can reach. Age badges need a qualifying birthday."]];
   const saved = review.status === "saved" || state.data.stale || state.data.refresh_status === "failed";
   return `<section class="player-season-badges" aria-labelledby="player-badges-title"><header><h3 id="player-badges-title">Season badges</h3><span>${esc(review.season || team().season || "Season")}${saved ? " · saved" : ""}</span></header>
-    ${badges.available ? `<dl class="player-badge-totals">${totals.map(([key,label,description]) => `<div title="${description}"><dt>${label}</dt><dd>${badges[key].toLocaleString()}</dd></div>`).join("")}</dl>
-    ${badges.earned.length ? `<details class="player-badge-collection"><summary>Earned badges <span>${badges.variety} ${badges.variety === 1 ? "type" : "types"}</span></summary><ul>${badges.earned.map(b => `<li title="${esc(b.rule)}"><span aria-hidden="true">${b.icon}</span><span>${esc(b.name)}</span><b aria-label="${b.count} ${b.count === 1 ? "award" : "awards"}">×${b.count}</b></li>`).join("")}</ul><p>Chaos counts negative indicators; variety counts distinct types. Milestones include double-/triple-doubles and stat thresholds. One award per badge per game night.</p></details>` : '<p>No badges recorded for this player yet.</p>'}
+    ${badges.available ? `<dl class="player-badge-totals">${totals.map(([key,label,description]) => `<div title="${description}"><dt>${label}</dt><dd>${key === "variety" ? `${badges.variety}/${badges.variety_cap}` : badges[key].toLocaleString()}</dd></div>`).join("")}</dl>
+    ${badges.earned.length ? `<details class="player-badge-collection"><summary>Earned badges <span>${badges.variety}/${badges.variety_cap} types</span></summary><ul>${badges.earned.map(b => `<li title="${esc(b.rule)}"><span aria-hidden="true">${b.icon}</span><span>${esc(b.name)}</span><b aria-label="${b.count} ${b.count === 1 ? "award" : "awards"}">×${b.count}</b></li>`).join("")}</ul><p>Chaos counts negative indicators; variety counts distinct types out of ${badges.variety_cap} reachable for this player — the two age badges never both qualify. Milestones include double-/triple-doubles and stat thresholds. One award per badge per game night.</p></details>` : '<p>No badges recorded for this player yet.</p>'}
     <p class="player-badge-coverage">${review.as_of ? `Through ${esc(review.as_of)} · ` : ""}This league’s scoring · stored season games</p>` : '<p>Season badge history is unavailable in this report.</p>'}</section>`;
 }
 function showPlayer(p) {
   if (!p) return;
   const hasPerformance = !p.badge_profile || p.recent_fp != null || p.history?.length || p.projection;
 
-  const aliases = {GS: "GSW", NY: "NYK", NO: "NOP", SA: "SAS", PHO: "PHX", BRK: "BKN"};
-  const code = String(p.nba_team || "").trim().toUpperCase();
-  $("#player-dialog").style.setProperty("--team-accent", nbaTeamAccents[aliases[code] || code] || "#b39acb");
+  $("#player-dialog").style.setProperty("--team-accent", teamAccent(p.nba_team));
   let h = p.history || [];
   if (p.banked)
     p = {
@@ -797,6 +1070,11 @@ document.addEventListener("click", (e) => {
     testAction("bank", team().results[Number(b.dataset.bank)].player);
     return;
   }
+  b = e.target.closest("[data-lock]");
+  if (b) {
+    toggleLock(Number(b.dataset.lock));
+    return;
+  }
   b = e.target.closest("[data-team]");
   if (b) {
     state.team = b.dataset.team;
@@ -817,7 +1095,7 @@ document.addEventListener("click", (e) => {
       load();
     } else {
       state.view = b.dataset.view;
-      if (state.view === "review" && state.mode === "test") { state.mode = "live"; load(); return; }
+      if (["review", "badges"].includes(state.view) && state.mode === "test") { state.mode = "live"; load(); return; }
       render();
     }
     return;
@@ -846,6 +1124,18 @@ document.addEventListener("click", (e) => {
   b = e.target.closest("[data-player]");
   if (b) {
     showPlayer(team().results[Number(b.dataset.player)]);
+    return;
+  }
+  b = e.target.closest("[data-watch]");
+  if (b) {
+    const [tid, idx] = b.dataset.watch.split(":");
+    const target = (state.data?.teams || []).find((x) => x.id === tid);
+    if (!target) return;
+    if (state.team !== tid) {
+      state.team = tid;
+      render();
+    }
+    showPlayer(target.results[Number(idx)]);
     return;
   }
   b = e.target.closest("[data-available-more]");

@@ -13,13 +13,15 @@
       name="description"
       content="Your fantasy basketball teams, lock decisions, and players on the rise."
     />
+    <!-- Optional: full URL of the serverless lock endpoint (api/lock.ts). POST saves a flag; GET returns the committed lock document so locks sync across devices. Empty means device-local locks only. -->
+    <meta name="lockin-lock-endpoint" content="https://lock-in-model.vercel.app/api/lock" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./style.css?v=d5b92114ba0e2761" />
+    <link rel="stylesheet" href="./style.css?v=427ec5588f4d98bf" />
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to scouting report</a>
@@ -38,24 +40,30 @@
               <path d="M3 10h18M9 10v10" />
             </svg>
             My teams <i id="team-count">—</i></button
+          ><button class="nav" data-view="games">
+            <span aria-hidden="true" class="nav-number">02</span><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="13" rx="2" /><path d="m10 9 5 3-5 3z" /></svg>
+            Games to watch</button
           ><button class="nav" data-view="review">
-            <span aria-hidden="true" class="nav-number">02</span><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m8 10V4m8 16v-7"/></svg>
+            <span aria-hidden="true" class="nav-number">03</span><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m8 10V4m8 16v-7"/></svg>
             Season review</button
           ><button class="nav" data-view="rise">
-            <span aria-hidden="true" class="nav-number">03</span
+            <span aria-hidden="true" class="nav-number">04</span
             ><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m3 17 6-6 4 4 8-11M15 4h6v6" />
             </svg>
             On the rise</button
+          ><button class="nav" data-view="badges">
+            <span aria-hidden="true" class="nav-number">05</span><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5" /><path d="m8.5 13-2 8 5.5-3 5.5 3-2-8"/></svg>
+            Badge race</button
           ><button class="nav" data-view="alerts">
-            <span aria-hidden="true" class="nav-number">04</span
+            <span aria-hidden="true" class="nav-number">06</span
             ><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m12 3 10 18H2L12 3Z" />
               <path d="M12 9v5m0 3v1" />
             </svg>
             Data alerts <i id="alert-count">0</i></button
           ><button class="nav" data-view="test">
-            <span aria-hidden="true" class="nav-number">05</span
+            <span aria-hidden="true" class="nav-number">07</span
             ><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
               <rect x="3" y="5" width="18" height="16" rx="2" />
               <path d="M7 3v4m10-4v4M3 11h18m-11 3 5 3-5 3v-6Z" />
@@ -248,8 +256,8 @@
       <div id="roster-editor"></div>
     </dialog>
     <div id="toast" role="status" hidden></div>
-    <script src="./insights.js?v=45f7500e212359c7" defer></script>
+    <script src="./insights.js?v=97f0b5e98b3b31b4" defer></script>
     <script src="./pages.js?v=9220a4fa59ca8f21" defer></script>
-    <script src="./app.js?v=7e287c5e103a861e" defer></script>
+    <script src="./app.js?v=d25c495a577a72ea" defer></script>
   </body>
 </html>
