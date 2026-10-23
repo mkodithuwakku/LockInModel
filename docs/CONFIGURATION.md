@@ -94,7 +94,7 @@ Daily projections reuse `decision.lookback_games`, `recent_days`, `decay`, and `
 
 `state/locks.json` stores manager-reported Sleeper lock flags and is the one `state/` file intentionally committed to Git: the phone write path and the Mac's daily publication share it through `main`. Schema version 1 is `{version, updated_at, leagues: {league_id: {schedule_week, locks: {key: record}}}}`. Each record carries `player_id` (Sleeper id when known), `player_name`/`canonical_name` fallback, `roster_slot`, `slot_index`, `locked_at`, optional `locked_fp` and `game_date`. `schedule_week` is the Sleeper matchup week number when the calendar exposes one, otherwise the week-start date; a mismatch means the flags are ignored and a newer week write replaces the container.
 
-The local Flask app accepts `POST /api/lock` with the same payload the serverless function validates (no passcode; loopback plus CSRF already gate it). For the published phone site, deploy `api/lock.ts` as a serverless function (e.g. Vercel) with these environment variables:
+The local Flask app accepts `POST /api/lock` with the same payload the serverless function validates (no passcode; loopback plus CSRF already gate it). For the published phone site, deploy `api/lock.mts` as a serverless function (e.g. Vercel) with these environment variables:
 
 | Environment variable | Purpose |
 | --- | --- |
