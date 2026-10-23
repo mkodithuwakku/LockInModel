@@ -1,10 +1,25 @@
 {
   "version": 1,
-  "updated_at": "2026-10-23T02:12:10.281Z",
+  "updated_at": "2026-10-23T02:13:32.729Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
       "locks": {}
+    },
+    "1415115155703926784": {
+      "schedule_week": 1,
+      "locks": {
+        "2133": {
+          "player_id": "2133",
+          "player_name": "Anthony Edwards",
+          "canonical_name": "anthony edwards",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 45,
+          "game_date": "2026-10-21",
+          "locked_at": "2026-10-23T02:13:32.729Z"
+        }
+      }
     }
   }
 }
