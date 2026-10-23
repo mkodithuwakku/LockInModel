@@ -1,7 +1,7 @@
 # Implementation Runbook: Epic 3 — Database Centralization & Normalization
 
 **Branch:** `architecture-v2`  
-**Status:** Ready for implementation  
+**Status:** Completed & verified (commit `f02ffc2`)  
 **Safety Boundary:** Must NOT overwrite or alter `data/lockin.sqlite3` directly. All changes must default to `data/experiment.sqlite3` or use the `LOCKIN_DB_PATH` environment variable.
 
 ---
