@@ -73,8 +73,8 @@ async function github(
   path: string,
   init: Record<string, unknown> = {},
 ): Promise<{status: number; body: any}> {
-  const {repo, token} = repo();
-  const response = await fetch(`https://api.github.com/repos/${repo}${path}`, {
+  const {repo: name, token} = repo();
+  const response = await fetch(`https://api.github.com/repos/${name}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
