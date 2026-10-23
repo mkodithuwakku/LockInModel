@@ -15,9 +15,9 @@ This document is a high-density reference for agents navigating the backend, dat
 | `decide.py` | Evaluates whether to LOCK or WAIT for a player's latest score in the fantasy week | `per_player_week_decision()`, `evaluate_player_lock()` |
 | `model.py` | Recency-weighted baseline (exponential decay), career/prior shrinkage, variance floors, normal beat probability, rarity adjustment | `rolling_baseline()`, `probability_future_beats_current()`, `rarity_score()` |
 | `season_history.py` | Blends prior-season games into sparse current-season projections and lock baselines (default 10-game window) | `blend_seasons()` |
-| `lineup.py` | Daily pregame forecasts and Hungarian algorithm optimizer for maximum-weight positional lineup assignment; locked players pin to their synced slot before the solver sees the pool; leftover slots fill with idle roster players as zero-projection off-day placeholders | `recommend_lineup()`, `project_players()`, `active_slots()`, `lock_match()`, `locked_score()` |
+| `lineup.py` | Daily pregame forecasts and Hungarian algorithm optimizer for maximum-weight positional lineup assignment; locked players pin to their synced slot before the solver sees the pool; leftover slots fill with idle roster players as zero-projection off-day placeholders; `apply_opponent_model()` overlays `ComponentRidge` opponent-aware projections on baseline profiles for players with a verified game today (graceful baseline fallback) | `recommend_lineup()`, `project_players()`, `apply_opponent_model()`, `opponent_targets()`, `active_slots()`, `lock_match()`, `locked_score()` |
 | `projections.py` | Validates and parses Sleeper/RotoWire per-game external forecasts; derives Poisson-approximated milestone expectations | `fetch_forecasts()`, `parse_forecasts()`, `forecast_profile()` |
-| `game_store.py` | Local SQLite player-game store; daily overlap upserts (7-day window) and weekly full-season reconciliation | `GameStore`, `games` table, `refresh_status` table |
+| `game_store.py` | Local SQLite player-game store; daily overlap upserts (7-day window) and weekly full-season reconciliation; normalized v2 schema with legacy `games` payload fallback | `GameStore`, `fact_game_logs`, `dim_players`, `dim_teams`, `dim_refreshes` tables |
 | `forecast_store.py` | SQLite pregame forecast snapshots by formula fingerprint, date, and player ID | `ForecastStore`, `formula_key()`, `forecast_snapshots` table |
 | `daily_badges.py` | Computes 15 NBA-wide stat leader badges and 4 league-scored fantasy leader badges for yesterday's games | `previous_night_badges()`, `fantasy_night_badges()` |
 | `badge_awards.py` | Computes 15 single-game stat milestones, 10 contextual awards (streaks, age, outcome, assist-to-turnover margin) | `raw_awards()`, `fantasy_awards()`, `MILESTONES`, `EXTRA_KEYS` |
@@ -30,6 +30,9 @@ This document is a high-density reference for agents navigating the backend, dat
 | `storage.py` | Loads canonical `config.local.yaml` (falling back to `config.yaml`); atomic JSON and YAML writes; weekly lock-flag document for `state/locks.json` | `load_cfg()`, `save_cfg()`, `write_json()`, `load_locks()`, `save_locks()`, `locks_for_league()`, `apply_lock()` |
 | `simulation.py` | Manages offline Test Week simulator state, phase transitions (morning/night), banked scores, and revisions | `load_test_week()`, `advance_night()`, `bank_score()` |
 | `publication.py` | Local daily scheduled exporter to `gh-pages`; LaunchAgent installation, retry ledger, deployment confirmation; fast-forwards `main` before analysis to absorb phone lock commits | `publish_due()`, `run_publication()`, `install_agent()`, `sync_remote_locks()` |
+| `evaluator.py` | Offline evaluation harness: per-game forecast metrics (MAE/RMSE/bias/correlation), walk-forward game-forecast backtests, and sequential weekly lock-policy regret vs Oracle; B0 calls the production decision as a black box with explicit `remaining_games`/`career_prior` so no network occurs | `compute_forecast_metrics()`, `evaluate_game_forecasts()`, `evaluate_game_backtest()`, `simulate_weekly_lock()`, `evaluate_season_weekly_policy()` |
+| `features.py` | Opponent-aware pregame features from box scores only: Dean Oliver possessions/pace, rolling 15-game opponent defensive rating and per-100-possession concessions, positional concession ratios, rest/back-to-back and home flags; all rolling windows are shifted so a game on date T uses only games strictly before T | `FeatureBuilder`, `team_game_table()`, `training_matrix()`, `features_for()` |
+| `model_ml.py` | Closed-form Ridge component model (one regression per PTS/REB/AST/STL/BLK/TOV/FG3M) over pregame features; nonnegative predictions rescored through `scoring.add_fantasy_points()` so league formulas and bonuses apply unchanged | `ComponentRidge`, `ridge_fit()`, `ridge_predict()` |
 | `pages.py` | Filters dashboard data to public allowlisted fields; exports static JSON, HTML, CSS, JS, and image assets | `export_site()`, `refresh_report()`, `public_report()` |
 | `transport.py` | Rate-limited HTTP client with on-disk response caching, host pacing, and persistent failure cooldowns | `HTTP`, `CachedHTTP`, `DataUnavailable` |
 | `app.py` | Local Flask HTTP server; CSRF token validation, loopback restriction, background job worker | `/api/bootstrap`, `/api/dashboard`, `/api/test-week`, `/api/roster`, `/api/sync`, `/api/refresh`, `/api/lock` |
@@ -42,23 +45,29 @@ This document is a high-density reference for agents navigating the backend, dat
 
 ## 2. Persistence & SQLite Data Model
 
-SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `ForecastStore`, `BadgeStore`).
+SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `ForecastStore`, `BadgeStore`). Set `LOCKIN_DB_PATH` (e.g. `data/experiment.sqlite3`) to isolate tests and migrations; `GameStore(path)` accepts an explicit path.
 
 ### Tables
-1. **`games`** (`game_store.py`):
-   - Key: `(season, game_id, player_id)`
-   - Stores: Observed regular-season box scores (`PTS`, `REB`, `AST`, `STL`, `BLK`, `TOV`, `MIN`, `FGM`, `FGA`, `FG3M`, `FG3A`, `FTM`, `FTA`, `WL`, etc.).
-   - Ingestion: Reconciled upsert. Final games only.
-2. **`refresh_status`** (`game_store.py`):
+1. **`fact_game_logs`** (`game_store.py`):
+   - Key: `(season, game_id, player_id)`; foreign keys to `dim_players` and `dim_teams`; `PRAGMA foreign_keys = ON`.
+   - Stores: Typed observed regular-season box scores (`pts`, `reb`, `ast`, `stl`, `blk`, `tov`, `min`, `fgm`, `fga`, `fg3m`, `fg3a`, `ftm`, `fta`, `oreb`, `dreb`, `pf`, `wl`, `home`, `source`).
+   - Ingestion: Reconciled upsert. Final games only. `read(season)` joins dimensions and reconstructs the legacy uppercase DataFrame contract (`GAME_ID`, `PLAYER_NAME`, `TEAM_ABBREVIATION`, `MATCHUP`, etc.).
+2. **`dim_players`** (`game_store.py`):
+   - Key: `player_id`; stores `sleeper_id`, `canonical_name` (indexed), `display_name`, `primary_position`, `birth_date`.
+3. **`dim_teams`** (`game_store.py`):
+   - Key: `team_id` (NBA ID or abbreviation surrogate); unique `abbreviation`, `team_name`.
+4. **`dim_refreshes`** (`game_store.py`):
    - Key: `season`
-   - Stores: Last successful refresh timestamp.
-3. **`forecast_snapshots`** (`forecast_store.py`):
+   - Stores: Last successful refresh dates (`refreshed_on`, `full_on`, `fetched_at`).
+5. **`games` / `refreshes`** (legacy v1, `game_store.py`):
+   - JSON `payload` box scores keyed `(season, game_id, player_id)`. Still read when a season has no fact rows; a refresh drains that season into `fact_game_logs`. `scripts/migrate_v2_db.py` bulk-migrates a legacy file.
+6. **`forecast_snapshots`** (`forecast_store.py`):
    - Key: `(formula_key, game_date, player_id)`
    - Stores: Pregame projected fantasy points saved before games tip off. Used for above/below expectation badges.
-4. **`badge_days`** (`badge_store.py`):
+7. **`badge_days`** (`badge_store.py`):
    - Key: `(formula_key, game_date)`
    - Stores: Hash fingerprint of observed games on that date, rules version, and processing status. Skips unchanged nights; recomputes on corrections.
-5. **`badge_awards`** (`badge_store.py`):
+8. **`badge_awards`** (`badge_store.py`):
    - Key: `(formula_key, game_date, player_id, badge_key)`
    - Stores: Individual earned badges, rank, value, tied status, and detail metadata.
 
@@ -77,7 +86,7 @@ SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `Foreca
 
 ```
 [External Sources]
-   ├─ NBA Stats API (or Sleeper/Sportradar fallback) ──► GameStore (SQLite: games)
+   ├─ NBA Stats API (or Sleeper/Sportradar fallback) ──► GameStore (SQLite: fact_game_logs)
    ├─ Sleeper Schedule & Roster API ─────────────────► Schedule cache & config.local.yaml
    └─ Sleeper / RotoWire Projections ────────────────► ForecastStore (SQLite: forecast_snapshots)
             │

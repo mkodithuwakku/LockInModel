@@ -17,7 +17,7 @@
 | `providers.py` | Explicit fixture/live input policies |
 | `fetch_data.py` | NBA adapters, name matching, strict normalization, dates, bonuses |
 | `sleeper_stats.py` | Reconciled, final-only Sleeper / Sportradar fallback observations |
-| `game_store.py` | SQLite player-game history, daily overlap upserts, weekly full reconciliation |
+| `game_store.py` | Normalized SQLite player-game history (`fact_game_logs` + dimension tables), daily overlap upserts, weekly full reconciliation, legacy payload fallback |
 | `forecast_store.py` | SQLite pregame forecast snapshots for next-day above/below expectation badges |
 | `publication.py` | Local static publication, deployment verification, retry ledger, macOS wake catch-up |
 | `transport.py` | Persistent response cache, request serialization/pacing, cooldown circuit |

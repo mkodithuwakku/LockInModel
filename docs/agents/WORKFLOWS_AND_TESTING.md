@@ -46,6 +46,7 @@ When modifying a specific component, run its corresponding test file first:
 | Season review aggregates | `.venv/bin/python -m pytest tests/test_season_review.py` |
 | Pickups & schedule-aware swaps | `.venv/bin/python -m pytest tests/test_pickups.py` |
 | SQLite game store | `.venv/bin/python -m pytest tests/test_game_store.py` |
+| Evaluation harness | `.venv/bin/python -m pytest tests/test_evaluator.py` |
 | Sleeper API / stats fallback | `.venv/bin/python -m pytest tests/test_sleeper.py tests/test_sleeper_stats.py` |
 | Static export & publication | `.venv/bin/python -m pytest tests/test_publication.py tests/test_pages.py` |
 | Practice simulator (Test Week) | `.venv/bin/python -m pytest tests/test_simulation.py` |
@@ -96,6 +97,35 @@ When modifying a specific component, run its corresponding test file first:
 ```bash
 # Run end-of-day report using captured fixtures (no network required)
 .venv/bin/python main.py --date 2025-12-25
+```
+
+### v2 Database Migration
+```bash
+# Copy legacy JSON-payload games into the normalized schema (source stays read-only)
+.venv/bin/python scripts/migrate_v2_db.py --src data/lockin.sqlite3 --dest data/experiment.sqlite3
+
+# Point the app at an isolated database instead of data/lockin.sqlite3
+LOCKIN_DB_PATH="data/experiment.sqlite3" .venv/bin/python app.py
+```
+
+### Offline Evaluation CLI
+```bash
+# Weekly lock-policy regret vs Oracle over a season's stored games
+.venv/bin/python evaluator.py --mode weekly --season 2026-27 --db data/experiment.sqlite3
+
+# Walk-forward game-forecast backtest: B0 production baseline vs CHALLENGER_C1
+.venv/bin/python evaluator.py --mode game --season 2025-26 --db data/experiment.sqlite3
+```
+Policies: `B0` (production `decide.per_player_week_decision`), `RAW_NORMAL`,
+`ALWAYS_WAIT`, `THRESHOLD_40`, `CHALLENGER_C1` (opponent-aware Ridge model),
+`ORACLE`. `--policies` selects a subset, `--limit` caps player-weeks or slate
+dates. `data/experiment.sqlite3` holds ingested Parquet fixtures for training;
+never point these at `data/lockin.sqlite3`.
+
+### Fixture Ingestion
+```bash
+# Load data/fixtures/<season>/{games,priors}.parquet into the experiment DB
+.venv/bin/python scripts/ingest_fixtures_to_db.py --db data/experiment.sqlite3
 ```
 
 ### Vercel Serverless Lock Endpoint

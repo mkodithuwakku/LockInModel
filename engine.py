@@ -18,6 +18,8 @@ from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import (
     project_players,
+    apply_opponent_model,
+    opponent_targets,
     recommend_lineup,
     unavailable_lineup,
     lock_match,
@@ -151,6 +153,11 @@ def build_dashboard(
             or (p.get("first_name", "") + " " + p.get("last_name", ""))
         ): p.get("fantasy_positions", [])
         for p in sleeper_players.values()
+    }
+    pid_positions = {
+        str(pid): positions[name][0]
+        for name, pid in identity.items()
+        if positions.get(name)
     }
     results = []
     alerts = list(getattr(provider, "alerts", []))
@@ -457,6 +464,23 @@ def build_dashboard(
                 cfg,
                 reference,
             )
+            if not getattr(provider, "stats_error", None):
+                targets = opponent_targets(provider, rows, reference, mode)
+                if targets:
+                    league_games = (
+                        pd.concat([observed, fallback], ignore_index=True)
+                        if fallback is not None and not fallback.empty
+                        else observed
+                    )
+                    apply_opponent_model(
+                        projection_cache[projection_key],
+                        targets,
+                        league_games,
+                        pid_positions,
+                        weights,
+                        cfg,
+                        reference,
+                    )
         profiles = dict(projection_cache[projection_key])
         from projections import forecast_profile
 
@@ -471,7 +495,7 @@ def build_dashboard(
             if forecast and (
                 not profile
                 or profile.get("projection_source")
-                not in {"current_season", "blended_seasons"}
+                not in {"current_season", "blended_seasons", "opponent_ridge"}
             ):
                 try:
                     profile = forecast_profile(
