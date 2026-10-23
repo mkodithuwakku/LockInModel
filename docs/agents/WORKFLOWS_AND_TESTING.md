@@ -115,12 +115,45 @@ LOCKIN_DB_PATH="data/experiment.sqlite3" .venv/bin/python app.py
 
 # Walk-forward game-forecast backtest: B0 production baseline vs CHALLENGER_C1
 .venv/bin/python evaluator.py --mode game --season 2025-26 --db data/experiment.sqlite3
+
+# Hyperparameter grid search (lam x window x decay) ranked by walk-forward MAE
+.venv/bin/python evaluator.py --mode tune --db data/experiment.sqlite3
 ```
 Policies: `B0` (production `decide.per_player_week_decision`), `RAW_NORMAL`,
 `ALWAYS_WAIT`, `THRESHOLD_40`, `CHALLENGER_C1` (opponent-aware Ridge model),
 `ORACLE`. `--policies` selects a subset, `--limit` caps player-weeks or slate
-dates. `data/experiment.sqlite3` holds ingested Parquet fixtures for training;
-never point these at `data/lockin.sqlite3`.
+dates. `data/experiment.sqlite3` holds ingested Parquet fixtures for training.
+The evaluator is read-only, so `--db data/lockin.sqlite3` is safe for
+prospective live-season metrics — but never train/tune against it.
+
+### Biweekly model check
+
+The Ridge model refits on every refresh, but nothing tunes its knobs
+automatically. A ~2-week cadence keeps it honest:
+
+1. **Live-season scorecard** (prospective, real data):
+   `.venv/bin/python evaluator.py --mode game --db data/lockin.sqlite3` —
+   compares `CHALLENGER_C1` vs `B0` MAE/RMSE/correlation on this season's
+   games and also scores saved `forecast_snapshots` rows.
+   `.venv/bin/python evaluator.py --mode weekly --db data/lockin.sqlite3` —
+   weekly lock regret, ridge vs baseline, on real weeks. Early season has few
+   samples; small gaps are noise.
+2. **Retune if the ridge lags or drift shows**:
+   `.venv/bin/python evaluator.py --mode tune --db data/experiment.sqlite3`
+   ranks a `ridge_lambda x feature_window x player_decay` grid by
+   walk-forward MAE and prints a ready-to-paste `model:` block. Use `--limit`
+   (e.g. 60) for faster sweeps; early-season dates barely differentiate
+   because training rows are sparse for every combo.
+3. **Adopt a winner** by editing the `model:` section of the effective
+   config — `config.local.yaml` when it exists (it shadows `config.yaml`),
+   otherwise `config.yaml`. Production (`apply_opponent_model`), the weekly
+   challenger, and the game backtest all read `model_ml.model_settings(cfg)`,
+   so the new values apply to projections, week-game tiles, and lock/wait
+   probabilities on the next publish — no code changes needed.
+4. **Never force it**: if no config clearly beats defaults, keep them. If the
+   ridge ever underperforms persistently, raising `min_train_rows` (e.g.
+   `999999`) effectively disables the overlay and every decision reverts to
+   B0 without a code change.
 
 ### Fixture Ingestion
 ```bash

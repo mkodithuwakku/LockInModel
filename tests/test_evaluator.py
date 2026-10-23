@@ -171,3 +171,49 @@ def test_season_evaluation_aggregates_player_weeks(tmp_path):
     assert wait["total_fp"] == 40.0 and oracle["total_fp"] == 95.0
     b0 = report["policies"]["B0"]
     assert b0["player_weeks"] == 2 and b0["regret_total"] >= 0
+
+
+def test_tune_ridge_ranks_grid_by_walkforward_mae():
+    from evaluator import tune_ridge
+
+    rows = []
+    for day in pd.date_range("2026-01-01", periods=20, freq="D"):
+        for p in range(10):
+            if (p + day.day) % 2:
+                continue
+            team = f"T{p % 5}"
+            rows.append(
+                dict(
+                    GAME_ID=f"g{day.day}-{p}",
+                    PLAYER_ID=f"P{p}",
+                    PLAYER_NAME=f"P{p}",
+                    GAME_DATE=day,
+                    TEAM_ABBREVIATION=team,
+                    MATCHUP=f"{team} vs. T{(p + 1) % 5}",
+                    WL="W",
+                    MIN=30.0,
+                    PTS=10 + p,
+                    REB=5,
+                    AST=4,
+                    STL=1,
+                    BLK=0,
+                    TOV=2,
+                    FG3M=1,
+                    FGM=4,
+                    FGA=9,
+                    FTM=1,
+                    FTA=2,
+                    OREB=1,
+                    DREB=0,
+                    PF=1,
+                    POSITION="G",
+                )
+            )
+    games = pd.DataFrame(rows)
+    grid = {"lam": (1.0, 50.0), "window": (5,), "decay": (0.92,)}
+    results = tune_ridge(games, {"PTS": 1}, grid=grid)
+    assert len(results) == 2
+    assert all(r["samples"] > 0 for r in results)
+    assert results[0]["mae"] <= results[1]["mae"]
+    assert {"lam", "window", "decay", "mae", "rmse", "samples"} <= set(results[0])
+    assert tune_ridge(games.iloc[:0], {"PTS": 1}) == []

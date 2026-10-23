@@ -13,6 +13,7 @@ network calls.
 """
 
 import argparse
+import itertools
 import json
 
 import numpy as np
@@ -340,12 +341,19 @@ def evaluate_season_weekly_policy(
     c1 = None
     if "CHALLENGER_C1" in policies:
         from features import FeatureBuilder
-        from model_ml import ComponentRidge
+        from model_ml import ComponentRidge, model_settings
 
+        settings = model_settings(cfg)
         all_games = (
             pd.concat([prior, frame], ignore_index=True) if prior is not None else frame
         )
-        builder = FeatureBuilder(all_games, positions=positions)
+        builder = FeatureBuilder(
+            all_games,
+            positions=positions,
+            window=settings["feature_window"],
+            decay=settings["player_decay"],
+            lookback=settings["player_lookback"],
+        )
         matrix = builder.training_matrix()
         c1 = {"builder": builder, "matrix": matrix, "models": {}}
 
@@ -353,7 +361,9 @@ def evaluate_season_weekly_policy(
             key = str(pd.Timestamp(week_start).date())
             if key not in c1["models"]:
                 train = c1["matrix"][c1["matrix"].GAME_DATE < week_start]
-                c1["models"][key] = ComponentRidge().fit(train, weights)
+                c1["models"][key] = ComponentRidge(lam=settings["ridge_lambda"]).fit(
+                    train, weights
+                )
             return c1["models"][key]
 
         c1["weekly_model"] = weekly_model
@@ -399,7 +409,7 @@ def evaluate_season_weekly_policy(
 
 
 def evaluate_game_backtest(
-    games, cfg, weights, builder=None, positions=None, limit=None
+    games, cfg, weights, builder=None, positions=None, limit=None, settings=None
 ):
     """Walk-forward per-date game forecasts for B0 and CHALLENGER_C1.
 
@@ -409,8 +419,10 @@ def evaluate_game_backtest(
     played that date, so errors are paired and no future data leaks.
     """
     from lineup import project_players
-    from model_ml import ComponentRidge
+    from model_ml import ComponentRidge, model_settings
 
+    if settings is None:
+        settings = model_settings(cfg)
     report = {"dates": 0, "models": {}}
     if games is None or len(games) == 0:
         return report
@@ -421,7 +433,13 @@ def evaluate_game_backtest(
     if builder is None:
         from features import FeatureBuilder
 
-        builder = FeatureBuilder(games, positions=positions)
+        builder = FeatureBuilder(
+            games,
+            positions=positions,
+            window=settings["feature_window"],
+            decay=settings["player_decay"],
+            lookback=settings["player_lookback"],
+        )
     matrix = builder.training_matrix()
     matrix["GAME_DATE"] = pd.to_datetime(matrix.GAME_DATE)
     matrix["PLAYER_ID"] = matrix.PLAYER_ID.astype(str)
@@ -439,7 +457,7 @@ def evaluate_game_backtest(
             games[games.GAME_DATE < date], None, weights, cfg, date
         )
         train = matrix[matrix.GAME_DATE < date]
-        model = ComponentRidge().fit(train, weights)
+        model = ComponentRidge(lam=settings["ridge_lambda"]).fit(train, weights)
         today = matrix[matrix.GAME_DATE == date].reset_index(drop=True)
         c1_fp = model.predict_fp(today, weights).reset_index(drop=True)
         c1_stats = model.predict_components(today)
@@ -483,6 +501,99 @@ def evaluate_game_backtest(
         for stat, (a, p) in sorted(stat_pairs.items())
     }
     return report
+
+
+DEFAULT_TUNE_GRID = {
+    "lam": (1.0, 10.0, 50.0),
+    "window": (10, 15, 25),
+    "decay": (0.90, 0.92, 0.95),
+}
+
+
+def tune_ridge(games, weights, grid=None, positions=None, limit=None, eval_games=None):
+    """Grid-search Ridge/feature knobs by walk-forward game FP error.
+
+    Every (lam, window, decay) combo builds its own feature matrix and refits
+    once per slate date on strictly-prior rows — the same pregame contract the
+    production overlay obeys — and is ranked by MAE on games actually played.
+    ``eval_games`` may restrict scoring to a subset (e.g. the target season
+    while ``games`` also supplies prior-season training rows).
+    Returns a list of {lam, window, decay, mae, rmse, samples} sorted by MAE.
+    """
+    from features import FeatureBuilder
+    from model_ml import ComponentRidge
+
+    if games is None or len(games) == 0:
+        return []
+    grid = grid or DEFAULT_TUNE_GRID
+    games = games.copy()
+    games["GAME_DATE"] = pd.to_datetime(games.GAME_DATE)
+    games["PLAYER_ID"] = games.PLAYER_ID.astype(str)
+    scored = add_fantasy_points(normalize_stats_for_scoring(games), weights)
+    actual = {
+        (str(r.PLAYER_ID), str(r.GAME_DATE.date())): float(r.FP)
+        for r in scored.itertuples()
+    }
+    evaluate_on = eval_games if eval_games is not None else games
+    dates = sorted(pd.to_datetime(evaluate_on.GAME_DATE).unique())
+    if limit:
+        dates = dates[:limit]
+    results = []
+    for lam, window, decay in itertools.product(
+        grid["lam"], grid["window"], grid["decay"]
+    ):
+        builder = FeatureBuilder(games, positions=positions, window=window, decay=decay)
+        matrix = builder.training_matrix()
+        matrix["GAME_DATE"] = pd.to_datetime(matrix.GAME_DATE)
+        matrix["PLAYER_ID"] = matrix.PLAYER_ID.astype(str)
+        errors = []
+        for date in dates:
+            date = pd.Timestamp(date)
+            train = matrix[matrix.GAME_DATE < date]
+            if len(train) < 50:
+                continue
+            model = ComponentRidge(lam=lam).fit(train)
+            today = matrix[matrix.GAME_DATE == date].reset_index(drop=True)
+            preds = model.predict_fp(today, weights).reset_index(drop=True)
+            for i, row in today.iterrows():
+                obs = actual.get((str(row.PLAYER_ID), str(date.date())))
+                if obs is not None and np.isfinite(preds.iloc[i]):
+                    errors.append(obs - float(preds.iloc[i]))
+        errors = np.asarray(errors, dtype=float)
+        results.append(
+            {
+                "lam": lam,
+                "window": window,
+                "decay": decay,
+                "mae": float(np.abs(errors).mean()) if len(errors) else np.nan,
+                "rmse": (float(np.sqrt((errors**2).mean())) if len(errors) else np.nan),
+                "samples": int(len(errors)),
+            }
+        )
+    return sorted(results, key=lambda r: (np.isnan(r["mae"]), r["mae"]))
+
+
+def _print_tune_table(results, limit):
+    print(f"ridge tuning grid over {limit or 'all'} slate dates (ranked by MAE)")
+    header = f"{'rank':>4} {'lam':>6} {'window':>6} {'decay':>6} {'MAE':>7} {'RMSE':>7} {'n':>7}"
+    print(header)
+    print("-" * len(header))
+    for rank, r in enumerate(results, 1):
+        print(
+            f"{rank:>4} {r['lam']:>6.1f} {r['window']:>6d} {r['decay']:>6.2f} "
+            f"{r['mae']:>7.2f} {r['rmse']:>7.2f} {r['samples']:>7d}"
+        )
+    if results and np.isfinite(results[0]["mae"]):
+        best = results[0]
+        print(
+            "\nbest config — paste under 'model:' in the effective config"
+            " (config.local.yaml when present, else config.yaml):"
+        )
+        print(
+            f"  ridge_lambda: {best['lam']}\n"
+            f"  feature_window: {best['window']}\n"
+            f"  player_decay: {best['decay']}"
+        )
 
 
 def _print_weekly_table(report):
@@ -561,7 +672,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Offline evaluation: forecast error and weekly lock regret."
     )
-    parser.add_argument("--mode", choices=["weekly", "game"], default="weekly")
+    parser.add_argument("--mode", choices=["weekly", "game", "tune"], default="weekly")
     parser.add_argument("--season", default=None)
     parser.add_argument(
         "--db",
@@ -617,9 +728,29 @@ def main(argv=None):
             _print_weekly_table(report)
         else:
             print(json.dumps(report, indent=2, default=str))
+    elif args.mode == "tune":
+        games = store.read(season)
+        all_games = (
+            pd.concat([history, games], ignore_index=True)
+            if history is not None
+            else games
+        )
+        results = tune_ridge(
+            all_games,
+            weights,
+            positions=positions,
+            limit=args.limit,
+            eval_games=games,
+        )
+        if not args.json:
+            _print_tune_table(results, args.limit)
+        else:
+            print(json.dumps(results, indent=2, default=str))
     else:
         from features import FeatureBuilder
+        from model_ml import model_settings
 
+        settings = model_settings(cfg)
         games = store.read(season)
         all_games = (
             pd.concat([history, games], ignore_index=True)
@@ -631,8 +762,15 @@ def main(argv=None):
             cfg,
             weights,
             positions=positions,
-            builder=FeatureBuilder(all_games, positions=positions),
+            builder=FeatureBuilder(
+                all_games,
+                positions=positions,
+                window=settings["feature_window"],
+                decay=settings["player_decay"],
+                lookback=settings["player_lookback"],
+            ),
             limit=args.limit,
+            settings=settings,
         )
         from forecast_store import ForecastStore
 

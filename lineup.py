@@ -252,7 +252,7 @@ def apply_opponent_model(
     cfg,
     reference,
     schedule=None,
-    min_games=5,
+    min_games=None,
 ):
     """Opponent-aware Ridge projections for every unplayed ``week_games`` tile.
 
@@ -262,6 +262,10 @@ def apply_opponent_model(
     prior observations; training uses every league game, not just roster rows.
     Any failure (sparse data, unconfirmed opponent, fitting errors) leaves the
     baseline profile untouched — the fallback is never a zero forecast.
+
+    Hyperparameters come from ``model_ml.model_settings(cfg)`` so
+    ``evaluator.py --mode tune`` recommendations applied to ``cfg['model']``
+    take effect here without code changes.
     """
     ref = str(pd.Timestamp(reference).date())
     targets = []
@@ -288,8 +292,11 @@ def apply_opponent_model(
         return {}
     try:
         from features import FeatureBuilder
-        from model_ml import ComponentRidge
+        from model_ml import ComponentRidge, model_settings
 
+        settings = model_settings(cfg)
+        if min_games is None:
+            min_games = settings["min_player_games"]
         reference = pd.Timestamp(reference)
         counts = league_games.groupby(league_games.PLAYER_ID.astype(str)).size()
         eligible = [
@@ -301,17 +308,24 @@ def apply_opponent_model(
         ]
         if not eligible:
             return {}
-        builder = FeatureBuilder(league_games, positions=positions, schedule=schedule)
+        builder = FeatureBuilder(
+            league_games,
+            positions=positions,
+            schedule=schedule,
+            window=settings["feature_window"],
+            decay=settings["player_decay"],
+            lookback=settings["player_lookback"],
+        )
         matrix = builder.training_matrix()
         matrix["GAME_DATE"] = pd.to_datetime(matrix.GAME_DATE)
         # Strictly pregame: same-day observations never train a forecast,
         # matching the baseline's pregame contract.
         train = matrix[matrix.GAME_DATE < reference]
-        if len(train) < 100:
+        if len(train) < settings["min_train_rows"]:
             return {}
         # Weights are only needed for FP residuals (lock probabilities); tiles
         # rescore via each league's formula, so fit components only.
-        model = ComponentRidge().fit(train)
+        model = ComponentRidge(lam=settings["ridge_lambda"]).fit(train)
         if not model.betas:
             return {}
         feats = builder.features_for(pd.DataFrame(eligible))

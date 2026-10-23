@@ -20,6 +20,28 @@ from scoring import add_fantasy_points
 DEFAULT_LAMBDA = 10.0
 RESIDUAL_STD_FLOOR = 1.0
 
+# Knobs adjustable under cfg["model"] — retune via `evaluator.py --mode tune`.
+_MODEL_KNOBS = {
+    "ridge_lambda": (float, DEFAULT_LAMBDA),
+    "feature_window": (int, 15),
+    "player_decay": (float, 0.92),
+    "player_lookback": (int, 10),
+    "min_player_games": (int, 5),
+    "min_train_rows": (int, 100),
+}
+
+
+def model_settings(cfg):
+    """Effective opponent-model knobs: cfg['model'] overrides, else defaults."""
+    mp = (cfg or {}).get("model") or {}
+    out = {}
+    for key, (cast, default) in _MODEL_KNOBS.items():
+        try:
+            out[key] = cast(mp.get(key, default))
+        except (TypeError, ValueError):
+            out[key] = default
+    return out
+
 
 def feature_columns(stat):
     """Feature vector for one component, per the runbook spec."""

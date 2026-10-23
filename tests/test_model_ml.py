@@ -65,3 +65,29 @@ def test_fit_on_empty_or_missing_features_degrades_gracefully():
     assert (out.to_numpy() == 0).all()
     fp = model.predict_fp(frame, {"PTS": 1.0})
     assert fp.iloc[0] == 0.0
+
+
+def test_model_settings_defaults_and_cfg_overrides():
+    from model_ml import model_settings
+
+    defaults = model_settings(None)
+    assert defaults["ridge_lambda"] == 10.0
+    assert defaults["feature_window"] == 15
+    assert defaults["player_decay"] == pytest.approx(0.92)
+    assert defaults["player_lookback"] == 10
+    assert defaults["min_player_games"] == 5
+    assert defaults["min_train_rows"] == 100
+    tuned = model_settings(
+        {
+            "model": {
+                "ridge_lambda": 50.0,
+                "feature_window": 25,
+                "player_decay": "0.95",
+                "min_player_games": "bogus",
+            }
+        }
+    )
+    assert tuned["ridge_lambda"] == 50.0
+    assert tuned["feature_window"] == 25
+    assert tuned["player_decay"] == pytest.approx(0.95)
+    assert tuned["min_player_games"] == 5  # invalid values keep the default

@@ -32,6 +32,16 @@ decision:
   sd_floor_min: 4.0
   career_guard_scale: 0.6
   rookie_guard_fp: 17.5
+# Opponent-aware Ridge model knobs (defaults shown). Retune every couple of
+# weeks with `evaluator.py --mode tune` and update these only if a better
+# combo wins; delete the section to revert to defaults.
+model:
+  ridge_lambda: 10.0      # shrinkage strength; higher = more conservative
+  feature_window: 15      # rolling opponent team-state games
+  player_decay: 0.92      # exponential decay for recent player form
+  player_lookback: 10     # games in "recent" player means
+  min_player_games: 5     # prior games before a player may get a ridge forecast
+  min_train_rows: 100     # minimum feature rows before any model fit
 teams:
 - name: Guangdong Tigers
   starters:
