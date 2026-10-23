@@ -13,7 +13,9 @@ venv/
 .env.*
 !.env.example
 config.local.yaml
-state/
+# Local runtime state stays private; phone lock flags are committed intentionally.
+state/*
+!state/locks.json
 data/cache/
 data/fixtures/
 artifacts/

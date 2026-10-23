@@ -208,6 +208,32 @@ def publish_report(report, config):
         return commit
 
 
+def sync_remote_locks(config):
+    """Pull phone-written commits on main before analysis; never abort on failure."""
+    try:
+        fetched = git("fetch", config["remote"], "main", check=False)
+        if fetched.returncode:
+            print(
+                dt.datetime.now(UTC).isoformat(),
+                "Could not fetch main for remote locks; publishing local state.",
+                file=sys.stderr,
+            )
+            return
+        merged = git("merge", "--ff-only", "FETCH_HEAD", check=False)
+        if merged.returncode:
+            print(
+                dt.datetime.now(UTC).isoformat(),
+                "Main could not fast-forward; publishing local lock state.",
+                file=sys.stderr,
+            )
+    except Exception as exc:
+        print(
+            dt.datetime.now(UTC).isoformat(),
+            f"Remote lock sync failed ({exc}); publishing local state.",
+            file=sys.stderr,
+        )
+
+
 def visible(url, publication_id):
     try:
         response = requests.get(
@@ -278,6 +304,7 @@ def run(force=False, setup=False, now=None):
             from game_store import GameStore
 
             GameStore()
+            sync_remote_locks(config)
             report = refresh_report()
             report["publication_id"] = uuid.uuid4().hex
             report["published_at"] = now.isoformat()

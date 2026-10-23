@@ -4,7 +4,7 @@ import math
 
 import pandas as pd
 
-from fetch_data import normalize_stats_for_scoring
+from fetch_data import normalize_stats_for_scoring, canonical_name
 from model import rolling_baseline
 from season_history import blend_seasons
 from scoring import add_fantasy_points, effective_weights
@@ -185,7 +185,7 @@ def project_players(games, fallback, weights, cfg, reference):
                     cfg["decision"],
                     **cfg["decision"]
                     .get("player_overrides", {})
-                    .get(str(history.iloc[-1].PLAYER_NAME), {})
+                    .get(str(history.iloc[-1].PLAYER_NAME), {}),
                 )
                 decay = dcfg.get("decay", 0.92)
                 factors = [decay ** (len(window) - i - 1) for i in range(len(window))]
@@ -243,6 +243,47 @@ def project_players(games, fallback, weights, cfg, reference):
     return profiles
 
 
+def lock_match(row, record):
+    """A lock record identifies a roster player by Sleeper id, then name."""
+    pid = str(record.get("player_id") or "").strip()
+    if pid and (
+        str(row.get("sleeper_id") or "") == pid
+        or str(row.get("player_id") or "") in {pid, "sleeper:" + pid}
+    ):
+        return True
+    name = record.get("canonical_name") or record.get("player_name")
+    return bool(name) and canonical_name(
+        str(row.get("player") or "")
+    ) == canonical_name(str(name))
+
+
+def _pin_index(row, record, slots, pinned):
+    """The locked slot is the player's current synced slot, not a free choice."""
+    name = row.get("roster_slot") or record.get("roster_slot")
+    if name not in slots:
+        name = record.get("roster_slot")
+    if name not in slots:
+        return None
+    for candidate in (record.get("slot_index"), row.get("lineup_order")):
+        if (
+            isinstance(candidate, int)
+            and not isinstance(candidate, bool)
+            and 0 <= candidate < len(slots)
+            and slots[candidate] == name
+            and candidate not in pinned
+        ):
+            return candidate
+    return next(
+        (i for i, slot in enumerate(slots) if slot == name and i not in pinned),
+        None,
+    )
+
+
+def locked_score(record):
+    value = record.get("locked_fp")
+    return value if type(value) in (int, float) and math.isfinite(value) else None
+
+
 def unavailable_lineup(reference, reason):
     return {
         "date": str(reference),
@@ -252,12 +293,16 @@ def unavailable_lineup(reference, reason):
         "bench": [],
         "total_projected_fp": None,
         "filled_slots": 0,
+        "pinned_slots": 0,
         "eligible_players": 0,
         "missing_inputs": 0,
+        "pin_warnings": [],
     }
 
 
-def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None):
+def recommend_lineup(
+    team, rows, profiles, reference, mode="live", blocked=None, locks=None
+):
     date = str(reference)
     if blocked:
         return unavailable_lineup(date, blocked)
@@ -275,9 +320,34 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
         return unavailable_lineup(
             date, "This league has no active lineup slots configured."
         )
+    # Locked-in Sleeper starters stay pinned: their slots never re-enter the
+    # assignment pool, even on off days or negative banked scores.
+    pinned, pin_warnings = {}, []
+    for record in locks.values() if isinstance(locks, dict) else (locks or []):
+        if not isinstance(record, dict):
+            continue
+        hit = next((i for i, row in enumerate(rows) if lock_match(row, record)), None)
+        name = record.get("player_name") or str(record.get("player_id") or "?")
+        if hit is None:
+            pin_warnings.append(f"Locked player {name} is no longer on this roster.")
+            continue
+        row = rows[hit]
+        if row.get("roster_slot") in RESERVE:
+            pin_warnings.append(f"Locked player {row['player']} is in a reserve slot.")
+            continue
+        index = _pin_index(row, record, slots, pinned)
+        if index is None:
+            pin_warnings.append(
+                f"No {row.get('roster_slot')} slot remains for locked player {row['player']}."
+            )
+            continue
+        pinned[index] = (hit, record)
+    pinned_rows = {hit for hit, _ in pinned.values()}
     candidates, bench, seen = [], [], set()
     missing = scheduled = started = 0
-    for row in rows:
+    for row_index, row in enumerate(rows):
+        if row_index in pinned_rows:
+            continue
         name, pid = row["player"], str(row.get("player_id") or "")
         identity = pid or name.casefold()
         if identity in seen:
@@ -335,14 +405,75 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
                 candidates.append(entry)
         if reason:
             bench.append(dict(entry, reason=reason))
-    assignment = optimal_assignment(slots, candidates)
+    remaining = [slot for i, slot in enumerate(slots) if i not in pinned]
+    assignment = optimal_assignment(remaining, candidates) if remaining else []
     chosen = {i for i in assignment if i is not None}
     bench.extend(
         dict(p, reason="Lower projected total or position fit")
         for i, p in enumerate(candidates)
         if i not in chosen
     )
-    filled = len(chosen)
+
+    def pinned_entry(row, record):
+        entry = {
+            "player": row["player"],
+            "player_id": row.get("player_id"),
+            "positions": row.get("positions", []),
+            "current_slot": row.get("roster_slot"),
+            "injury_status": row.get("injury_status"),
+        }
+        profile = (
+            row["projection"]
+            if "projection" in row
+            else profiles.get(str(row.get("player_id") or ""))
+        )
+        if profile:
+            entry.update(profile)
+        today_games = [g for g in row.get("week_games", []) if g["date"] == date]
+        if today_games:
+            entry.update(
+                opponent=today_games[0].get("opponent"),
+                home=today_games[0].get("home"),
+            )
+        locked_fp = locked_score(record)
+        entry.update(
+            projected_fp=(
+                locked_fp if locked_fp is not None else entry.get("projected_fp")
+            ),
+            is_pinned=True,
+            is_locked=True,
+            locked_fp=locked_fp,
+            lock_game_date=record.get("game_date"),
+            lineup_reason="Pinned starter (locked in Sleeper)",
+        )
+        return entry
+
+    merged, cursor = [], 0
+    for i, slot in enumerate(slots):
+        if i in pinned:
+            hit, record = pinned[i]
+            merged.append(
+                dict(
+                    slot=slot,
+                    slot_index=i,
+                    **pinned_entry(rows[hit], record),
+                )
+            )
+            continue
+        player = assignment[cursor]
+        cursor += 1
+        merged.append(
+            dict(
+                slot=slot,
+                slot_index=i,
+                **(
+                    candidates[player]
+                    if player is not None
+                    else {"player": None, "projected_fp": None}
+                ),
+            )
+        )
+    filled = len(chosen) + len(pinned)
     # All unknown projections is not a credible zero-point recommendation.
     status = (
         "partial"
@@ -355,7 +486,11 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
     )
     reason = {
         "partial": "Best lineup among players with verified schedules and projections; some inputs are missing.",
-        "ready": "Maximum projected total across eligible players and league slots.",
+        "ready": (
+            "Maximum projected total across eligible players and unlocked league slots."
+            if pinned
+            else "Maximum projected total across eligible players and league slots."
+        ),
         "no_games": "No available roster players have a scheduled game today.",
         "empty": (
             "Today's available games have already started or finished. No remaining starts to recommend."
@@ -367,25 +502,24 @@ def recommend_lineup(team, rows, profiles, reference, mode="live", blocked=None)
         "date": date,
         "status": status,
         "reason": reason,
-        "slots": [
-            dict(
-                slot=slot,
-                slot_index=i,
-                **(
-                    candidates[player]
-                    if player is not None
-                    else {"player": None, "projected_fp": None}
-                )
-            )
-            for i, (slot, player) in enumerate(zip(slots, assignment))
-        ],
+        "slots": merged,
         "bench": bench,
         "total_projected_fp": (
-            round(sum(candidates[i]["projected_fp"] for i in chosen), 2)
+            round(
+                sum(candidates[i]["projected_fp"] for i in chosen)
+                + sum(
+                    fp
+                    for fp in (merged[i].get("projected_fp") for i in pinned)
+                    if type(fp) in (int, float)
+                ),
+                2,
+            )
             if filled or not missing
             else None
         ),
         "filled_slots": filled,
+        "pinned_slots": len(pinned),
         "eligible_players": len(candidates),
         "missing_inputs": missing,
+        "pin_warnings": pin_warnings,
     }

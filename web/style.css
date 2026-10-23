@@ -1115,6 +1115,46 @@ dialog label {
   font: 9px/1.5 var(--mono);
   padding-top: 6px;
 }
+.lock-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  color: var(--muted);
+  opacity: 0.55;
+  border-radius: 6px;
+}
+.lock-toggle:hover,
+.lock-toggle:focus-visible {
+  opacity: 1;
+  outline: none;
+}
+.lock-toggle:focus-visible {
+  box-shadow: 0 0 0 2px var(--line);
+}
+.lock-toggle svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+.lock-toggle.is-locked {
+  opacity: 1;
+  color: var(--positive);
+}
+.lock-toggle.is-locked svg rect {
+  fill: var(--positive);
+  stroke: none;
+}
+.lock-chip {
+  font: 8px var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--positive);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
 .league-scope {
   border-left: 3px solid var(--purple);
   padding: 10px 14px;

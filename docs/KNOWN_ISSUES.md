@@ -41,7 +41,8 @@ Local credentials, imports, cache files, and `.venv` remain on the computer; rem
 | Area | Limitation |
 | --- | --- |
 | League scoring | Unavailable fouls are omitted; unavailable rebound splits are approximated using total rebounds. Generic milestone bonuses are computed. Unknown nonzero rules still block recommendations |
-| Sleeper lock state | Read-only rosters are imported, but existing lock selections are not; the app does not submit actions |
+| Sleeper lock state | The Sleeper API exposes no lock field, so flags are user-supplied and unverified. Toggling in LockIn never submits anything to Sleeper. A wrong or stale flag can pin a player who is not actually locked until the manager removes the flag or the week rolls over; the matchup-score auto-detection layer remains planned |
+| Lock flag propagation | Phone toggles write `state/locks.json` through an optional serverless function; without a deployed endpoint the flag is device-local only. GitHub commit propagation to Pages is near-instant for the browser's optimistic re-pin, but the authoritative lineup reflects it only at the next Mac publication. If the Mac cannot fast-forward `main`, it publishes its local lock state and logs a warning |
 | Live availability | NBA Stats may reject or time out on local requests. Saved history is retained but cannot supply newly missed games. Rosters and independently verified Sleeper schedules remain visible; no performance recommendations are invented during an outage |
 | Schedule feed | Public Sleeper schedule schema is not part of the core documented v1 league API. Dates/opponents are available; tip-off times are not. Changes/postponements wait for cache refresh |
 | Offseason | Completed leagues produce no active recommendations; new-season rosters must exist before meaningful live analysis |

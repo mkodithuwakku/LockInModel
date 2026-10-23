@@ -3,14 +3,26 @@
 import datetime as dt
 import pandas as pd
 from zoneinfo import ZoneInfo
-from storage import ROOT, load_cfg, read_json
+from storage import (
+    ROOT,
+    load_cfg,
+    read_json,
+    load_locks,
+    locks_for_league,
+)
 from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
 from decide import per_player_week_decision
 from pickups import find_pickups, available_players
 from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
-from lineup import project_players, recommend_lineup, unavailable_lineup
+from lineup import (
+    project_players,
+    recommend_lineup,
+    unavailable_lineup,
+    lock_match,
+    locked_score,
+)
 from daily_badges import previous_night_badges, fantasy_night_badges, combine_badges
 from badge_awards import raw_awards, fantasy_awards
 from season_review import season_review
@@ -18,6 +30,25 @@ from season_review import season_review
 
 def today():
     return dt.datetime.now(ZoneInfo("America/Edmonton")).date()
+
+
+def fantasy_week_key(provider, reference):
+    """Sleeper matchup week when the calendar exposes it, else the week start."""
+    calendar = getattr(provider, "calendar", None)
+    bounds = (
+        calendar.display_week(reference)
+        if calendar
+        else [str(d.date()) for d in get_week_bounds(reference)]
+    )
+    if calendar:
+        weeks = {
+            g.get("week")
+            for g in calendar.games
+            if bounds[0] <= g["date"] <= bounds[1] and g.get("week") is not None
+        }
+        if len(weeks) == 1:
+            return int(weeks.pop())
+    return bounds[0]
 
 
 def build_dashboard(
@@ -157,6 +188,8 @@ def build_dashboard(
     season_badge_cache = {}
     fantasy_badge_cache = {}
     projection_cache = {}
+    week_key = fantasy_week_key(provider, reference) if mode == "live" else None
+    locks_doc = load_locks() if mode == "live" else {}
     for team in cfg["teams"]:
         team = apply_scoring_policy(dict(team))
         if mode == "live" and team.get("league_status", "in_season") != "in_season":
@@ -164,6 +197,11 @@ def build_dashboard(
             continue
         weights = team.get("weights") or cfg["weights"]
         rows = []
+        team_locks = (
+            locks_for_league(locks_doc, team.get("league_id"), week_key)
+            if mode == "live" and team.get("source") == "sleeper"
+            else {}
+        )
         weights, _ = effective_weights(observed, weights)
         if team.get("unsupported_scoring"):
             alerts.append(
@@ -339,6 +377,7 @@ def build_dashboard(
             row["roster_slot"] = meta.get("roster_slot") or (
                 "START" if row["starter"] else "BN"
             )
+            row["sleeper_id"] = meta.get("sleeper_id")
             row["lineup_order"] = meta.get("lineup_order", team["players"].index(name))
             row["injury_status"] = meta.get("injury_status") if mode == "live" else None
             if mode == "live":
@@ -495,12 +534,22 @@ def build_dashboard(
                 ]
             )
         )
+        for record in team_locks.values():
+            hit = next((r for r in rows if lock_match(r, record)), None)
+            if hit is not None:
+                hit["is_locked"] = True
+                score = locked_score(record)
+                if score is not None:
+                    hit["locked_fp"] = score
+                if record.get("game_date"):
+                    hit["lock_game_date"] = record["game_date"]
         daily_lineup = recommend_lineup(
             team,
             rows,
             projection_cache[projection_key],
             reference,
             mode,
+            locks=team_locks or None,
             blocked=(
                 "Scoring inputs unavailable for this league."
                 if team.get("unsupported_scoring")
@@ -511,11 +560,16 @@ def build_dashboard(
                 )
             ),
         )
+        for warning in daily_lineup.get("pin_warnings", []):
+            alerts.append(
+                {"severity": "warning", "team": team["name"], "message": warning}
+            )
         results.append(
             {
                 "id": team["id"],
                 "team_name": team["name"],
                 "team_avatar_url": team.get("team_avatar_url"),
+                "league_id": team.get("league_id"),
                 "league_name": team.get("league_name", "Local roster"),
                 "source": team.get("source", "local"),
                 "season": team.get("season"),
@@ -539,6 +593,7 @@ def build_dashboard(
                     season=team.get("season"),
                 ),
                 "recommended_lineup": daily_lineup,
+                "locks": team_locks,
                 "pickups": candidates,
                 "available_players": (
                     available_players(
@@ -570,6 +625,7 @@ def build_dashboard(
             if getattr(provider, "calendar", None)
             else None
         ),
+        "locks_week": week_key,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "teams": results,
         "alerts": alerts,

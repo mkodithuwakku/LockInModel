@@ -429,12 +429,118 @@ function renderSeasonReview(t) {
 }
 
 function sheetView() {
-  return LockInInsights.rosterSheet(team() || {}, state.mode !== "test");
+  return LockInInsights.rosterSheet(
+    LockInInsights.repinLineup(team() || {}),
+    state.mode !== "test",
+  );
+}
+const lockIcon =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+function lockEndpoint() {
+  const configured = document
+    .querySelector('meta[name="lockin-lock-endpoint"]')
+    ?.content?.trim();
+  return configured || (hosted ? null : "/api/lock");
+}
+function lockPasscode() {
+  let passcode = localStorage.getItem("lockin_passcode") || "";
+  if (!passcode) {
+    passcode =
+      window.prompt("Enter your LockIn passcode to sync this lock:")?.trim() ||
+      "";
+    if (passcode) localStorage.setItem("lockin_passcode", passcode);
+  }
+  return passcode;
+}
+function canLock(p, i) {
+  const t = team();
+  const row = t?.results?.[i];
+  return state.mode === "live" && t?.source === "sleeper" && row?.starter === true && !p.vacant;
+}
+function lockButton(p, i) {
+  if (!canLock(p, i)) return "";
+  const locked = Boolean(p.is_locked);
+  return `<button class="lock-toggle${locked ? " is-locked" : ""}" data-lock="${i}" aria-pressed="${locked}" title="${locked ? "Locked in Sleeper — tap to remove the flag" : "Mark locked in Sleeper"}" aria-label="${locked ? "Remove lock flag" : "Mark locked"}: ${esc(p.player)}">${lockIcon}${locked ? '<span class="lock-chip">LOCKED</span>' : ""}</button>`;
+}
+async function postLock(endpoint, passcode, payload) {
+  const headers = {"Content-Type": "application/json"};
+  if (endpoint.startsWith("/")) headers["X-CSRF-Token"] = state.csrf;
+  else if (passcode) headers["x-lockin-passcode"] = passcode;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok)
+    throw new Error(data.error || "Could not save the lock. Try again.");
+  return data;
+}
+async function toggleLock(i) {
+  const t = team();
+  const row = t?.results?.[i];
+  if (!row || !canLock(row, i)) return;
+  const locking = !row.is_locked;
+  const key = String(row.sleeper_id || row.player_id || row.player);
+  const lastGame = [...(row.week_games || [])].reverse().find(g => Number.isFinite(g.fp));
+  const player = {
+    player_id: row.sleeper_id ? String(row.sleeper_id) : null,
+    player_name: row.player,
+    roster_slot: row.roster_slot,
+    slot_index: Number.isInteger(row.lineup_order) ? row.lineup_order : null,
+    locked_fp: locking && lastGame ? lastGame.fp : null,
+    game_date: locking && lastGame ? lastGame.date : null,
+  };
+  // hosted render() rebuilds state.data from publishedSource, so both layers
+  // carry the optimistic flag; snapshots restore on failure.
+  const targets = [t];
+  const sourceTeam = hosted
+    ? publishedSource?.teams?.find((x) => x.id === t.id)
+    : null;
+  if (sourceTeam) targets.push(sourceTeam);
+  const snapshots = targets.map((x) => ({team: x, locks: x.locks ? {...x.locks} : {}, locked: x.results?.[i]?.is_locked}));
+  for (const x of targets) {
+    const locks = {...(x.locks || {})};
+    if (locking) locks[key] = player;
+    else delete locks[key];
+    x.locks = locks;
+    if (x.results?.[i]) x.results[i].is_locked = locking;
+  }
+  render();
+  const revert = () => {
+    for (const {team: x, locks, locked} of snapshots) {
+      x.locks = locks;
+      if (x.results?.[i]) x.results[i].is_locked = locked;
+    }
+    render();
+  };
+  const endpoint = lockEndpoint();
+  if (!endpoint) {
+    toast(locking ? "Marked locked on this device only." : "Lock flag removed on this device.");
+    return;
+  }
+  const remote = !endpoint.startsWith("/");
+  if (remote && !lockPasscode()) {
+    revert();
+    return;
+  }
+  try {
+    await postLock(endpoint, localStorage.getItem("lockin_passcode") || "", {
+      league_id: t.league_id,
+      schedule_week: state.data?.locks_week,
+      action: locking ? "lock" : "unlock",
+      player,
+    });
+    toast(locking ? "Locked in — pinned for this week." : "Lock flag removed.");
+  } catch (e) {
+    revert();
+    toast(e.message || "Could not save the lock. Change reverted.");
+  }
 }
 function renderLineup() {
   $("#practice-lineup").hidden = state.mode !== "test" || state.view !== "team";
   if (!$("#practice-lineup").hidden) renderPracticeLineup();
-  const t = team(), daily = t?.recommended_lineup;
+  const t = team(), daily = LockInInsights.repinLineup(t || {}).recommended_lineup;
   const target = $("#recommended-lineup");
   target.hidden = state.view !== "team" || state.mode === "test";
   if (!t || target.hidden) { target.innerHTML = ""; return; }
@@ -647,7 +753,7 @@ function rosterRow(p, i, week) {
       `<span class="game-matchup"><small>${weekday}</small><b>${game.home ? "" : "@"}${esc(game.opponent)}</b></span><em class="game-score" data-kind="${score.kind}" data-performance="${score.kind === "actual" ? playerPerformance(p, score.value).tone : "unknown"}"><span>${score.label}</span> ${fmt(score.value)}</em>`).join("") ||
       `<span class="game-matchup"><small>${weekday}</small><b>${known ? "—" : "?"}</b></span>`}</span>`;
   }).join("");
-  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.lineup_fp ?? p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}${p.lineup_reason ? `<div class="roster-bench-reason">${esc(p.lineup_reason)}</div>` : ""}</div><div class="player-call">${badge(p)}${p.last_game_fp != null ? `<strong>${performanceNumber(p, p.last_game_fp, " <small>FP</small>")}</strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games and fantasy points">${games}</div></div>`;
+  return `<div class="player-row" data-status="${esc(p.status)}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.lineup_fp ?? p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}${p.lineup_reason ? `<div class="roster-bench-reason">${esc(p.lineup_reason)}</div>` : ""}</div><div class="player-call">${lockButton(p, i)}${badge(p)}${p.last_game_fp != null ? `<strong>${performanceNumber(p, p.last_game_fp, " <small>FP</small>")}</strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games and fantasy points">${games}</div></div>`;
 }
 function playerDailyBadges(p) {
   if (state.data?.stale || state.data?.refresh_status === "failed") return [];
@@ -795,6 +901,11 @@ document.addEventListener("click", (e) => {
   b = e.target.closest("[data-bank]");
   if (b) {
     testAction("bank", team().results[Number(b.dataset.bank)].player);
+    return;
+  }
+  b = e.target.closest("[data-lock]");
+  if (b) {
+    toggleLock(Number(b.dataset.lock));
     return;
   }
   b = e.target.closest("[data-team]");

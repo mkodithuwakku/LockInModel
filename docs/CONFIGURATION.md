@@ -90,6 +90,21 @@ PG/SG/SF/PF/C, G/F, and UTIL are supported active slots. BN/IR/TAXI are excluded
 
 Daily projections reuse `decision.lookback_games`, `recent_days`, `decay`, and `prior_weight_games`, together with that league's scoring weights. Both projections and weekly locks fill a sparse current-season window with actual prior-season games until `lookback_games` current-season appearances exist (default 10), including midseason returns. During this blend, `recent_days` does not discard the historical rows and `prior_weight_games` is not applied a second time. Missing historical games are not fabricated. No player-specific or league-specific lineup algorithm is needed. Read [daily lineup assumptions](MODEL.md#11-daily-lineup-projections-and-assignment) before treating a suggested arrangement as a legal Sleeper change.
 
+## Locked-player flags
+
+`state/locks.json` stores manager-reported Sleeper lock flags and is the one `state/` file intentionally committed to Git: the phone write path and the Mac's daily publication share it through `main`. Schema version 1 is `{version, updated_at, leagues: {league_id: {schedule_week, locks: {key: record}}}}`. Each record carries `player_id` (Sleeper id when known), `player_name`/`canonical_name` fallback, `roster_slot`, `slot_index`, `locked_at`, optional `locked_fp` and `game_date`. `schedule_week` is the Sleeper matchup week number when the calendar exposes one, otherwise the week-start date; a mismatch means the flags are ignored and a newer week write replaces the container.
+
+The local Flask app accepts `POST /api/lock` with the same payload the serverless function validates (no passcode; loopback plus CSRF already gate it). For the published phone site, deploy `api/lock.ts` as a serverless function (e.g. Vercel) with these environment variables:
+
+| Environment variable | Purpose |
+| --- | --- |
+| `LOCKIN_PASSCODE` | Shared secret checked against the `x-lockin-passcode` request header; the site prompts once and stores it in `localStorage` |
+| `GITHUB_TOKEN` | Fine-grained token scoped to this repository with **Contents: Read and write**; it must live only in the function's env, never in the static page |
+| `GITHUB_REPO` | `owner/name` of this repository |
+| `GITHUB_BRANCH` | Target branch; defaults to `main` |
+
+The function commits `state/locks.json` to `main` with a short backoff retry on concurrent-write conflicts. Point the published site at it by setting the `lockin-lock-endpoint` meta tag in `web/index.html` to the function's full URL. With no endpoint configured — or before deployment — toggles still work as device-local optimistic flags; they just never reach the repo or the Mac. The Mac's `publication.py` fast-forwards `main` before analysis so phone-written locks are in the file it reads.
+
 ## Forecast fallback and scoring display
 
 Current-season Sleeper / RotoWire forecasts are retrieved during live refresh for imported players, with a six-hour cache. No credentials, new database, extra scheduler, or per-player configuration are needed. When current game history is absent, these forecasts precede the historical fallback and are rescored with each league's weights. See [Projections](PROJECTIONS.md) for expected milestone bonuses. Approved scoring adjustments appear inside player details under Scoring method rather than Data alerts.

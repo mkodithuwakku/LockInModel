@@ -15,7 +15,7 @@ This document is a high-density reference for agents navigating the backend, dat
 | `decide.py` | Evaluates whether to LOCK or WAIT for a player's latest score in the fantasy week | `per_player_week_decision()`, `evaluate_player_lock()` |
 | `model.py` | Recency-weighted baseline (exponential decay), career/prior shrinkage, variance floors, normal beat probability, rarity adjustment | `rolling_baseline()`, `probability_future_beats_current()`, `rarity_score()` |
 | `season_history.py` | Blends prior-season games into sparse current-season projections and lock baselines (default 10-game window) | `blend_seasons()` |
-| `lineup.py` | Daily pregame forecasts and Hungarian algorithm optimizer for maximum-weight positional lineup assignment | `recommend_lineup()`, `project_players()`, `active_slots()` |
+| `lineup.py` | Daily pregame forecasts and Hungarian algorithm optimizer for maximum-weight positional lineup assignment; locked players pin to their synced slot before the solver sees the pool | `recommend_lineup()`, `project_players()`, `active_slots()`, `lock_match()`, `locked_score()` |
 | `projections.py` | Validates and parses Sleeper/RotoWire per-game external forecasts; derives Poisson-approximated milestone expectations | `fetch_forecasts()`, `parse_forecasts()`, `forecast_profile()` |
 | `game_store.py` | Local SQLite player-game store; daily overlap upserts (7-day window) and weekly full-season reconciliation | `GameStore`, `games` table, `refresh_status` table |
 | `forecast_store.py` | SQLite pregame forecast snapshots by formula fingerprint, date, and player ID | `ForecastStore`, `formula_key()`, `forecast_snapshots` table |
@@ -27,14 +27,16 @@ This document is a high-density reference for agents navigating the backend, dat
 | `sleeper.py` | Read-only import of Sleeper leagues, teams, rosters, scoring settings, and ownership metadata | `import_sleeper()`, `fetch_user_leagues()` |
 | `sleeper_stats.py` | Validated Sleeper/Sportradar fallback box scores when NBA Stats fails or misses recent finals | `parse_games()`, `fetch_sleeper_games()` |
 | `schedule.py` | Full-season regular schedule cache; determines remaining weekly game opportunities | `season_schedule()`, `remaining_games()` |
-| `storage.py` | Loads canonical `config.local.yaml` (falling back to `config.yaml`); atomic JSON and YAML writes | `load_cfg()`, `save_cfg()`, `write_json_atomic()` |
+| `storage.py` | Loads canonical `config.local.yaml` (falling back to `config.yaml`); atomic JSON and YAML writes; weekly lock-flag document for `state/locks.json` | `load_cfg()`, `save_cfg()`, `write_json()`, `load_locks()`, `save_locks()`, `locks_for_league()`, `apply_lock()` |
 | `simulation.py` | Manages offline Test Week simulator state, phase transitions (morning/night), banked scores, and revisions | `load_test_week()`, `advance_night()`, `bank_score()` |
-| `publication.py` | Local daily scheduled exporter to `gh-pages`; LaunchAgent installation, retry ledger, deployment confirmation | `publish_due()`, `run_publication()`, `install_agent()` |
+| `publication.py` | Local daily scheduled exporter to `gh-pages`; LaunchAgent installation, retry ledger, deployment confirmation; fast-forwards `main` before analysis to absorb phone lock commits | `publish_due()`, `run_publication()`, `install_agent()`, `sync_remote_locks()` |
 | `pages.py` | Filters dashboard data to public allowlisted fields; exports static JSON, HTML, CSS, JS, and image assets | `export_site()`, `refresh_report()`, `public_report()` |
 | `transport.py` | Rate-limited HTTP client with on-disk response caching, host pacing, and persistent failure cooldowns | `HTTP`, `CachedHTTP`, `DataUnavailable` |
-| `app.py` | Local Flask HTTP server; CSRF token validation, loopback restriction, background job worker | `/api/bootstrap`, `/api/dashboard`, `/api/test-week`, `/api/roster`, `/api/sync`, `/api/refresh` |
-| `web/app.js` | Frontend presentation controller; routing, dialogs, team switching, rendering, player modals, dismiss handlers | DOM rendering, event listeners, state binding |
-| `web/insights.js` | Pure client-side calculations: recent form deltas, sparklines, performance colour baselines, badge formatting, roster sheet order | `rosterSheet()`, `performanceScore()`, `performanceBaseline()`, `formScore()` |
+| `app.py` | Local Flask HTTP server; CSRF token validation, loopback restriction, background job worker | `/api/bootstrap`, `/api/dashboard`, `/api/test-week`, `/api/roster`, `/api/sync`, `/api/refresh`, `/api/lock` |
+| `api/lock.ts` | Optional Vercel serverless bridge: validates `x-lockin-passcode`, commits `state/locks.json` to `main` via the GitHub Contents API, retries conflicts | `handler()` |
+| `api/locks-core.mjs` | Shared pure lock-document logic for the endpoint (payload validation, lock/unlock, week expiry) | `validatePayload()`, `applyLock()`, `emptyDocument()` |
+| `web/app.js` | Frontend presentation controller; routing, dialogs, team switching, rendering, player modals, dismiss handlers, lock toggle with optimistic POST and passcode prompt | DOM rendering, event listeners, `toggleLock()`, `postLock()` |
+| `web/insights.js` | Pure client-side calculations: recent form deltas, sparklines, performance colour baselines, badge formatting, roster sheet order, client-side lineup re-pinning | `rosterSheet()`, `repinLineup()`, `performanceScore()`, `performanceBaseline()`, `formScore()` |
 
 ---
 
@@ -66,6 +68,7 @@ SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `Foreca
 - `state/publication.json`: Publication ledger (published commit, daily completion slot, pending deployment, retry counters).
 - `state/test-week.json`: Current state of the offline practice simulator (clock, revision, banked scores, roster edits).
 - `state/email-delivery.json`: Delivery ledger suppressing duplicate daily emails.
+- `state/locks.json`: Manager-reported Sleeper lock flags keyed by league and matchup week — the one `state/` file intentionally committed, shared between the phone write path and the Mac publication.
 - `data/fixtures/2025-26/`: Checksum-verified Parquet tables for offline Test Week (`games.parquet`, `schedule.parquet`, `priors.parquet`).
 
 ---

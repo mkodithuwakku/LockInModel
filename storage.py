@@ -1,7 +1,9 @@
 """Atomic local persistence. Personal configuration never belongs in Git."""
 
 import copy
+import datetime as dt
 import json
+import logging
 import os
 from pathlib import Path
 import tempfile
@@ -12,6 +14,8 @@ from scoring import apply_scoring_policy, supported_stat
 ROOT = Path(__file__).resolve().parent
 LOCK = threading.RLock()
 CONFIG = ROOT / "config.local.yaml"
+LOCKS = ROOT / "state/locks.json"
+LOCKS_VERSION = 1
 
 
 def atomic_write(path, text):
@@ -120,6 +124,117 @@ def save_cfg(cfg):
     with LOCK:
         validate_config(cfg)
         atomic_write(CONFIG, yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+
+
+def load_locks():
+    """Manager-reported Sleeper lock flags; corrupt files fail closed."""
+    try:
+        data = json.loads(LOCKS.read_text())
+    except FileNotFoundError:
+        return {}
+    except (ValueError, OSError) as exc:
+        logging.getLogger(__name__).warning("Ignoring unreadable locks file: %s", exc)
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_locks(locks):
+    if not isinstance(locks, dict):
+        raise ValueError("Locks document must be a mapping.")
+    write_json(LOCKS, locks)
+
+
+def locks_for_league(locks, league_id, week_key):
+    """Locks for one league, only while the stored fantasy week is current."""
+    if not league_id or week_key is None or not isinstance(locks, dict):
+        return {}
+    record = (locks.get("leagues") or {}).get(str(league_id))
+    if not isinstance(record, dict) or record.get("schedule_week") != week_key:
+        return {}
+    return {
+        str(key): value
+        for key, value in (record.get("locks") or {}).items()
+        if isinstance(value, dict)
+    }
+
+
+def _older_week(stored, current):
+    """Week keys are only comparable within the same kind (int or date string)."""
+    if isinstance(stored, int) and isinstance(current, int):
+        return stored < current
+    if isinstance(stored, str) and isinstance(current, str):
+        return stored < current
+    return False
+
+
+def apply_lock(doc, payload):
+    """Validate and apply one phone-reported lock/unlock to the document."""
+    from fetch_data import canonical_name
+
+    if not isinstance(payload, dict):
+        raise ValueError("Expected a lock request object.")
+    league = str(payload.get("league_id") or "").strip()
+    week = payload.get("schedule_week")
+    action = payload.get("action")
+    player = payload.get("player")
+    if not league.isdigit():
+        raise ValueError("A Sleeper league id is required.")
+    if action not in ("lock", "unlock"):
+        raise ValueError("Action must be 'lock' or 'unlock'.")
+    if not isinstance(week, int) and not (isinstance(week, str) and week.strip()):
+        raise ValueError("A schedule week is required.")
+    if isinstance(week, str):
+        week = week.strip()
+    if not isinstance(player, dict):
+        raise ValueError("A player object is required.")
+    name = str(player.get("player_name") or "").strip()
+    key = str(player.get("player_id") or "").strip() or canonical_name(name)
+    if not key:
+        raise ValueError("A player id or name is required.")
+
+    doc = dict(doc or {})
+    leagues = dict(doc.get("leagues") or {})
+    container = dict(leagues.get(league) or {})
+    if container.get("schedule_week") != week:
+        container = {"schedule_week": week, "locks": {}}
+    records = dict(container.get("locks") or {})
+    if action == "lock":
+        slot_index = player.get("slot_index")
+        records[key] = {
+            "player_id": str(player.get("player_id") or "") or None,
+            "player_name": name or None,
+            "canonical_name": canonical_name(name) if name else None,
+            "roster_slot": str(player.get("roster_slot") or "") or None,
+            "slot_index": slot_index if isinstance(slot_index, int) else None,
+            "locked_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "locked_fp": (
+                player["locked_fp"]
+                if isinstance(player.get("locked_fp"), (int, float))
+                else None
+            ),
+            "game_date": str(player.get("game_date") or "") or None,
+        }
+    else:
+        records.pop(key, None)
+        if name:
+            records.pop(canonical_name(name), None)
+    container["locks"] = records
+    # Expired weeks never linger; only compare keys of the same kind.
+    leagues = {
+        str(lid): record
+        for lid, record in leagues.items()
+        if not _older_week(
+            (record or {}).get("schedule_week") if isinstance(record, dict) else None,
+            week,
+        )
+    }
+    leagues[league] = container
+    doc.update(
+        version=LOCKS_VERSION,
+        updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),
+        leagues=leagues,
+    )
+    return doc
 
 
 def organize_teams(cfg):

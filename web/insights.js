@@ -1,6 +1,185 @@
 /* Pure presentation helpers; never mutate synced rosters or recompute scoring. */
 (function (root) {
   "use strict";
+  const SLOT_POSITIONS = {
+    PG: ["PG"], SG: ["SG"], SF: ["SF"], PF: ["PF"], C: ["C"],
+    G: ["PG", "SG"], F: ["SF", "PF"], UTIL: ["PG", "SG", "SF", "PF", "C"],
+  };
+  const OUT_STATUSES = new Set(["OUT", "O", "IR", "INJURED_RESERVE", "SUSPENDED", "SUSP", "INACTIVE"]);
+  const PLAYABLE = new Set(["pre_game", "in_progress", "complete", "final", "post_game"]);
+  // Python's round() is banker's rounding; cents keep parity with lineup.py.
+  const cents = (v) => {
+    const x = v * 100, f = Math.floor(x), d = x - f;
+    return d > 0.5 ? f + 1 : d < 0.5 ? f : (f % 2 === 0 ? f : f + 1);
+  };
+  function eligibleSlot(positions, slot) {
+    return slot in SLOT_POSITIONS &&
+      (slot === "UTIL" || (positions || []).some((p) => SLOT_POSITIONS[slot].includes(p)));
+  }
+  function optimalAssignment(slots, candidates) {
+    // Rectangular maximum-weight assignment, mirroring lineup.py exactly.
+    const n = slots.length, count = candidates.length;
+    if (!n) return [];
+    const m = count + n;
+    const forbidden = candidates.reduce((sum, p) => sum + Math.abs(cents(p.projected_fp)), 0) + 1;
+    const costs = slots.map((slot) =>
+      candidates.map((p) => (eligibleSlot(p.positions, slot) ? -cents(p.projected_fp) : forbidden)).concat(Array(n).fill(0)));
+    const u = Array(n + 1).fill(0), v = Array(m + 1).fill(0);
+    const assignment = Array(m + 1).fill(0), way = Array(m + 1).fill(0);
+    for (let i = 1; i <= n; i++) {
+      assignment[0] = i;
+      let j0 = 0;
+      const minimum = Array(m + 1).fill(Infinity), used = Array(m + 1).fill(false);
+      while (true) {
+        used[j0] = true;
+        const i0 = assignment[j0];
+        let delta = Infinity, j1 = 0;
+        for (let j = 1; j <= m; j++) {
+          if (used[j]) continue;
+          const reduced = costs[i0 - 1][j - 1] - u[i0] - v[j];
+          if (reduced < minimum[j]) { minimum[j] = reduced; way[j] = j0; }
+          if (minimum[j] < delta) { delta = minimum[j]; j1 = j; }
+        }
+        for (let j = 0; j <= m; j++) {
+          if (used[j]) { u[assignment[j]] += delta; v[j] -= delta; }
+          else minimum[j] -= delta;
+        }
+        j0 = j1;
+        if (assignment[j0] === 0) break;
+      }
+      while (true) {
+        const j1 = way[j0];
+        assignment[j0] = assignment[j1];
+        j0 = j1;
+        if (j0 === 0) break;
+      }
+    }
+    const result = Array(n).fill(null);
+    for (let j = 1; j <= count; j++) {
+      if (assignment[j]) result[assignment[j] - 1] = j - 1;
+    }
+    return result;
+  }
+  const canon = (s) =>
+    String(s ?? "").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().trim()
+      .replace(/(?:,?\s+(?:jr\.?|sr\.?|ii|iii|iv))$/u, "");
+  const lockMatches = (row, record) => {
+    const pid = String(record.player_id ?? "");
+    if (pid && (String(row.sleeper_id ?? "") === pid || String(row.player_id ?? "") === pid || String(row.player_id ?? "") === "sleeper:" + pid)) return true;
+    const name = String(record.player_name ?? "");
+    return name.length > 0 && canon(row.player) === canon(name);
+  };
+  function repinLineup(team) {
+    // Re-derives the daily lineup with pinned players, mirroring recommend_lineup.
+    const daily = team?.recommended_lineup;
+    const locks = team?.locks;
+    if (!daily || !Array.isArray(daily.slots) || !locks || typeof locks !== "object" || !Object.keys(locks).length)
+      return team;
+    const date = daily.date;
+    const rows = team.results || [];
+    const slots = daily.slots.map((s) => s.slot);
+    const pinned = new Map();
+    for (const record of Object.values(locks)) {
+      if (!record || typeof record !== "object") continue;
+      const hit = rows.findIndex((r) => lockMatches(r, record));
+      if (hit < 0 || ["IR", "TAXI"].includes(rows[hit].roster_slot)) continue;
+      const row = rows[hit];
+      const name = row.roster_slot && slots.includes(row.roster_slot) ? row.roster_slot : record.roster_slot;
+      let index = null;
+      for (const candidate of [record.slot_index, row.lineup_order]) {
+        if (Number.isInteger(candidate) && candidate >= 0 && candidate < slots.length && slots[candidate] === name && !pinned.has(candidate)) { index = candidate; break; }
+      }
+      if (index == null) index = slots.findIndex((s, i) => s === name && !pinned.has(i));
+      if (index != null && index >= 0) pinned.set(index, {hit, record});
+    }
+    const pinnedRows = new Set([...pinned.values()].map((v) => v.hit));
+    const candidates = [], bench = [], seen = new Set();
+    let missing = 0, scheduled = 0, started = 0;
+    rows.forEach((row, i) => {
+      if (pinnedRows.has(i)) return;
+      const identity = row.player_id != null && row.player_id !== "" ? String(row.player_id) : String(row.player).toLowerCase();
+      if (seen.has(identity)) return;
+      seen.add(identity);
+      const entry = {player: row.player, player_id: row.player_id, positions: row.positions || [], current_slot: row.roster_slot, injury_status: row.injury_status};
+      const profile = row.projection;
+      if (profile && Number.isFinite(profile.projected_fp)) Object.assign(entry, profile);
+      let reason = null;
+      const todayGames = (row.week_games || []).filter((g) => g.date === date);
+      if (["IR", "TAXI"].includes(row.roster_slot)) reason = "Reserve slot";
+      else if (OUT_STATUSES.has(String(row.injury_status ?? "").toUpperCase().replaceAll(" ", "_"))) reason = "Unavailable: " + row.injury_status;
+      else if (row.schedule_state !== "verified") { reason = "Schedule unavailable"; missing++; }
+      else if (!todayGames.length) reason = "No game today";
+      else if (todayGames.some((g) => !PLAYABLE.has(g.status))) { reason = "Game postponed or unconfirmed"; missing++; }
+      else if (todayGames.some((g) => g.status !== "pre_game")) { reason = "Game already started or finished"; started++; }
+      else {
+        scheduled++;
+        if (!profile || !Number.isFinite(profile.projected_fp)) { reason = "Projection unavailable"; missing++; }
+        else if (!slots.some((s) => eligibleSlot(row.positions, s))) {
+          reason = (row.positions || []).length ? "No eligible lineup slot" : "Position eligibility unavailable";
+          if (!(row.positions || []).length) missing++;
+        } else {
+          entry.opponent = todayGames[0].opponent;
+          entry.home = todayGames[0].home;
+          candidates.push(entry);
+        }
+      }
+      if (reason) bench.push({...entry, reason});
+    });
+    const pinnedEntry = (row, record) => {
+      const entry = {player: row.player, player_id: row.player_id, positions: row.positions || [], current_slot: row.roster_slot, injury_status: row.injury_status};
+      if (row.projection) Object.assign(entry, row.projection);
+      const todayGames = (row.week_games || []).filter((g) => g.date === date);
+      if (todayGames.length) { entry.opponent = todayGames[0].opponent; entry.home = todayGames[0].home; }
+      const lockedFp = Number.isFinite(record.locked_fp) ? record.locked_fp : null;
+      entry.projected_fp = lockedFp ?? entry.projected_fp;
+      Object.assign(entry, {
+        is_pinned: true, is_locked: true, locked_fp: lockedFp,
+        lock_game_date: record.game_date ?? null,
+        lineup_reason: "Pinned starter (locked in Sleeper)",
+      });
+      return entry;
+    };
+    const remaining = slots.filter((_, i) => !pinned.has(i));
+    const assignment = remaining.length ? optimalAssignment(remaining, candidates) : [];
+    const chosen = new Set(assignment.filter((i) => i !== null));
+    candidates.forEach((p, i) => {
+      if (!chosen.has(i)) bench.push({...p, reason: "Lower projected total or position fit"});
+    });
+    const merged = [];
+    let cursor = 0;
+    slots.forEach((slot, i) => {
+      if (pinned.has(i)) {
+        const {hit, record} = pinned.get(i);
+        merged.push({slot, slot_index: i, ...pinnedEntry(rows[hit], record)});
+        return;
+      }
+      const pick = assignment[cursor++];
+      merged.push({slot, slot_index: i, ...(pick != null ? candidates[pick] : {player: null, projected_fp: null})});
+    });
+    const filled = chosen.size + pinned.size;
+    const pinnedTotal = [...pinned.keys()].reduce((sum, i) => sum + (Number.isFinite(merged[i].projected_fp) ? merged[i].projected_fp : 0), 0);
+    const chosenTotal = [...chosen].reduce((sum, i) => sum + candidates[i].projected_fp, 0);
+    const status = missing ? "partial" : filled ? "ready" : !scheduled && !started ? "no_games" : "empty";
+    const reason = {
+      partial: "Best lineup among players with verified schedules and projections; some inputs are missing.",
+      ready: pinned.size
+        ? "Maximum projected total across eligible players and unlocked league slots."
+        : "Maximum projected total across eligible players and league slots.",
+      no_games: "No available roster players have a scheduled game today.",
+      empty: started && !candidates.length
+        ? "Today's available games have already started or finished. No remaining starts to recommend."
+        : "No remaining eligible starts with a positive projected contribution.",
+    }[status];
+    return {
+      ...team,
+      recommended_lineup: {
+        ...daily, status, reason, slots: merged, bench,
+        filled_slots: filled, pinned_slots: pinned.size,
+        total_projected_fp: (filled || !missing) ? Math.round((chosenTotal + pinnedTotal) * 100) / 100 : null,
+        eligible_players: candidates.length,
+      },
+    };
+  }
   function rosterSheet(team, useRecommendation = true) {
     const original = (team.results || []).map((p, i) => ({p, i}));
     const daily = team.recommended_lineup;
@@ -19,7 +198,10 @@
       // Never display a plan against a different roster snapshot.
       if (!row || assigned.has(row.i)) return fallback();
       assigned.set(row.i, slot);
-      starters.push({i: row.i, p: {...row.p, starter: true, roster_slot: slot.slot, lineup_order: order, lineup_fp: slot.projected_fp}});
+      starters.push({i: row.i, p: {...row.p, starter: true, roster_slot: slot.slot, lineup_order: order, lineup_fp: slot.projected_fp,
+        is_locked: Boolean(slot.is_locked || row.p.is_locked), is_pinned: Boolean(slot.is_pinned),
+        locked_fp: Number.isFinite(slot.locked_fp) ? slot.locked_fp : null,
+        lock_game_date: slot.lock_game_date ?? null, lineup_reason: slot.lineup_reason ?? null}});
     }
     const others = original.filter(({i}) => !assigned.has(i)).map(({p, i}, order) => {
       const exclusion = (daily.bench || []).find(entry => match(entry)?.i === i);
@@ -231,7 +413,8 @@
       .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
     return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
   }
-  const helpers = { badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
+  const helpers = { badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, repinLineup, teamForm, sparkline, dailyBadges, previousDate, badgeGuide };
+  helpers._test = {optimalAssignment, eligibleSlot, lockMatches};
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;
 })(typeof window === "undefined" ? globalThis : window);

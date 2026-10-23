@@ -295,6 +295,18 @@ def roster():
     return jsonify(message="Roster saved. Reports use this same selection.")
 
 
+@app.route("/api/lock", methods=["POST"])
+def lock_flag():
+    from storage import apply_lock, load_locks, save_locks
+
+    body = request.get_json()
+    with LOCK:
+        doc = apply_lock(load_locks(), body)
+        save_locks(doc)
+        dashboard_cache.clear()
+    return jsonify(status="ok", updated_at=doc.get("updated_at"))
+
+
 @app.route("/api/test-week", methods=["GET", "POST"])
 def test_week():
     from simulation import get_report, act

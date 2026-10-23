@@ -67,6 +67,10 @@ Website publication is separate: a native macOS LaunchAgent targets 7:00 AM Amer
 | Player has no game/history | No eligible observation exists by the selected date |
 | Refresh reports cooldown | Wait for the persistent host cooldown; repeated refreshes will not bypass it |
 | Imported roster cannot be edited | Make changes in Sleeper, then sync; local teams remain editable |
+| Lock toggle missing from a roster row | Locks apply to Sleeper starters in live mode only; bench/reserve rows, local teams, and Test Week do not offer the toggle |
+| Lock change reverts with a toast | The write failed; check the passcode, the endpoint deployment, or retry. The flag stays local to the device |
+| Locked player not pinned on Pages | The published report predates the flag; the browser re-pins client-side, and the next Mac publication persists it. A missing passcode or unconfigured endpoint keeps the flag device-local |
+| Passcode rejected | Update the `LOCKIN_PASSCODE` env var on the deployed function, then clear `lockin_passcode` in the browser's localStorage and re-enter |
 | Replay checksum error | A required fixture file changed or is missing; inspect before recapturing |
 | Email blocked | Replace the publicly exposed app password or complete local settings |
 | Email already attempted | Daily duplicate suppression; inspect `state/email-delivery.json` |
@@ -111,7 +115,11 @@ The Mac publishes the public dashboard with `publication.py`; GitHub serves only
 .venv/bin/python publication.py status
 ```
 
-Initial setup publishes the branch, configures Pages to serve it, and requests the first Pages build. Installation creates `~/Library/LaunchAgents/com.lockin.publish.plist`; Codex and Flask do not need to remain open. Keep the Mac logged in and connected for updates. The agent runs after missed sleep intervals/login and retries transient failures. Inspect `logs/publication.log`, `logs/publication-error.log`, and `state/publication.json`. A manual `publication.py run --force` bypasses the daily publication guard, and fetches game updates again, even on the same day; it still respects provider cooldowns. Source changes made on another computer must be pulled into this checkout before publication. See [Hosting](HOSTING.md) for verification and recovery.
+Initial setup publishes the branch, configures Pages to serve it, and requests the first Pages build. Installation creates `~/Library/LaunchAgents/com.lockin.publish.plist`; Codex and Flask do not need to remain open. Keep the Mac logged in and connected for updates. The agent runs after missed sleep intervals/login and retries transient failures. Inspect `logs/publication.log`, `logs/publication-error.log`, and `state/publication.json`. A manual `publication.py run --force` bypasses the daily publication guard, and fetches game updates again, even on the same day; it still respects provider cooldowns. Source changes made on another computer must be pulled into this checkout before publication. The publisher fetches and fast-forward merges `main` before analysis, so lock flags committed from the phone are in `state/locks.json` when the engine runs; a non-fast-forward or unreachable remote logs a warning and publishes the local state. See [Hosting](HOSTING.md) for verification and recovery.
+
+### Phone lock endpoint
+
+The optional serverless bridge in `api/lock.ts` lets the published site persist lock toggles to `state/locks.json`. Deploy it (for example as a Vercel function pointed at this repository) with `LOCKIN_PASSCODE`, `GITHUB_TOKEN`, and `GITHUB_REPO` env vars as described in [Configuration](CONFIGURATION.md#locked-player-flags), then set the `lockin-lock-endpoint` meta tag in `web/index.html` to its URL and republish. Until an endpoint is configured, lock toggles behave as device-local optimistic flags only. The endpoint validates the passcode, the payload schema, and the league/week/player identity, then commits to `main` via the GitHub Contents API; it returns JSON errors for bad passcodes, malformed bodies, and exhausted write conflicts rather than leaking details. Flags whose stored week differs from the current fantasy week are ignored by the engine and replaced by the next write.
 
 ## Database maintenance
 
