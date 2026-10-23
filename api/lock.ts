@@ -116,8 +116,9 @@ export default async function handler(
       const {branch} = repo();
       const {doc} = await readFile(branch);
       return res.status(200).json(doc);
-    } catch {
-      return res.status(500).json({error: "Could not load locks."});
+    } catch (error) {
+      const detail = (error as Error)?.message || "Could not load locks.";
+      return res.status(500).json({error: detail});
     }
   }
   if (req.method !== "POST")
