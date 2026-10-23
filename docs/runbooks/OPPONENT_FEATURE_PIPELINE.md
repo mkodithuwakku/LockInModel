@@ -9,6 +9,11 @@ CHALLENGER_C1 MAE 5.11 vs B0 5.20 on 26,066 paired samples (RMSE 6.55 vs 6.76,
 r 0.706 vs 0.690); weekly mode over 9,918 player-weeks gives C1 total regret
 13,721.0 vs B0 15,907.5 (efficiency 90.1% vs 89.5%, best-game hit 0.723 vs
 0.701). These are retrospective fixture results, not prospective guarantees.
+
+Promoted to production: `lineup.apply_opponent_model()` overlays the model on
+baseline projections for players with a verified opponent tonight
+(`projection_source: "opponent_ridge"`), falling back to the baseline
+otherwise.
 **Prerequisites:** Epic 3 (`game_store.py` v2) and Epic 2 (`evaluator.py`) completed.  
 **Reference Document:** `docs/epics/OPPONENT_AWARE_PROJECTIONS.md`
 

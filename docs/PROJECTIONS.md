@@ -10,6 +10,10 @@ Every roster player has a projection independently of start eligibility. Bench, 
 
 Unusable records remain unavailable with an explanation. They never become invented zero forecasts. Rookie identity can use Sleeper's imported player ID; it does not require an invented NBA ID.
 
+## Opponent-aware overlay (`opponent_ridge`)
+
+After the baseline above is chosen, `lineup.apply_opponent_model()` replaces the forecast for players who have a verified game on the target date with a confirmed opponent and at least five prior observations. `features.FeatureBuilder` builds strictly pregame context — Dean Oliver possessions/pace, rolling 15-game opponent defensive rating and per-100-possession concessions, positional concession ratios, rest and home flags — and `model_ml.ComponentRidge` predicts each box-score component (PTS/REB/AST/STL/BLK/TOV/FG3M). The components overlay the baseline's full stat line and are rescored through `scoring.add_fantasy_points()`, so any league formula and milestone bonuses apply unchanged; the resulting profile is labeled `projection_source: "opponent_ridge"`. Training uses only games strictly before the target date, and any failure — sparse history, unconfirmed opponent, missing scoring inputs, or a fit error — keeps the baseline profile untouched. The challenger measured lower paired game MAE and weekly regret than the baseline policy on the 2024-25/2025-26 fixtures before promotion; retrospective results are not prospective guarantees.
+
 The projection carries source, as-of date, FP, stat components, and either observed sample/last-played metadata or the forecast provider update time. The public export allowlists every nested field. Forecasts are cached separately from observed games and never inserted as completed games. Real live refreshes also archive same-day pregame estimates for the NBA player pool in a separate table in the existing SQLite database, so next-day [above/below-projection badges](DAILY_BADGES.md#forecast-comparisons) use a saved benchmark.
 
 ## Small current-season samples
