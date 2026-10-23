@@ -99,7 +99,8 @@ They are not labeled as pickup recommendations.
 
 All player cards include a compact **Season badges** section: total awards,
 chaos (negative indicators), milestones, and variety (distinct types, shown as
-earned out of the 44 badge types). Expand
+earned out of the effective cap of 43, or 42 for ages 24–31, accounting for
+mutually exclusive age awards). Expand
 **Earned badges** for each earned type and its repeat count. Counts use the same
 league/season ledger as the race and include games before joining the roster.
 Unavailable history displays an unavailable message rather than zero; a covered

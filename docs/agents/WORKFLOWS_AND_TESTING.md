@@ -22,13 +22,13 @@ source .venv/bin/activate
 Always run all three checks before completing non-documentation changes:
 
 ```bash
-# 1. Python unit and regression tests (198 tests)
+# 1. Python unit and regression tests (214 tests)
 .venv/bin/python -m pytest -q
 
 # 2. Code formatting check
 .venv/bin/python -m black --check *.py tests
 
-# 3. Node.js frontend policy & client logic tests (38 tests)
+# 3. Node.js frontend policy & client logic tests (50 tests)
 node --test tests/*.test.cjs
 ```
 
@@ -39,15 +39,17 @@ When modifying a specific component, run its corresponding test file first:
 | :--- | :--- |
 | Core modeling & decisions | `.venv/bin/python -m pytest tests/test_core.py` |
 | Positional lineup optimizer | `.venv/bin/python -m pytest tests/test_lineup.py` |
+| Locked-player pinning & storage | `.venv/bin/python -m pytest tests/test_lineup_pinning.py` |
 | Projections & Sleeper parsing | `.venv/bin/python -m pytest tests/test_projections.py` |
 | Daily badges & leaderboards | `.venv/bin/python -m pytest tests/test_daily_badges.py tests/test_badge_awards.py` |
 | Season badge store & ledger | `.venv/bin/python -m pytest tests/test_badge_store.py` |
 | Season review aggregates | `.venv/bin/python -m pytest tests/test_season_review.py` |
+| Pickups & schedule-aware swaps | `.venv/bin/python -m pytest tests/test_pickups.py` |
 | SQLite game store | `.venv/bin/python -m pytest tests/test_game_store.py` |
 | Sleeper API / stats fallback | `.venv/bin/python -m pytest tests/test_sleeper.py tests/test_sleeper_stats.py` |
 | Static export & publication | `.venv/bin/python -m pytest tests/test_publication.py tests/test_pages.py` |
 | Practice simulator (Test Week) | `.venv/bin/python -m pytest tests/test_simulation.py` |
-| Client-side logic & policies | `node --test tests/insights.test.cjs tests/pages.test.cjs tests/season_review.test.cjs` |
+| Client-side logic & pinning | `node --test tests/insights.test.cjs tests/lineup_pinning.test.cjs tests/pages.test.cjs tests/season_review.test.cjs` |
 
 ---
 
@@ -95,3 +97,8 @@ When modifying a specific component, run its corresponding test file first:
 # Run end-of-day report using captured fixtures (no network required)
 .venv/bin/python main.py --date 2025-12-25
 ```
+
+### Vercel Serverless Lock Endpoint
+- Production URL: `https://lock-in-model.vercel.app/api/lock`
+- Reads current committed locks on `main`: `curl https://lock-in-model.vercel.app/api/lock`
+- Local implementation: `api/lock.ts` (TypeScript ESM handler) and `shared/locks-core.cjs` (CommonJS mutation core).

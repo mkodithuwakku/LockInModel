@@ -165,10 +165,13 @@ The expanded player card keeps a small NBA logo beside its team abbreviation abo
 
 ## Season totals
 
-The **Badge race** in [Season review](SEASON_REVIEW.md#season-badge-race) retains
-earned indicators for the whole season, even after the previous-night icons
-expire. It offers current-roster and NBA-wide views, every badge leaderboard,
-and total, negative, milestone, and variety leaders. Refreshes reuse the same
-award rules and update `badge_days` / `badge_awards` in the existing SQLite file.
-One player/badge/night counts once; ties remain eligible. Coverage reflects
-stored observations and genuine pregame forecasts, not invented past awards.
+The dedicated **Badge race** tab (`data-view="badges"`) retains earned indicators
+for the whole season, even after previous-night icons expire. It defaults to an
+NBA-wide view and provides a current-roster toggle, every individual badge
+leaderboard, and cards for total awards, negative (Chaos) leaders, milestones,
+and badge variety. Distinct badge variety is capped at 43 (or 42 for ages 24–31
+or unconfirmed birthdays) because the age-based awards (*The Unction* $\ge 32$ and
+*Young Boys FC* $\le 23$) are mutually exclusive. Refreshes reuse the same award
+rules and update `badge_days` / `badge_awards` in the existing SQLite file. One
+player/badge/night counts once; ties remain eligible. Coverage reflects stored
+observations and genuine pregame forecasts, not invented past awards.

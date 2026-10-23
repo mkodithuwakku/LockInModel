@@ -36,6 +36,8 @@
 | `notify.py` | SMTP transport with an explicit timeout |
 | `gui_select.py` | Compatibility launcher for the web dashboard |
 | `logger.py` | Console and optional file logging |
+| `api/lock.ts` | Vercel serverless function; validates lock mutations, handles CORS preflight, commits `state/locks.json` to `main` via GitHub Contents API |
+| `shared/locks-core.cjs` | Shared pure lock-document mutation and validation logic (CJS for Vercel/Node compatibility) |
 
 ## Request flow
 
@@ -239,6 +241,16 @@ counts, totals, negative/milestone counts, and variety. It exports no birthdays,
 private account information, or database. `seasonBadgeLeaders()` applies current
 roster versus NBA scope and competition ranks in the browser. No new service,
 website database, or scheduled job is needed. See [Badge race](SEASON_REVIEW.md#season-badge-race).
+
+## Locked-player pinning and serverless write bridge
+
+Sleeper lock-in leagues freeze a starter in their assigned slot once locked. Because the Sleeper API exposes no lock flag, managers flag locks manually.
+
+- **Storage (`state/locks.json`):** The one `state/` file intentionally committed to Git. Maps league IDs and matchup weeks to locked player records with slot index, timestamp, and locked FP. Mismatched weeks auto-expire.
+- **Serverless Bridge (`api/lock.ts` / `shared/locks-core.cjs`):** Deployed on Vercel at `https://lock-in-model.vercel.app/api/lock`. Handles CORS preflight, optional passcode check, and uses the GitHub Contents API to commit updates to `main` with 3x retry on 409 Conflict. Answers GET to return current locks.
+- **Daily Publication Sync:** `publication.py` runs `sync_remote_locks()` (`git fetch origin main && git merge --ff-only`) before refreshing reports so phone-written locks reach the static export.
+- **Optimizer Pinning:** `lineup.py` pre-filters pinned starters, removes them and their slots from Hungarian candidates, and renders their banked FP. When scheduled candidates are fewer than active slots, healthy idle players fill remaining slots as zero-projection placeholders.
+- **Client Mirror:** `web/insights.js`'s `repinLineup()` mirrors the pre-filtering and off-day fill logic in the browser, providing immediate optimistic re-pinning on toggle.
 
 ## Proposed future architecture
 

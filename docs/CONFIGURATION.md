@@ -104,7 +104,7 @@ The local Flask app accepts `POST /api/lock` with the same payload the serverles
 | `GITHUB_BRANCH` | Target branch; defaults to `main` |
 | `LOCKIN_ORIGIN` | Allowed cross-origin caller; defaults to `https://<repo-owner>.github.io` — set it only if Pages serves a custom domain |
 
-The function commits `state/locks.json` to `main` with a short backoff retry on concurrent-write conflicts. POSTs whose `Origin`/`Referer` header disagrees with the Pages origin are rejected; that check discourages casual abuse but is not real authentication — with `LOCKIN_PASSCODE` unset, anyone who finds the URL can write valid lock flags to the repo. Point the published site at it by setting the `lockin-lock-endpoint` meta tag in `web/index.html` to the function's full URL. With no endpoint configured — or before deployment — toggles still work as device-local optimistic flags; they just never reach the repo or the Mac. The Mac's `publication.py` fast-forwards `main` before analysis so phone-written locks are in the file it reads.
+The function commits `state/locks.json` to `main` with a short backoff retry on concurrent-write conflicts. POSTs whose `Origin`/`Referer` header disagrees with the Pages origin are rejected; that check discourages casual abuse but is not real authentication — with `LOCKIN_PASSCODE` unset, anyone who finds the URL can write valid lock flags to the repo. The published site is pointed at the deployed endpoint (`https://lock-in-model.vercel.app/api/lock`) via the `lockin-lock-endpoint` meta tag in `web/index.html`. The Mac's `publication.py` fast-forwards `main` before analysis so phone-written locks reach the morning report automatically.
 
 ## Forecast fallback and scoring display
 

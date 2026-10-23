@@ -108,12 +108,20 @@ SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `Foreca
    - Normal CDF calculates $P(\text{future score} > \text{current score})$.
    - Adjusts for stat rarity z-scores ($\ge 1.75$), small sample size ($<3$ games), and remaining schedule opportunities.
    - Outputs a heuristic score in $[0, 1]$. Value $\ge 0.5$ triggers `LOCK`, else `WAIT`.
-2. **Hungarian Positional Lineup Optimizer** (`lineup.py`):
-   - Matches eligible active slots (`PG`, `SG`, `SF`, `PF`, `C`, `G`, `F`, `UTIL`) to available players.
-   - Excludes injured (`OUT`, `IR`, `INACTIVE`) and off-day players.
-   - Exact maximum-weight assignment; runtime $O(S^2(P+S))$.
+2. **Hungarian Positional Lineup Optimizer & Pinning** (`lineup.py`, `web/insights.js`):
+   - **Pinned Starters:** Pre-filters locked players into their designated starter slot (`roster_slot` / index) and removes them and their slots from the candidate pool before running the solver. Pinned slots carry locked FP as banked scores.
+   - **Matching:** Matches remaining eligible active slots (`PG`, `SG`, `SF`, `PF`, `C`, `G`, `F`, `UTIL`) to available players with verified games.
+   - **Off-Day Fill:** When too few same-day players exist, idle healthy roster players fill open slots as zero-projection placeholders so the sheet is never vacant.
+   - **Runtime:** Exact maximum-weight assignment; runtime $O(S^2(P+S))$.
 3. **Daily Badges** (44 total indicators):
-   - 15 raw box-score leader badges (`sniper`, `fire`, `boards`, `bricks`, `thief`, `rejection`, `runner`, `dime`, `sandwich`, `merchant`, `heartbreak`, `shield`, `creator`, `coffee`, `magician`).
+   - 15 raw box-score leader badges (`sniper`, `fire`, `boards`, `bricks`, `thief`, `rejection`, `runner`, `dime`, `sandwich`, `merchant`, `heartbreak`, `shield` [requires $\ge 1$ STL and $\ge 1$ BLK], `creator`, `coffee`, `magician`).
    - 4 league-scored fantasy badges (`overachiever`, `underachiever`, `efficient`, `inefficient`).
    - 15 single-game stat milestones (points: 30–70; assists: 10–20; rebounds: 10–20; threes: 5, 10; steals: 10; blocks: 10). Only highest tier per stat awarded.
    - 10 contextual awards (Butterfingers, 3-game heater/cold spell, winning/losing MVP, along for the ride, home hero, away villain, Unction $\ge 32$, Young Boys $\le 23$).
+   - **Variety Cap:** Ceiling is 43 (or 42 for ages 24–31 / missing birthday) due to mutual exclusivity between Unction and Young Boys.
+4. **Schedule-Aware Add/Drop Analysis** (`pickups.py` `suggest_swap`):
+   - Pairs best On the Rise waiver add with the weakest compatible roster drop.
+   - Computes net FP across remaining games this week plus roughly one week horizon (3.5 games).
+   - Recommends `hold` when net gain $\le 0$, preventing late-week spot streaming from stranding rosters with inferior players.
+5. **Cross-Team Games to Watch** (`web/insights.js` `gamesToWatch`):
+   - Aggregates today's NBA matchups and ranks them by count of distinct rostered fantasy players across all user leagues.

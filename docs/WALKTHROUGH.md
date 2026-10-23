@@ -4,7 +4,7 @@
 
 A player may play several times during a fantasy week, but only one chosen performance counts in a lock-in format. The application evaluates whether the latest completed score is worth keeping or whether remaining opportunities justify waiting.
 
-It does not submit the decision to Sleeper. It also does not infer that you have already locked a player: existing lock selections are not imported.
+The app does not submit lock decisions to Sleeper. Because the Sleeper API exposes no lock flag, managers flag locked starters directly in LockIn via the lock icon on each roster row. Pinned starters freeze in their assigned starter slot with their banked score, preventing the daily optimizer from moving or benching them.
 
 ## Daily workflow
 
@@ -40,6 +40,8 @@ A single outstanding performance can be a good score to lock without indicating 
 
 It asks whether FP increased, whether minutes increased, how consistently the player exceeded their baseline, and whether unusually strong shooting or steals/blocks account for the improvement. An estimated projection is compared with a position-compatible roster alternative, preferring bench players when available.
 
+On the Rise also displays a **schedule-aware swap card** (`suggest_swap`). It pairs the top waiver candidate with the weakest compatible roster player, netting remaining games this week against approximately one more week of games (3.5 games). If the short-term schedule bump does not overcome the long-term downgrade (net FP $\le 0$), the card explicitly advises **Hold**.
+
 For imported leagues, every team's roster is used to identify unrostered players. For local sample teams, league ownership is unknown. During replay, imported ownership remains a current snapshot and must not be interpreted as historical availability.
 
 ## Scoring and data limitations
@@ -58,24 +60,28 @@ Discuss database upserts versus immutable replay, local availability versus stat
 
 Select a team to see the latest refresh’s **Recommended lineup** directly in the roster sheet. The summary shows the report day, projected FP total, and filled slots. Recommended starters occupy their assigned league positions; other players appear under Bench or reserve with exclusion reasons. Full roster, Lineup, and Bench filters use these displayed assignments. Player cards still open the same player details.
 
-The optimizer can promote bench players and move flexible players between eligible positions. Unfilled positions and partial inputs stay explicit; when no starts are available, a compact slot strip avoids a wall of empty cards. An unavailable or mismatched plan falls back to a clearly labeled synced roster. Test Week retains manual starter selection and a separate pregame preview.
+**Locked starters and off-day filling:**
+- **Pinned locks:** Tapping the lock icon on a roster row pins that player in their current Sleeper starter slot. Pinned slots carry a blue **LOCKED** status badge and display the player's banked score. The Hungarian optimizer pre-filters pinned slots and candidates, preventing locked starters from being displaced or moved to other slots.
+- **Off-day filling:** When a team has fewer scheduled players than active slots, the optimizer and client mirror fill the remaining slots with healthy idle players as zero-projection placeholders so every slot has a starter card.
+- **Position chips:** Each active slot displays a distinct color chip (`PG`, `SG`, `SF`, `PF`, `C`, `G`, `F`, `UTIL`).
 
-The date and Snapshot details identify when the plan was saved. Midnight does not erase it, and a failed refresh retains the older dated plan; freshness notices still apply to lock/pickup decisions. After adding or dropping players in Sleeper, refresh and publish from your Mac. Reload on the hosted site only reads that publication. The display never changes the actual Sleeper lineup. Check existing locks and tipoffs there before acting.
+## Application navigation
 
-NBA team abbreviations in roster cards include a small decorative team logo (14px, or 12px on phones). Logos load from the NBA CDN; unknown/free-agent teams and failed images retain text only.
-
-## Season review and badge race
-
-Switch to **Season review** in the main navigation to see every published team's season production, scored under that league's formula. Select a team card for its detailed breakdown:
-- **Production summaries:** Roster FP, FP per player appearance, coverage, top-3 contributor share, and aggregate box-score shooting percentages.
-- **Key players:** Season anchor (highest total FP), per-game leader (highest average), form leader (largest recent 5-game vs preceding 5-game change), and biggest swings (largest FP standard deviation).
-- **Season Badge race:** Tracks cumulative awards for all 44 badges across the season. Switch between **My roster** and **NBA-wide** views, review category leaders, or expand individual badge categories. Selecting any player opens their expanded card with season award counts and repeat counts.
+The sidebar and mobile bottom navigation provide seven dedicated views:
+1. **01 My teams:** Primary roster-first workspace, daily recommended lineup, and player details.
+2. **02 Games to watch:** Ranks today's NBA matchups by the count of distinct rostered fantasy players across all your active leagues. Includes game status and participating players.
+3. **03 Season review:** Current-roster aggregate season production (Roster FP, FP/appearance, box score, weekly production) and key player highlights (Season anchor, Per-game leader, Form leader, Biggest swings).
+4. **04 On the rise:** Waiver candidate screening, unrostered directory, and schedule-aware add/drop swap recommendations.
+5. **05 Badge race:** Full-season leaderboard tracking all 44 badge categories across the NBA or filtered to your current roster, with variety cap fraction (43 or 42).
+6. **06 Data alerts:** Operational notices, scoring gap warnings, and pin warnings (e.g. if a locked player leaves starters).
+7. **07 Test Week:** Offline practice simulator with morning/night transitions and score banking.
 
 ## Badge guide
 
 Select **Badge guide** in the top bar to inspect all 44 daily indicators in a scrollable reference dialog. The guide covers:
 - **Single-game milestones:** 30–70 points, 10–20 assists, 10–20 rebounds, 5–10 threes, 10 steals, and 10 blocks (highest qualifying tier awarded per stat).
-- **NBA-wide leaders:** Top-3 finishes in threes, field goals, boards, steals, blocks, minutes, assists, free throws, turnovers, and missed shots, plus double-doubles (☕) and triple-doubles (🎩).
-- **Contextual fantasy leaders:** League-scored leaders in wins/losses, home/away, ages 32+ and 23-and-younger, 3-game heater/cold-spell streaks, and assist-to-turnover margins (Butterfingers).
+- **NBA-wide leaders:** Top-3 finishes in threes, field goals, boards, steals, blocks, minutes, assists, free throws, turnovers, missed shots, Stock Expert ($\ge 1$ STL and $\ge 1$ BLK), double-doubles (☕), and triple-doubles (🎩).
+- **Contextual fantasy leaders:** League-scored leaders in wins/losses, home/away, ages 32+ (*The Unction*) and 23-and-younger (*Young Boys FC*), 3-game heater/cold-spell streaks, and assist-to-turnover margins (*Butterfingers*).
 - **League-scored projection surprises:** Above/below expectation comparisons powered by archived pregame forecasts.
+
 

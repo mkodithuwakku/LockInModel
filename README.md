@@ -328,6 +328,6 @@ The default daily slot is 7:00 AM America/Edmonton. The agent checks every 15 mi
 | [Model evaluation epic](docs/epics/MODEL_EVALUATION.md) | Proposed projection/weekly-lock evaluation, ML experiments, operational benchmarks, and later-branch rollout |
 | [Opponent-aware projection epic](docs/epics/OPPONENT_AWARE_PROJECTIONS.md) | Proposed architecture, source research, evaluation and kickoff backlog; no implementation |
 | [Static export efficiency epic](docs/epics/STATIC_EXPORT_EFFICIENCY.md) | Proposed shared identities, on-demand resources, caching, and compact JSON export; planning only |
-| [Locked-player pinning epic](docs/epics/LOCKED_PLAYER_PINNING.md) | Proposed serverless write bridge, optimizer pinning, and client-side lineup re-pinning; planning only |
+| [Locked-player pinning epic](docs/epics/LOCKED_PLAYER_PINNING.md) | Implemented serverless write bridge, optimizer pinning, and client-side lineup re-pinning |
 
 **Keep this README current with code changes.** [AGENTS.md](AGENTS.md) requires a documentation review for every implementation, dependency, configuration, or workflow change, with affected README sections, linked guides, and screenshots updated in the same change. The pull request template records that review. If documented behavior is unchanged, record why no README edit is needed; do not add filler or a running changelog here.

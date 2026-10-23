@@ -60,20 +60,23 @@ To maximize agent effectiveness and minimize unnecessary token expenditure:
 
 Do not read entire multi-thousand line files speculatively. Consult this index:
 - **Lock / Wait decision heuristics:** `decide.py`, `model.py`
+- **Locked-player pinning & state:** `state/locks.json`, `storage.py` (`load_locks`), `lineup.py` (`recommend_lineup`)
+- **Vercel lock endpoint & shared logic:** `api/lock.ts`, `shared/locks-core.cjs`
 - **Prior-season history blending (<10 games):** `season_history.py`
-- **Daily lineup optimizer (Hungarian algorithm):** `lineup.py`
+- **Daily lineup optimizer & off-day filling:** `lineup.py`, `web/insights.js` (`repinLineup`)
 - **External Sleeper forecasts & Poisson bonuses:** `projections.py`
 - **Daily badges (15 stat + 4 fantasy leaders):** `daily_badges.py`
 - **Milestones & contextual awards (Butterfingers, streaks):** `badge_awards.py`
 - **Season badge ledger in SQLite:** `badge_store.py`
 - **Season Review aggregations & key players:** `season_review.py`
-- **Waiver pickup screening (On the Rise):** `pickups.py`
+- **Waiver pickups & schedule-aware swap cards:** `pickups.py` (`find_pickups`, `suggest_swap`)
+- **Games to watch cross-team matchup ranking:** `web/insights.js` (`gamesToWatch`), `web/app.js`
 - **Sleeper import & fallback box scores:** `sleeper.py`, `sleeper_stats.py`
 - **SQLite game persistence & upserts:** `game_store.py`, `forecast_store.py`
 - **Schedule caching & remaining games:** `schedule.py`
 - **Static export & daily GitHub Pages publication:** `pages.py`, `publication.py`
 - **Offline Test Week practice simulator:** `simulation.py`
-- **Client-side presentation & derived form:** `web/insights.js`, `web/app.js`
+- **Client-side presentation, derived form, & views:** `web/insights.js`, `web/app.js`
 
 ### Verification commands
 

@@ -27,6 +27,13 @@
 - Daily contextual and milestone badges cover 44 indicators with a compact badge guide modal and SQLite pregame forecast comparison archive.
 - Observed-history bootstrap blends prior-season games into sparse current projections and weekly lock baselines without duplicate shrinkage.
 - Validated Sleeper / Sportradar game-level box-score fallback recovers finals when NBA Stats is unavailable or misses recent games.
+- Locked-player pinning freezes Sleeper lock-in starters in their assigned slot with banked scores, pre-filtering Hungarian optimizer candidates.
+- Vercel serverless bridge (`api/lock.ts`) commits lock toggles to `state/locks.json` on `main`; Mac publication pulls remote locks before analysis.
+- Off-day lineup filling populates open slots with healthy idle players as zero-projection placeholders so the roster sheet is never vacant.
+- Games to watch view aggregates and ranks today's NBA matchups across all imported fantasy leagues.
+- Dedicated Badge race navigation view provides an NBA-wide default and accounts for mutually exclusive age badges in variety caps.
+- Schedule-aware add/drop swap suggestions evaluate short-term schedules against a next-week horizon, advising hold when net gain is non-positive.
+- Stock Expert badge enforces at least one steal and one block requirement.
 
 ## Credential and Git history handling
 
