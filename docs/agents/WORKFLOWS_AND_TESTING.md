@@ -98,6 +98,15 @@ When modifying a specific component, run its corresponding test file first:
 .venv/bin/python main.py --date 2025-12-25
 ```
 
+### v2 Database Migration
+```bash
+# Copy legacy JSON-payload games into the normalized schema (source stays read-only)
+.venv/bin/python scripts/migrate_v2_db.py --src data/lockin.sqlite3 --dest data/experiment.sqlite3
+
+# Point the app at an isolated database instead of data/lockin.sqlite3
+LOCKIN_DB_PATH="data/experiment.sqlite3" .venv/bin/python app.py
+```
+
 ### Vercel Serverless Lock Endpoint
 - Production URL: `https://lock-in-model.vercel.app/api/lock`
 - Reads current committed locks on `main`: `curl https://lock-in-model.vercel.app/api/lock`
