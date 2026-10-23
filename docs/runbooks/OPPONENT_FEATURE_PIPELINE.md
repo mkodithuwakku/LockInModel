@@ -1,7 +1,7 @@
 # Implementation Runbook: Epic 1 — Opponent-Aware Feature Pipeline & Prediction Model
 
 **Branch:** `architecture-v2`  
-**Status:** Completed & verified on `architecture-v2`  
+**Status:** Completed & verified (commit `c7dec4e`)  
 
 Measured on the ingested 2024-25 + 2025-26 fixtures (52,948 player-games,
 `data/experiment.sqlite3`): game-mode walk-forward over 164 slate dates gives
