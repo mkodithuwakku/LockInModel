@@ -20,7 +20,7 @@ TEAM_FIELDS = (
 PLAYER_FIELDS = (
     "player player_id sleeper_id status decision note reason starter positions nba_team week "
     "last_game_date last_game_fp remaining_games_est fp_mean_recent fp_std_recent "
-    "sample_size baseline_source baseline_current_season_games baseline_prior_season_games baseline_window_games p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state history_source "
+    "sample_size baseline_source baseline_current_season_games baseline_prior_season_games baseline_window_games p_lock p_wait warnings roster_slot lineup_order injury_status schedule_state history_source decision_model "
     "is_locked locked_fp lock_game_date age"
 ).split()
 HISTORY_FIELDS = "date fp minutes pts reb ast stl blk tov".split()
