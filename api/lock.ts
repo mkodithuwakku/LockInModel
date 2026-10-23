@@ -1,6 +1,7 @@
 // Vercel serverless function: persists phone lock toggles to state/locks.json
 // on the main branch via the GitHub Contents API. Deploy with these env vars:
-//   LOCKIN_PASSCODE  shared secret checked against x-lockin-passcode (required)
+//   LOCKIN_PASSCODE  shared secret checked against x-lockin-passcode (optional;
+//                    unset means the endpoint accepts any schema-valid write)
 //   GITHUB_TOKEN     fine-grained PAT, Contents: Read and write on the repo (required)
 //   GITHUB_REPO      e.g. "mkodithuwakku/LockInModel" (required)
 //   GITHUB_BRANCH    defaults to "main"
@@ -43,9 +44,19 @@ function setCors(res: LockResponse): void {
 
 function authorized(header: string | string[] | undefined): boolean {
   const expected = process.env.LOCKIN_PASSCODE || "";
+  // With no passcode configured the endpoint accepts any schema-valid write;
+  // the origin check below is the only casual-abuse barrier.
+  if (!expected) return true;
   const given = Array.isArray(header) ? String(header[0]) : String(header ?? "");
-  if (!expected || expected.length !== given.length) return false;
+  if (expected.length !== given.length) return false;
   return timingSafeEqual(Buffer.from(given), Buffer.from(expected));
+}
+
+function originAllowed(req: LockRequest): boolean {
+  const header = req.headers["origin"] ?? req.headers["referer"];
+  const value = Array.isArray(header) ? header[0] : header;
+  if (!value) return true; // Non-browser callers send no Origin header.
+  return String(value).startsWith(corsOrigin());
 }
 
 function repo(): {repo: string; branch: string; token: string} {
@@ -111,6 +122,8 @@ export default async function handler(
   }
   if (req.method !== "POST")
     return res.status(405).json({error: "Method not allowed."});
+  if (!originAllowed(req))
+    return res.status(403).json({error: "Unexpected request origin."});
   if (!authorized(req.headers["x-lockin-passcode"]))
     return res.status(401).json({error: "Invalid passcode."});
   let payload;

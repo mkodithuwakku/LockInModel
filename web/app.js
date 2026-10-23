@@ -476,16 +476,7 @@ function lockEndpoint() {
     ?.content?.trim();
   return configured || (hosted ? null : "/api/lock");
 }
-function lockPasscode() {
-  let passcode = localStorage.getItem("lockin_passcode") || "";
-  if (!passcode) {
-    passcode =
-      window.prompt("Enter your LockIn passcode to sync this lock:")?.trim() ||
-      "";
-    if (passcode) localStorage.setItem("lockin_passcode", passcode);
-  }
-  return passcode;
-}
+
 function canLock(p, i) {
   const t = team();
   const row = t?.results?.[i];
@@ -506,8 +497,11 @@ async function postLock(endpoint, passcode, payload) {
     body: JSON.stringify(payload),
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(data.error || "Could not save the lock. Try again.");
+  if (!response.ok) {
+    const error = new Error(data.error || "Could not save the lock. Try again.");
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 async function toggleLock(i) {
@@ -553,18 +547,32 @@ async function toggleLock(i) {
     toast(locking ? "Marked locked on this device only." : "Lock flag removed on this device.");
     return;
   }
-  const remote = !endpoint.startsWith("/");
-  if (remote && !lockPasscode()) {
-    revert();
-    return;
-  }
+  const payload = {
+    league_id: t.league_id,
+    schedule_week: state.data?.locks_week,
+    action: locking ? "lock" : "unlock",
+    player,
+  };
   try {
-    await postLock(endpoint, localStorage.getItem("lockin_passcode") || "", {
-      league_id: t.league_id,
-      schedule_week: state.data?.locks_week,
-      action: locking ? "lock" : "unlock",
-      player,
-    });
+    // Open endpoints never need a passcode; a 401 means one is configured.
+    try {
+      await postLock(endpoint, localStorage.getItem("lockin_passcode") || "", payload);
+    } catch (e) {
+      if (e.status !== 401) throw e;
+      const passcode =
+        window.prompt("Enter your LockIn passcode to sync this lock:")?.trim() || "";
+      if (!passcode) {
+        revert();
+        return;
+      }
+      localStorage.setItem("lockin_passcode", passcode);
+      try {
+        await postLock(endpoint, passcode, payload);
+      } catch (retry) {
+        if (retry.status === 401) localStorage.removeItem("lockin_passcode");
+        throw retry;
+      }
+    }
     toast(locking ? "Locked in — pinned for this week." : "Lock flag removed.");
   } catch (e) {
     revert();
