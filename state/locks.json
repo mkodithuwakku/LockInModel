@@ -1,21 +1,10 @@
 {
   "version": 1,
-  "updated_at": "2026-10-23T02:12:04.337Z",
+  "updated_at": "2026-10-23T02:12:10.281Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
-      "locks": {
-        "test": {
-          "player_id": "test",
-          "player_name": "Endpoint Verify",
-          "canonical_name": "endpoint verify",
-          "roster_slot": "UTIL",
-          "slot_index": 9,
-          "locked_fp": 0,
-          "game_date": "2026-10-23",
-          "locked_at": "2026-10-23T02:12:04.337Z"
-        }
-      }
+      "locks": {}
     }
   }
 }
