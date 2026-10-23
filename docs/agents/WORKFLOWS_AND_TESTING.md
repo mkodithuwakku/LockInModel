@@ -46,6 +46,7 @@ When modifying a specific component, run its corresponding test file first:
 | Season review aggregates | `.venv/bin/python -m pytest tests/test_season_review.py` |
 | Pickups & schedule-aware swaps | `.venv/bin/python -m pytest tests/test_pickups.py` |
 | SQLite game store | `.venv/bin/python -m pytest tests/test_game_store.py` |
+| Evaluation harness | `.venv/bin/python -m pytest tests/test_evaluator.py` |
 | Sleeper API / stats fallback | `.venv/bin/python -m pytest tests/test_sleeper.py tests/test_sleeper_stats.py` |
 | Static export & publication | `.venv/bin/python -m pytest tests/test_publication.py tests/test_pages.py` |
 | Practice simulator (Test Week) | `.venv/bin/python -m pytest tests/test_simulation.py` |
@@ -105,6 +106,15 @@ When modifying a specific component, run its corresponding test file first:
 
 # Point the app at an isolated database instead of data/lockin.sqlite3
 LOCKIN_DB_PATH="data/experiment.sqlite3" .venv/bin/python app.py
+```
+
+### Offline Evaluation CLI
+```bash
+# Weekly lock-policy regret vs Oracle over a season's stored games
+.venv/bin/python evaluator.py --mode weekly --season 2026-27 --db data/experiment.sqlite3
+
+# Saved pregame forecast vs actual FP error (MAE/RMSE/bias/correlation)
+.venv/bin/python evaluator.py --mode game --season 2026-27 --db data/experiment.sqlite3
 ```
 
 ### Vercel Serverless Lock Endpoint
