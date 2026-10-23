@@ -141,7 +141,7 @@ flowchart TD
 | [game_store.py](game_store.py), [forecast_store.py](forecast_store.py), [badge_store.py](badge_store.py) | SQLite observations, incremental upserts, pregame forecast snapshots, and season badge awards |
 | [sleeper.py](sleeper.py), [sleeper_stats.py](sleeper_stats.py), [transport.py](transport.py), [capture.py](capture.py) | League import, fallback box-score reconciliation, cached/paced requests, historical capture |
 | [pages.py](pages.py), [publication.py](publication.py), [web/pages.js](web/pages.js) | Allowlisted export, local daily publication, wake catch-up, browser expiry, remote lock sync |
-| [api/lock.mts](api/lock.mts), [shared/locks-core.mjs](shared/locks-core.mjs) | Optional serverless write bridge that commits phone lock toggles to `state/locks.json` on `main` via the GitHub API |
+| [api/lock.ts](api/lock.ts), [shared/locks-core.cjs](shared/locks-core.cjs) | Optional serverless write bridge that commits phone lock toggles to `state/locks.json` on `main` via the GitHub API |
 | [main.py](main.py), [notify.py](notify.py) | Reports, delivery ledger, pickup cooldowns, SMTP |
 | [tests/](tests/), [docs/](docs/) | Regression checks and implementation guides |
 

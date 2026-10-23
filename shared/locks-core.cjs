@@ -2,11 +2,11 @@
  * Pure functions so offline Node tests cover the same rules the endpoint uses.
  */
 
-export function emptyDocument() {
+function emptyDocument() {
   return {version: 1, updated_at: null, leagues: {}};
 }
 
-export function canonicalName(name) {
+function canonicalName(name) {
   const normalized = String(name ?? "")
     .normalize("NFKD")
     .replace(/\p{M}/gu, "")
@@ -24,7 +24,7 @@ function olderWeek(stored, current) {
   return false;
 }
 
-export function validatePayload(body) {
+function validatePayload(body) {
   if (!body || typeof body !== "object" || Array.isArray(body))
     throw new Error("Expected a JSON lock request.");
   const league_id = String(body.league_id ?? "").trim();
@@ -64,7 +64,7 @@ export function validatePayload(body) {
   };
 }
 
-export function applyLock(doc, payload, now = new Date()) {
+function applyLock(doc, payload, now = new Date()) {
   const {league_id, schedule_week: week, action, player} = payload;
   const next = doc && typeof doc === "object" ? {...doc} : emptyDocument();
   const leagues = {...(next.leagues || {})};
@@ -93,3 +93,10 @@ export function applyLock(doc, payload, now = new Date()) {
   next.leagues = leagues;
   return next;
 }
+
+module.exports = {
+  applyLock,
+  canonicalName,
+  emptyDocument,
+  validatePayload,
+};

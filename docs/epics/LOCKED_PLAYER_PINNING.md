@@ -1,6 +1,6 @@
 # Epic proposal: locked-player pinning for daily recommended lineups
 
-**Status:** v1 implemented on `feature/locked-player-pinning` — storage schema, optimizer pinning, engine/export integration, `publication.py` remote lock sync, local `/api/lock` route, `api/lock.mts` + `shared/locks-core.mjs` serverless bridge, and client-side re-pinning, all covered by pytest and Node tests. Manual flags are manager-supplied and not verified against Sleeper. Still planned (not implemented): the `/matchups` auto-detection layer that derives definitive locks when a starter's counted score matches an earlier game instead of the latest one, and a deployed endpoint instance (env vars and meta tag are operator setup steps).
+**Status:** v1 implemented on `feature/locked-player-pinning` — storage schema, optimizer pinning, engine/export integration, `publication.py` remote lock sync, local `/api/lock` route, `api/lock.ts` + `shared/locks-core.cjs` serverless bridge, and client-side re-pinning, all covered by pytest and Node tests. Manual flags are manager-supplied and not verified against Sleeper. Still planned (not implemented): the `/matchups` auto-detection layer that derives definitive locks when a starter's counted score matches an earlier game instead of the latest one, and a deployed endpoint instance (env vars and meta tag are operator setup steps).
 
 **Prepared:** October 22, 2026.
 
@@ -75,7 +75,7 @@ The following constraints are verified against the live Sleeper API and LockIn c
       └─ 3. HTTPS POST (JSON + x-lockin-passcode)
             │
             ▼
-[Vercel Serverless Function] (`api/lock.mts`)
+[Vercel Serverless Function] (`api/lock.ts`)
       │
       ├─ 4. Validates passcode against process.env.LOCKIN_PASSCODE
       ├─ 5. Fetches state/locks.json from GitHub API (branch: main)
@@ -143,7 +143,7 @@ Locks are scoped strictly to `schedule_week`. When the schedule week advances (e
 
 ## 5. Serverless write endpoint contract (Vercel)
 
-A single Vercel TypeScript function located at `api/lock.mts` handles remote writes.
+A single Vercel TypeScript function located at `api/lock.ts` handles remote writes.
 
 ### 5.1 Endpoint specification
 - **Method:** `POST`
@@ -373,7 +373,7 @@ Create `tests/lineup_pinning.test.cjs` covering:
 3. Toggling lock state updates slot projected total to banked score.
 
 ### 12.3 Serverless function testing (Vercel)
-Test `api/lock.mts` locally using `vitest` or mock requests:
+Test `api/lock.ts` locally using `vitest` or mock requests:
 - Mock GitHub REST API GET and PUT endpoints.
 - Test valid lock, valid unlock, invalid passcode (401), conflict retry (409 -> 200).
 
@@ -399,7 +399,7 @@ Upon implementation, the following documentation must be updated in the same cha
    - Update architecture diagram to show the Vercel write bridge.
    - Note limitations: lock flags are manager-reported, not verified via Sleeper push.
 2. `docs/ARCHITECTURE.md`:
-   - Document `state/locks.json` and `api/lock.mts`.
+   - Document `state/locks.json` and `api/lock.ts`.
    - Update request flow and security boundary.
 3. `docs/CONFIGURATION.md`:
    - Add `LOCKIN_PASSCODE` configuration instructions.

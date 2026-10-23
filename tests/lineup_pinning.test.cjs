@@ -150,7 +150,7 @@ test("sleeper_id matches the lock record even when player_id differs", () => {
 });
 
 test("locks-core validates payloads and applies lock, unlock and week expiry", async () => {
-  const { validatePayload, applyLock, emptyDocument } = await import("../shared/locks-core.mjs");
+  const { validatePayload, applyLock, emptyDocument } = await import("../shared/locks-core.cjs");
   const body = {
     league_id: "1180000000000000000", schedule_week: 3, action: "lock",
     player: { player_id: "8155", player_name: "Pascal Siakam", roster_slot: "PF", slot_index: 4, locked_fp: 41.5, game_date: "2026-10-20" },
