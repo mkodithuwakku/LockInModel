@@ -49,6 +49,26 @@ def migrate(src, dest):
             if "refreshes" in tables
             else []
         )
+        managed = {
+            "games",
+            "refreshes",
+            "dim_teams",
+            "dim_players",
+            "fact_game_logs",
+            "dim_refreshes",
+        }
+        # Auxiliary stores sharing the file (forecast_snapshots, badge_* and any
+        # future tables) are not normalized; carry them over verbatim instead
+        # of leaving irreplaceable pregame forecast data behind.
+        auxiliary = []
+        for name, ddl in reader.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type='table'"
+        ):
+            if name in managed or name.startswith("sqlite_"):
+                continue
+            auxiliary.append(
+                (name, ddl, reader.execute("SELECT * FROM %s" % name).fetchall())
+            )
     finally:
         reader.close()
 
@@ -68,6 +88,13 @@ def migrate(src, dest):
         db.executemany(
             "INSERT OR REPLACE INTO dim_refreshes VALUES (?, ?, ?, ?)", refreshes
         )
+        for name, ddl, aux_rows in auxiliary:
+            db.execute(ddl.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS", 1))
+            cols = len(aux_rows[0]) if aux_rows else 1
+            db.executemany(
+                "INSERT OR IGNORE INTO %s VALUES (%s)" % (name, ",".join("?" * cols)),
+                aux_rows,
+            )
 
     expected_sums = tuple(
         sum(GameStore._number(row.get(stat)) for _, row in payloads)
@@ -103,6 +130,7 @@ def migrate(src, dest):
         "migrated": migrated,
         "sums": actual_sums,
         "refreshes": len(refreshes),
+        "auxiliary": {name: len(rows) for name, _, rows in auxiliary},
         "errors": errors,
     }
 
@@ -118,6 +146,8 @@ def main(argv=None):
         "from %(src)s to %(dest)s." % report
     )
     print("PTS/REB/AST sums:", report["sums"])
+    for name, count in sorted(report["auxiliary"].items()):
+        print("Auxiliary table %s: %d rows" % (name, count))
     for error in report["errors"]:
         print("ERROR:", error, file=sys.stderr)
     return 1 if report["errors"] else 0
