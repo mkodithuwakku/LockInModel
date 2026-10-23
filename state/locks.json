@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-23T02:14:19.493Z",
+  "updated_at": "2026-10-23T02:14:21.474Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -24,6 +24,16 @@
     "1415801499308580864": {
       "schedule_week": 1,
       "locks": {
+        "1713": {
+          "player_id": "1713",
+          "player_name": "Dejounte Murray",
+          "canonical_name": "dejounte murray",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 31.5,
+          "game_date": "2026-10-21",
+          "locked_at": "2026-10-23T02:14:21.474Z"
+        },
         "2055": {
           "player_id": "2055",
           "player_name": "Nickeil Alexander-Walker",
