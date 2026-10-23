@@ -128,8 +128,12 @@ prospective live-season metrics — but never train/tune against it.
 
 ### Biweekly model check
 
-The Ridge model refits on every refresh, but nothing tunes its knobs
-automatically. A ~2-week cadence keeps it honest:
+The Ridge model refits on every refresh; `model_check.py` evaluates and
+recommends knob changes every ~14 days via the `com.lockin.modelcheck`
+LaunchAgent (same 15-minute tick + wake catch-up as the publisher — see
+`docs/HOSTING.md`). It writes `state/model_check.json` plus an append-only
+`state/model_check_history.jsonl`. To run it manually — or understand what
+each section does:
 
 1. **Live-season scorecard** (prospective, real data):
    `.venv/bin/python evaluator.py --mode game --db data/lockin.sqlite3` —

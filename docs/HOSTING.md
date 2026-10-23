@@ -23,6 +23,19 @@ A filesystem lock prevents overlapping publisher processes. `state/publication.j
 
 No update deadline is guaranteed: macOS must run the job, Git credentials must remain usable, providers must respond, and GitHub Pages must deploy. Catch-up cannot recover a missed fantasy decision deadline. Logging out or powering off prevents execution until the user logs in again.
 
+## Biweekly model check
+
+`model_check.py` runs the same launchd pattern for the opponent-aware model: `com.lockin.modelcheck` ticks at minutes 00/15/30/45 and after login, and `run()` executes only when the last completed check is at least 14 days old — missed ticks coalesce into one run after wake, identical to the publisher. Each run produces prospective B0-vs-Ridge scorecards on the live database (game MAE, weekly lock regret, saved-forecast accuracy), then a λ×window×decay tuning sweep on the fixture database. Results append to `state/model_check_history.jsonl`; the latest report sits in `state/model_check.json`. Tuned values are recommended only — adopt them under `model:` in the effective config. Failed sections retry after a six-hour backoff, with per-section errors recorded rather than aborting the whole report.
+
+```bash
+.venv/bin/python model_check.py install   # register the LaunchAgent
+.venv/bin/python model_check.py status    # last result / error
+.venv/bin/python model_check.py run --force  # evaluate now
+launchctl bootout gui/$(id -u)/com.lockin.modelcheck  # uninstall
+```
+
+Logs live at `logs/model_check.log` and `logs/model_check-error.log`.
+
 ## Setup
 
 Connect the desired Sleeper account in the local dashboard first. The publisher reads `config.local.yaml`; it never replaces that file with temporary cloud defaults. Git must already authenticate to the GitHub repository through the OS credential helper.
