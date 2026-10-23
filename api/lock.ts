@@ -7,7 +7,7 @@
 //   LOCKIN_ORIGIN    allowed CORS origin; defaults to "https://<owner>.github.io"
 
 import {timingSafeEqual} from "node:crypto";
-import {applyLock, emptyDocument, validatePayload} from "./locks-core.mjs";
+import {applyLock, emptyDocument, validatePayload} from "../shared/locks-core.mjs";
 
 const PATH = "state/locks.json";
 const RETRIES = 3;

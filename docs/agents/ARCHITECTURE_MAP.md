@@ -34,7 +34,7 @@ This document is a high-density reference for agents navigating the backend, dat
 | `transport.py` | Rate-limited HTTP client with on-disk response caching, host pacing, and persistent failure cooldowns | `HTTP`, `CachedHTTP`, `DataUnavailable` |
 | `app.py` | Local Flask HTTP server; CSRF token validation, loopback restriction, background job worker | `/api/bootstrap`, `/api/dashboard`, `/api/test-week`, `/api/roster`, `/api/sync`, `/api/refresh`, `/api/lock` |
 | `api/lock.ts` | Optional Vercel serverless bridge: validates `x-lockin-passcode`, commits `state/locks.json` to `main` via the GitHub Contents API, retries conflicts | `handler()` |
-| `api/locks-core.mjs` | Shared pure lock-document logic for the endpoint (payload validation, lock/unlock, week expiry) | `validatePayload()`, `applyLock()`, `emptyDocument()` |
+| `shared/locks-core.mjs` | Shared pure lock-document logic for the endpoint (payload validation, lock/unlock, week expiry); kept outside `api/` so Vercel does not route it | `validatePayload()`, `applyLock()`, `emptyDocument()` |
 | `web/app.js` | Frontend presentation controller; routing, dialogs, team switching, rendering, player modals, dismiss handlers, lock toggle with optimistic POST and passcode prompt | DOM rendering, event listeners, `toggleLock()`, `postLock()` |
 | `web/insights.js` | Pure client-side calculations: recent form deltas, sparklines, performance colour baselines, badge formatting, roster sheet order, client-side lineup re-derivation (locks + placeholder fill) | `rosterSheet()`, `repinLineup()`, `performanceScore()`, `performanceBaseline()`, `formScore()` |
 

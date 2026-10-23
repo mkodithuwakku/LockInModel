@@ -1,6 +1,6 @@
 # Epic proposal: locked-player pinning for daily recommended lineups
 
-**Status:** v1 implemented on `feature/locked-player-pinning` — storage schema, optimizer pinning, engine/export integration, `publication.py` remote lock sync, local `/api/lock` route, `api/lock.ts` + `api/locks-core.mjs` serverless bridge, and client-side re-pinning, all covered by pytest and Node tests. Manual flags are manager-supplied and not verified against Sleeper. Still planned (not implemented): the `/matchups` auto-detection layer that derives definitive locks when a starter's counted score matches an earlier game instead of the latest one, and a deployed endpoint instance (env vars and meta tag are operator setup steps).
+**Status:** v1 implemented on `feature/locked-player-pinning` — storage schema, optimizer pinning, engine/export integration, `publication.py` remote lock sync, local `/api/lock` route, `api/lock.ts` + `shared/locks-core.mjs` serverless bridge, and client-side re-pinning, all covered by pytest and Node tests. Manual flags are manager-supplied and not verified against Sleeper. Still planned (not implemented): the `/matchups` auto-detection layer that derives definitive locks when a starter's counted score matches an earlier game instead of the latest one, and a deployed endpoint instance (env vars and meta tag are operator setup steps).
 
 **Prepared:** October 22, 2026.
 
