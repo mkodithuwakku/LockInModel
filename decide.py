@@ -29,6 +29,7 @@ def per_player_week_decision(
     remaining_games=UNSET,
     career_prior=UNSET,
     previous_games=None,
+    future_mus=None,
 ):
     reference = reference or dt.date.today()
     start, end = get_week_bounds(reference)
@@ -138,7 +139,9 @@ def per_player_week_decision(
         baseline = rolling_baseline(
             base, cfg["decision"]["lookback_games"], cfg, player_name, career_prior
         )
-        rec = lock_recommendation(last, remaining_games, baseline, cfg)
+        rec = lock_recommendation(
+            last, remaining_games, baseline, cfg, future_mus=future_mus
+        )
         if not np.isfinite(rec["p_lock"]):
             return unavailable("DATA_UNAVAILABLE", "Model inputs are not finite.")
         result.update(

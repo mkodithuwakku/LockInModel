@@ -202,11 +202,19 @@ def rarity_boost(
 
 
 def probability_future_beats_current(
-    current_fp: float, remaining_games: int, fp_mean: float, fp_std: float
+    current_fp: float,
+    remaining_games: int,
+    fp_mean: float,
+    fp_std: float,
+    future_mus=None,
 ) -> float:
     """
     Approximate P(max of `remaining_games` future games > current_fp) using a Normal model,
     with robust guards for early-season/tiny samples.
+
+    ``future_mus`` optionally supplies a per-game mean for each remaining
+    opportunity (e.g. opponent-adjusted Ridge projections); missing/invalid
+    entries and length mismatches fall back to the uniform ``fp_mean``.
     """
     log.debug(
         f"P(max>c) with c={_fmt2(current_fp)}, n={remaining_games}, mu={_fmt2(fp_mean)}, sd={_fmt2(fp_std)}"
@@ -221,9 +229,18 @@ def probability_future_beats_current(
         log.debug(f"[normal] no-variance fallback → p(max>c)={_fmt2(p)}")
         return p
 
+    if future_mus is not None:
+        mus = [
+            float(m) if isinstance(m, (int, float)) and np.isfinite(m) else fp_mean
+            for m in list(future_mus)[:remaining_games]
+        ]
+        mus += [fp_mean] * (remaining_games - len(mus))
+    else:
+        mus = [fp_mean] * remaining_games
+
     # If sd effectively zero, deterministic compare
     if fp_std <= 1e-6:
-        p = 1.0 if fp_mean > current_fp else 0.0
+        p = 1.0 if max(mus) > current_fp else 0.0
         log.debug(
             f"[normal] sd≈0 fallback → p(max>c)={_fmt2(p)} (mu {('>' if p==1.0 else '<=')} current)"
         )
@@ -234,18 +251,22 @@ def probability_future_beats_current(
     def Phi(x):  # std normal CDF
         return 0.5 * (1.0 + erf(x / sqrt(2.0)))
 
-    z = (current_fp - fp_mean) / fp_std
-    p_le_c = Phi(z)
-    p_all_le_c = (p_le_c) ** remaining_games
+    p_all_le_c = 1.0
+    for mu in mus:
+        p_all_le_c *= Phi((current_fp - mu) / fp_std)
     p = 1.0 - p_all_le_c
     log.debug(
-        f"[normal] z={_fmt2(z)} Phi(z)={_fmt2(p_le_c)} n={remaining_games} all<=c={_fmt2(p_all_le_c)} p(max>c)={_fmt2(p)}"
+        f"[normal] n={remaining_games} all<=c={_fmt2(p_all_le_c)} p(max>c)={_fmt2(p)}"
     )
     return float(np.clip(p, 0.0, 1.0))
 
 
 def lock_recommendation(
-    current_row: pd.Series, remaining_games: int, baseline: dict, cfg: dict
+    current_row: pd.Series,
+    remaining_games: int,
+    baseline: dict,
+    cfg: dict,
+    future_mus=None,
 ) -> dict:
     """Combine signals into a final lock/wait recommendation, with early-season guards."""
     log.debug(
@@ -262,6 +283,7 @@ def lock_recommendation(
         remaining_games=int(remaining_games),
         fp_mean=float(fp_mean) if fp_mean is not None else np.nan,
         fp_std=float(fp_std) if fp_std is not None else np.nan,
+        future_mus=future_mus,
     )
     p_lock = 1.0 - p_future_beats
 

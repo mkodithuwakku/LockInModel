@@ -509,6 +509,58 @@ def build_dashboard(
                 value = tile_map.get((pid, str(game["date"])), baseline)
                 if isinstance(value, (int, float)) and math.isfinite(value):
                     game["proj_fp"] = round(float(value), 1)
+        # Upgrade decided rows to opponent-aware per-game probabilities; the B0
+        # result stands whenever no ridge tile exists for the remaining games.
+        for row in rows:
+            if row.get("decision") not in ("LOCK", "WAIT") or not row.get(
+                "remaining_games_est"
+            ):
+                continue
+            pid = str(row.get("player_id") or "")
+            last_date = str(row.get("last_game_date") or "")
+            mus = [
+                tile_map.get((pid, str(g["date"])))
+                for g in sorted(
+                    (
+                        g
+                        for g in row.get("week_games") or []
+                        if g.get("status") in ("pre_game", "scheduled")
+                        and str(g["date"]) > last_date
+                    ),
+                    key=lambda g: g["date"],
+                )
+            ]
+            if not mus or all(m is None for m in mus):
+                continue
+            try:
+                prior = provider.prior(pid, weights, reference)
+            except (DataUnavailable, ValueError):
+                prior = None
+            redone = per_player_week_decision(
+                row["player"],
+                observed[observed.PLAYER_ID.astype(str) == pid],
+                weights,
+                cfg,
+                pid,
+                reference=reference,
+                remaining_games=row["remaining_games_est"],
+                career_prior=prior,
+                previous_games=(
+                    fallback[fallback.PLAYER_ID.astype(str) == pid]
+                    if fallback is not None and not fallback.empty
+                    else None
+                ),
+                future_mus=mus,
+            )
+            if redone.get("decision") in ("LOCK", "WAIT"):
+                row.update(
+                    decision=redone["decision"],
+                    status=redone["status"],
+                    p_lock=redone["p_lock"],
+                    p_wait=redone["p_wait"],
+                    reason=redone.get("reason", row.get("reason")),
+                    decision_model="opponent_ridge",
+                )
         from projections import forecast_profile
 
         for row in rows:

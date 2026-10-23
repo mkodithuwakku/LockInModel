@@ -109,15 +109,16 @@ The larger prior/rookie guard applies to tiny samples. The configured absolute m
 
 ## 6. Probability of a better future game
 
-Assume future scores are independent draws from the same `Normal(μ, σ)` distribution. For candidate score `c` and `n` remaining games:
+Assume future scores are independent draws from `Normal(μ_i, σ)` where each remaining game `i` has its own mean. For candidate score `c` and `n` remaining games:
 
 ```text
-z = (c − μ) / σ
-P(one future score ≤ c) = Φ(z)
-P(all n future scores ≤ c) = Φ(z)^n
-P(at least one future score > c) = 1 − Φ(z)^n
-initial p_lock = Φ(z)^n
+P(game i ≤ c) = Φ((c − μ_i) / σ)
+P(all n future scores ≤ c) = Π_i Φ((c − μ_i) / σ)
+P(at least one future score > c) = 1 − Π_i Φ((c − μ_i) / σ)
+initial p_lock = Π_i Φ((c − μ_i) / σ)
 ```
+
+When the engine has opponent-aware Ridge tiles for the player's remaining games, `future_mus` supplies those per-game means (μ_i = the tile projection, including rest and venue); games without a ridge value and any length mismatch fall back to the uniform baseline mean `μ`. Without `future_mus` the model degenerates to `Φ(z)^n` as before.
 
 Special cases in `probability_future_beats_current()`:
 
