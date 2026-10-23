@@ -1,14 +1,12 @@
 # Epic proposal: projection, lock-policy, and backend evaluation
 
-**Status:** planning only; no evaluator, training job, schema migration, or UI implemented.
+**Status:** implemented and merged to `main` — offline evaluation engine in `evaluator.py`, walk-forward game backtests, sequential weekly-lock regret vs Oracle, hyperparameter grid search (`--mode tune`), and biweekly macOS LaunchAgent `model_check.py` (`com.lockin.modelcheck`).
 
-**Prepared:** October 21, 2026.
+**Prepared:** October 21, 2026. Updated October 23, 2026.
 
-**Reviewed baseline:** source commit `5f63fda`.
+**Reviewed baseline:** source commit `61c1c92` / `c5a33ac`.
 
-**Development boundary:** the user wants evaluation and opponent factoring developed
-on a **separate branch later**. Do not create that branch, start training, change
-production weights, or add scheduled work as part of this documentation task.
+**Delivery summary:** Evaluator implemented offline against `fact_game_logs` and fixture tables; benchmarks verified 26,066 paired game samples and 9,918 player-weeks. Automated model checks log to `state/model_check.json` and `state/model_check_history.jsonl`. See implementation runbook `docs/runbooks/EVALUATION_HARNESS.md`.
 
 ## 1. Purpose and delivery order
 

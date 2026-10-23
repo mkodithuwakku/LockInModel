@@ -252,19 +252,18 @@ Sleeper lock-in leagues freeze a starter in their assigned slot once locked. Bec
 - **Optimizer Pinning:** `lineup.py` pre-filters pinned starters, removes them and their slots from Hungarian candidates, and renders their banked FP. When scheduled candidates are fewer than active slots, healthy idle players fill remaining slots as zero-projection placeholders.
 - **Client Mirror:** `web/insights.js`'s `repinLineup()` mirrors the pre-filtering and off-day fill logic in the browser, providing immediate optimistic re-pinning on toggle.
 
+## Opponent-aware projections and model evaluation
+
+The system implements component-level opponent modeling and reproducible offline evaluation:
+
+- **Feature Engineering (`features.py`):** `FeatureBuilder` extracts strictly pregame features from prior box scores: Dean Oliver possessions and pace, rolling 15-game opponent defensive rating (DefRtg) and per-100-possession concessions (PTS, REB, AST, STL, BLK, TOV, FG3M), opponent positional concession ratios vs league means, schedule rest (scheduled unplayed games count toward rest), and home/away venue. All windows shift past the game date; missing data falls back gracefully to neutral values (ratios 1.0, league means).
+- **Component Ridge Regression (`model_ml.py`):** Trains one closed-form Ridge model per box-score component ($\beta = (X^TX + \lambda I)^{-1}X^Ty$, $\lambda=10$, unpenalized intercept) with nonnegative clamping. `predict_fp()` rescores predicted components through each league's exact formula in `scoring.py` so custom weights, milestone bonuses, and approximations apply accurately. Configured via `model_settings(cfg)` with overrides under `model:` in YAML.
+- **Matchup Tiles & Profiles (`lineup.py`, `engine.py`):** `apply_opponent_model()` evaluates every unplayed game tile in `week_games`, attaching matchup-specific `proj_fp` (e.g. Wednesday vs CHA differs from Friday vs BOS). The target date's projection also overlays the player profile as `projection_source: "opponent_ridge"`.
+- **Opponent-Aware Lock Decisions (`decide.py`, `model.py`):** When opponent-aware projections exist for a player's remaining games, `probability_future_beats_current()` calculates joint probability using per-game means $\mu_i$ ($P = \prod \Phi((c - \mu_i)/\sigma)$) and tags the decision with `decision_model: "opponent_ridge"`.
+- **Evaluation Harness (`evaluator.py`):** Evaluates forecast error (MAE, RMSE, bias, Pearson $r$) and weekly lock policy regret against an Oracle upper bound. Supports walk-forward date-by-date backtests and hyperparameter grid sweeps (`--mode tune`).
+- **Biweekly Model Check (`model_check.py`):** Native macOS LaunchAgent (`com.lockin.modelcheck`) checks every 15 minutes, runs when $\ge 14$ days elapsed, and records prospective scorecards and fixture tuning sweeps in `state/model_check.json` and append-only `state/model_check_history.jsonl`.
+
 ## Proposed future architecture
-
-- The [backend evaluation proposal](epics/MODEL_EVALUATION.md) describes separate
-  modules for game forecasts, sequential weekly locks, calibration experiments,
-  and operational/data-quality scorecards. It shares the opponent epic’s future
-  archive contracts. Both are documentation-only and reserved for a separate
-  development branch later; no evaluation pipeline or training job is installed.
-
-- [Opponent-aware projections](epics/OPPONENT_AWARE_PROJECTIONS.md) is a research
-  and kickoff proposal, separate from the implemented contracts above. It proposes
-  versioned input/forecast records in the existing local database, shared per-game
-  stat distributions, league-specific rescoring, and static report delivery. No
-  proposed table, adapter, model, or scheduled job has been added.
 
 - [Static export efficiency](epics/STATIC_EXPORT_EFFICIENCY.md) proposes shared
   player identities, on-demand directory/history assets, version-aware caching,

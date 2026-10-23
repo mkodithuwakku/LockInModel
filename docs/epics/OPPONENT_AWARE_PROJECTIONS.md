@@ -1,15 +1,9 @@
 # Epic proposal: opponent-aware player projections
 
-**Status:** proposed; not implemented or approved for implementation.  
-**Prepared:** October 21, 2026.  
-**Code baseline reviewed:** `2961775`.  
-**Scope of this change:** research and documentation only. No model, database,
-provider, scheduler, UI, or publication behavior changes.
-
-**Development plan:** evaluation and opponent factoring will be implemented on a
-separate branch later, at the user’s direction. No branch is created now. The
-[backend evaluation epic](MODEL_EVALUATION.md) expands OPP-04 and OPP-11 into shared
-per-game and weekly-lock scorecards, plus operational benchmarks.
+**Status:** implemented and promoted to production on `main` — pregame features in `features.py`, closed-form Ridge component regressions in `model_ml.py`, tile projections (`proj_fp`) in `lineup.py`, and opponent-adjusted lock/wait decisions (`future_mus`) in `decide.py`/`model.py`. Verified on historical fixtures with a 13.7% reduction in weekly lock regret.  
+**Prepared:** October 21, 2026. Updated October 23, 2026.  
+**Code baseline reviewed:** `61c1c92` / `eb4306a`.  
+**Delivery summary:** Feature pipeline and component model developed on `architecture-v2`, verified via `evaluator.py`, and merged to `main`. See implementation runbook `docs/runbooks/OPPONENT_FEATURE_PIPELINE.md`.
 
 ## 1. Outcome and recommendation
 

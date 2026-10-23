@@ -109,3 +109,20 @@ The function commits `state/locks.json` to `main` with a short backoff retry on 
 ## Forecast fallback and scoring display
 
 Current-season Sleeper / RotoWire forecasts are retrieved during live refresh for imported players, with a six-hour cache. No credentials, new database, extra scheduler, or per-player configuration are needed. When current game history is absent, these forecasts precede the historical fallback and are rescored with each league's weights. See [Projections](PROJECTIONS.md) for expected milestone bonuses. Approved scoring adjustments appear inside player details under Scoring method rather than Data alerts.
+
+## Opponent-aware model settings
+
+The opponent-aware Ridge overlay (`model_ml.py`) reads hyperparameter knobs from the optional `model:` mapping in `config.local.yaml` (falling back to `config.yaml` defaults):
+
+```yaml
+model:
+  ridge_lambda: 10.0      # L2 regularization weight; higher = more shrinkage toward baseline
+  feature_window: 15      # Rolling game window for opponent DefRtg and concessions
+  player_decay: 0.92      # Exponential recency weighting for player historical form
+  player_lookback: 10     # Max games evaluated for player feature vector
+  min_player_games: 5     # Minimum prior games before enabling opponent overlay for a player
+  min_train_rows: 100     # Minimum training rows required before fitting the component models
+```
+
+These knobs apply to production lineup projections, individual game tiles, the weekly challenger policy, and walk-forward backtests. Run `.venv/bin/python evaluator.py --mode tune` to perform a grid search on fixture data and obtain recommended values, or let the biweekly `model_check.py` LaunchAgent log tuning recommendations to `state/model_check.json`. Setting `min_train_rows: 999999` cleanly disables the overlay without code changes, falling back to the uniform baseline.
+

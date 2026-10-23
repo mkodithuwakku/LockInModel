@@ -30,7 +30,8 @@ This document is a high-density reference for agents navigating the backend, dat
 | `storage.py` | Loads canonical `config.local.yaml` (falling back to `config.yaml`); atomic JSON and YAML writes; weekly lock-flag document for `state/locks.json` | `load_cfg()`, `save_cfg()`, `write_json()`, `load_locks()`, `save_locks()`, `locks_for_league()`, `apply_lock()` |
 | `simulation.py` | Manages offline Test Week simulator state, phase transitions (morning/night), banked scores, and revisions | `load_test_week()`, `advance_night()`, `bank_score()` |
 | `publication.py` | Local daily scheduled exporter to `gh-pages`; LaunchAgent installation, retry ledger, deployment confirmation; fast-forwards `main` before analysis to absorb phone lock commits | `publish_due()`, `run_publication()`, `install_agent()`, `sync_remote_locks()` |
-| `evaluator.py` | Offline evaluation harness: per-game forecast metrics (MAE/RMSE/bias/correlation), walk-forward game-forecast backtests, and sequential weekly lock-policy regret vs Oracle; B0 calls the production decision as a black box with explicit `remaining_games`/`career_prior` so no network occurs | `compute_forecast_metrics()`, `evaluate_game_forecasts()`, `evaluate_game_backtest()`, `simulate_weekly_lock()`, `evaluate_season_weekly_policy()` |
+| `model_check.py` | Biweekly prospective scorecard and hyperparameter tuning sweep; `com.lockin.modelcheck` LaunchAgent checks every 15 min and runs when $\ge 14$ days elapsed; logs to `state/model_check.json` and `state/model_check_history.jsonl` | `check_due()`, `run()`, `install_agent()`, `status()` |
+| `evaluator.py` | Offline evaluation harness: per-game forecast metrics (MAE/RMSE/bias/correlation), walk-forward game-forecast backtests, and sequential weekly lock-policy regret vs Oracle; B0 calls the production decision as a black box with explicit `remaining_games`/`career_prior` so no network occurs | `compute_forecast_metrics()`, `evaluate_game_forecasts()`, `evaluate_game_backtest()`, `simulate_weekly_lock()`, `evaluate_season_weekly_policy()`, `tune_ridge()` |
 | `features.py` | Opponent-aware pregame features from box scores only: Dean Oliver possessions/pace, rolling 15-game opponent defensive rating and per-100-possession concessions, positional concession ratios, rest/back-to-back and home flags; all rolling windows are shifted so a game on date T uses only games strictly before T | `FeatureBuilder`, `team_game_table()`, `training_matrix()`, `features_for()` |
 | `model_ml.py` | Closed-form Ridge component model (one regression per PTS/REB/AST/STL/BLK/TOV/FG3M) over pregame features; nonnegative predictions rescored through `scoring.add_fantasy_points()` so league formulas and bonuses apply unchanged | `ComponentRidge`, `ridge_fit()`, `ridge_predict()` |
 | `pages.py` | Filters dashboard data to public allowlisted fields; exports static JSON, HTML, CSS, JS, and image assets | `export_site()`, `refresh_report()`, `public_report()` |
@@ -78,6 +79,8 @@ SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `Foreca
 - `state/test-week.json`: Current state of the offline practice simulator (clock, revision, banked scores, roster edits).
 - `state/email-delivery.json`: Delivery ledger suppressing duplicate daily emails.
 - `state/locks.json`: Manager-reported Sleeper lock flags keyed by league and matchup week — the one `state/` file intentionally committed, shared between the phone write path and the Mac publication.
+- `state/model_check.json`: Latest biweekly model evaluation report and tuning recommendations.
+- `state/model_check_history.jsonl`: Append-only historical log of biweekly model checks.
 - `data/fixtures/2025-26/`: Checksum-verified Parquet tables for offline Test Week (`games.parquet`, `schedule.parquet`, `priors.parquet`).
 
 ---
@@ -114,10 +117,13 @@ SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `Foreca
 
 1. **Lock/Wait Decision** (`decide.py`, `model.py`):
    - Computes weighted recent mean and standard deviation with exponential decay (default `d=0.92`).
-   - Normal CDF calculates $P(\text{future score} > \text{current score})$.
+   - When opponent-aware Ridge predictions exist for remaining matchups, `probability_future_beats_current()` takes per-game means $\mu_i$:
+     $$P(\text{all remaining } \le c) = \prod_i \Phi\left(\frac{c - \mu_i}{\sigma}\right)$$
+     The row is tagged with `decision_model: "opponent_ridge"`. Games without Ridge projections fall back to the uniform baseline mean $\mu$.
    - Adjusts for stat rarity z-scores ($\ge 1.75$), small sample size ($<3$ games), and remaining schedule opportunities.
    - Outputs a heuristic score in $[0, 1]$. Value $\ge 0.5$ triggers `LOCK`, else `WAIT`.
-2. **Hungarian Positional Lineup Optimizer & Pinning** (`lineup.py`, `web/insights.js`):
+2. **Hungarian Positional Lineup Optimizer & Opponent Tile Projections** (`lineup.py`, `web/insights.js`):
+   - **Matchup-Specific Ridge Tiles:** `lineup.apply_opponent_model()` scores every unplayed `week_games` matchup tile with an opponent-adjusted projection (`proj_fp`). Tonight's game also updates the player's primary profile with `projection_source: "opponent_ridge"`.
    - **Pinned Starters:** Pre-filters locked players into their designated starter slot (`roster_slot` / index) and removes them and their slots from the candidate pool before running the solver. Pinned slots carry locked FP as banked scores.
    - **Matching:** Matches remaining eligible active slots (`PG`, `SG`, `SF`, `PF`, `C`, `G`, `F`, `UTIL`) to available players with verified games.
    - **Off-Day Fill:** When too few same-day players exist, idle healthy roster players fill open slots as zero-projection placeholders so the sheet is never vacant.

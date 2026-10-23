@@ -87,7 +87,7 @@ Website publication is separate: a native macOS LaunchAgent targets 7:00 AM Amer
 node --test tests/*.test.cjs
 ```
 
-Tests prohibit sockets and cover normalization, generic bonus thresholds, foul/rebound fallbacks, sparse histories, future-data exclusion, failure cooldowns, import atomicity, roster editing, pickup signals, and email guards. Store tests cover correction upserts, failed-refresh retention, forecast snapshots, and season badge award ledgers. Dedicated pinning tests (`tests/test_lineup_pinning.py`) cover slot freezing, off-day blocking, and week expiry. Publisher tests cover daily slots, remote lock sync, retries, pending deployment confirmation, and exported files pushed to a temporary local Git remote. Node checks (`tests/*.test.cjs`, 50 tests) cover hosted report policies, recent form deltas, performance colour baselines, client-side lineup re-pinning parity, Games to watch ranking, and Season Review aggregates. Real-fixture tests skip on a clean checkout until capture has run. Manual browser checks are separate; CI does not include an automated browser suite or a physical sleep/wake test.
+Tests prohibit sockets and cover normalization, generic bonus thresholds, foul/rebound fallbacks, sparse histories, future-data exclusion, failure cooldowns, import atomicity, roster editing, pickup signals, and email guards. Store tests cover correction upserts, failed-refresh retention, forecast snapshots, and season badge award ledgers. Dedicated pinning tests (`tests/test_lineup_pinning.py`) cover slot freezing, off-day blocking, and week expiry. Model and feature tests (`tests/test_features.py`, `tests/test_model_ml.py`, `tests/test_model_check.py`) cover possession and pace derivations, opponent defensive ratings, closed-form Ridge solving, and LaunchAgent check intervals. Publisher tests cover daily slots, remote lock sync, retries, pending deployment confirmation, and exported files pushed to a temporary local Git remote. Node checks (`tests/*.test.cjs`, 52 tests) cover hosted report policies, recent form deltas, performance colour baselines, client-side lineup re-pinning parity, Games to watch ranking, and Season Review aggregates. Real-fixture tests skip on a clean checkout until capture has run. Manual browser checks are separate; CI does not include an automated browser suite or a physical sleep/wake test.
 
 The Flask app binds only to loopback and is intended for one local user. The separately hosted [GitHub Pages dashboard](HOSTING.md) serves static reports without exposing Flask or allowing edits.
 
@@ -120,6 +120,16 @@ Initial setup publishes the branch, configures Pages to serve it, and requests t
 ### Phone lock endpoint
 
 The serverless bridge in `api/lock.ts` (with `shared/locks-core.cjs`) is deployed live at `https://lock-in-model.vercel.app/api/lock` and configured in `web/index.html`. It accepts GET requests to read current locks and POST requests to persist lock toggles to `state/locks.json` on `main`. The endpoint validates the passcode (when configured), payload schema, and league/week/player identity, then commits to `main` via the GitHub Contents API with conflict backoff retries. Flags whose stored week differs from the current fantasy week are ignored by the engine and replaced by the next write. When offline or unreachable, toggles still work as device-local optimistic flags in the browser.
+
+### Biweekly model check
+
+`model_check.py` runs a macOS LaunchAgent (`com.lockin.modelcheck`) that checks every 15 minutes and executes every 14+ days. It evaluates prospective scorecards on the live database and runs a $\lambda \times \text{window} \times \text{decay}$ tuning sweep on fixtures, writing results to `state/model_check.json` and `state/model_check_history.jsonl`:
+
+```bash
+.venv/bin/python model_check.py install
+.venv/bin/python model_check.py status
+.venv/bin/python model_check.py run --force  # run immediately
+```
 
 ## Database maintenance
 

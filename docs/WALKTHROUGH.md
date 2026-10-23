@@ -10,7 +10,7 @@ The app does not submit lock decisions to Sleeper. Because the Sleeper API expos
 
 Open the dashboard and choose a team. A compact header leads directly to the roster sheet; summary counters and supporting context follow below the full roster. The roster shows the latest score, recent baseline, remaining opportunities, and a decision status. Open a player to inspect actual observed game history and the explanation behind the recommendation.
 
-The dashboard uses a compact neutral-charcoal lineup layout with colored position slots, small headshots, NBA team/injury labels, and a seven-day opponent strip. Recommended starters from the latest refresh, bench, and reserve players are grouped separately. Upcoming game tiles show **Proj** fantasy points for each matchup across the week, using the saved per-game baseline without opponent adjustment. Completed performances show observed **Final** points; missing values stay dashes and an unknown schedule shows question marks rather than off days. Subtle gold indicates LOCK, muted steel indicates WAIT, and warm amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. Each state also has a text label. A lock score is a heuristic preference; it is not calibrated confidence.
+The dashboard uses a compact neutral-charcoal lineup layout with colored position slots, small headshots, NBA team/injury labels, and a seven-day opponent strip. Recommended starters from the latest refresh, bench, and reserve players are grouped separately. Upcoming game tiles show **Proj** fantasy points for each matchup across the week, using opponent-adjusted Ridge projections (`proj_fp`) that reflect the specific opponent, rest, and venue (falling back to the player baseline if context is sparse). Completed performances show observed **Final** points; missing values stay dashes and an unknown schedule shows question marks rather than off days. Subtle gold indicates LOCK, muted steel indicates WAIT, and warm amber indicates a review requirement, such as an unavailable schedule or incomplete scoring. Each state also has a text label. A lock score is a heuristic preference; it is not calibrated confidence.
 
 On phones, teams scroll horizontally and roster rows prioritize the latest score and decision; open player details for the baseline and history. A skip link and visible keyboard focus support navigation. Test Week's nightly box scores are expandable so the roster remains easier to reach.
 
@@ -30,9 +30,11 @@ Live observations accumulate in one local SQLite database and are shared across 
 
 ## How the lock model reasons
 
-Suppose a player usually produces 35 FP with a 10-FP standard deviation and just scored 45. The Normal model estimates a 15.9% chance that one future game exceeds 45. With one game left, the initial lock probability is 84.1%; with three left, it is approximately `0.8413³ = 59.6%`.
+Suppose a player usually produces 35 FP with a 10-FP standard deviation and just scored 45. When future games have uniform baselines, the Normal model estimates a 15.9% chance that one future game exceeds 45. With one game left, the initial lock probability is 84.1%; with three left, it is approximately `0.8413³ = 59.6%`.
 
-More opportunities make waiting more attractive. The application then adjusts for rarity, sample size, and configured preferences. This is an explicit statistical rule, not a trained machine-learning model or an optimal-stopping solver.
+When opponent-aware projections exist for the remaining matchups, the model replaces the uniform mean with per-game expectations $\mu_i$ (e.g. against a weak defense $\mu_1 = 44$, against an elite defense $\mu_2 = 28$):
+$$P(\text{all remaining } \le c) = \prod_i \Phi\left(\frac{c - \mu_i}{\sigma}\right)$$
+This tags the row with `decision_model: "opponent_ridge"`. More opportunities against favorable defenses make waiting more attractive; difficult upcoming matchups make locking immediate strong scores more compelling. The model then applies rarity, sample size, and configured preference adjustments.
 
 ## How the pickup finder reasons
 

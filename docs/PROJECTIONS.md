@@ -36,18 +36,14 @@ For external forecasts, ordinary components are linear weighted expectations. Su
 
 ## Display and availability
 
-Roster rows show projected FP and PTS/REB/AST; player details add minutes, steals, blocks, turnovers, threes, and shooting makes/attempts. Sources and dates remain visible. Each upcoming or in-progress game tile in the seven-day strip displays the saved per-game FP baseline as **Proj**. The baseline is repeated across matchups; it is not an opponent-specific prediction. Completed games show observed **Final** FP when available, including zero or negative scores. Missing forecasts or final scores stay as dashes; postponed/canceled games carry their status without a forecast. Current forecasts are never backfilled into games before their as-of date. Current-season history-based values supersede forecast fallback once usable observations exist. During a game-log failure only independently valid external forecasts can support the daily plan; weekly lock/pickup decisions still need observed data.
+Roster rows show projected FP and PTS/REB/AST; player details add minutes, steals, blocks, turnovers, threes, and shooting makes/attempts. Sources and dates remain visible. Each upcoming or in-progress game tile in the seven-day strip displays its matchup-specific opponent-aware projection as **Proj** (`proj_fp` from `ComponentRidge`), so distinct matchups across the week show different values. If opponent context is unconfirmed or player history is sparse, the tile cleanly falls back to the player's saved baseline average. Completed games show observed **Final** FP when available, including zero or negative scores. Missing forecasts or final scores stay as dashes; postponed/canceled games carry their status without a forecast. Current forecasts are never backfilled into games before their as-of date. Current-season history-based values supersede forecast fallback once usable observations exist. During a game-log failure only independently valid external forecasts can support the daily plan; weekly lock/pickup decisions still need observed data.
 
 Historical charts remain observed-only. Verified older observations are shown with a prior-season label when current history is absent. A rookie may have a complete forecast and no NBA history chart. This is an honest absence of observations, not a broken forecast.
 
 The roster sheet uses the latest saved daily assignment and retains its original date until a new refresh replaces it, including across midnight. Per-game estimates remain dated baseline information in a saved report; they are not live availability or permission to start a player. The Mac's existing scheduled publication carries new forecasts to GitHub Pages without adding a database there.
 
-## Proposed opponent-aware extension
+## Opponent-aware extension and verification
 
-The [opponent-aware projection epic](epics/OPPONENT_AWARE_PROJECTIONS.md) plans
-separate forecasts for each player/game, using opportunity estimates and
-player-style/opponent interactions before league scoring. It covers additional
-data sources, reproducible pregame snapshots, sparse-history treatment,
-validation, fallbacks, and later lock-model integration. **This is not implemented:**
-current weekly tiles still repeat the saved per-player baseline described above.
-No model or refresh behavior changes with the proposal.
+The [opponent-aware projection epic](epics/OPPONENT_AWARE_PROJECTIONS.md) is fully implemented and promoted to production. Using `features.FeatureBuilder` and `model_ml.ComponentRidge`, the pipeline generates matchup-specific projections for every unplayed weekly game tile, overlays today's lineup assignment with `opponent_ridge`, and supplies per-game means to weekly lock/wait decision probabilities. 
+
+On historical fixtures across 52,948 player-games, the opponent model achieved lower paired game MAE (5.11 vs 5.20 FP, $n=26,066$) and reduced weekly lock regret by 13.7% (13,721.0 vs 15,907.5 points) compared to the baseline `B0`. The biweekly `model_check.py` LaunchAgent monitors live model performance and fixture tuning sweeps. See the implementation runbook (`docs/runbooks/OPPONENT_FEATURE_PIPELINE.md`) and evaluation harness (`evaluator.py`).

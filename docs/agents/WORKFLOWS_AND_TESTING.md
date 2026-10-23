@@ -22,13 +22,13 @@ source .venv/bin/activate
 Always run all three checks before completing non-documentation changes:
 
 ```bash
-# 1. Python unit and regression tests (214 tests)
+# 1. Python unit and regression tests (245 tests)
 .venv/bin/python -m pytest -q
 
 # 2. Code formatting check
 .venv/bin/python -m black --check *.py tests
 
-# 3. Node.js frontend policy & client logic tests (50 tests)
+# 3. Node.js frontend policy & client logic tests (52 tests)
 node --test tests/*.test.cjs
 ```
 
@@ -40,13 +40,15 @@ When modifying a specific component, run its corresponding test file first:
 | Core modeling & decisions | `.venv/bin/python -m pytest tests/test_core.py` |
 | Positional lineup optimizer | `.venv/bin/python -m pytest tests/test_lineup.py` |
 | Locked-player pinning & storage | `.venv/bin/python -m pytest tests/test_lineup_pinning.py` |
+| Opponent features & Ridge model | `.venv/bin/python -m pytest tests/test_features.py tests/test_model_ml.py` |
+| Evaluation harness & tuning | `.venv/bin/python -m pytest tests/test_evaluator.py` |
+| Biweekly model-check runner | `.venv/bin/python -m pytest tests/test_model_check.py` |
 | Projections & Sleeper parsing | `.venv/bin/python -m pytest tests/test_projections.py` |
 | Daily badges & leaderboards | `.venv/bin/python -m pytest tests/test_daily_badges.py tests/test_badge_awards.py` |
 | Season badge store & ledger | `.venv/bin/python -m pytest tests/test_badge_store.py` |
 | Season review aggregates | `.venv/bin/python -m pytest tests/test_season_review.py` |
 | Pickups & schedule-aware swaps | `.venv/bin/python -m pytest tests/test_pickups.py` |
 | SQLite game store | `.venv/bin/python -m pytest tests/test_game_store.py` |
-| Evaluation harness | `.venv/bin/python -m pytest tests/test_evaluator.py` |
 | Sleeper API / stats fallback | `.venv/bin/python -m pytest tests/test_sleeper.py tests/test_sleeper_stats.py` |
 | Static export & publication | `.venv/bin/python -m pytest tests/test_publication.py tests/test_pages.py` |
 | Practice simulator (Test Week) | `.venv/bin/python -m pytest tests/test_simulation.py` |

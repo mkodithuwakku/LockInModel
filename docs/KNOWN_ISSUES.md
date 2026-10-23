@@ -34,6 +34,11 @@
 - Dedicated Badge race navigation view provides an NBA-wide default and accounts for mutually exclusive age badges in variety caps.
 - Schedule-aware add/drop swap suggestions evaluate short-term schedules against a next-week horizon, advising hold when net gain is non-positive.
 - Stock Expert badge enforces at least one steal and one block requirement.
+- Normalized relational SQLite schema (v2) with `dim_teams`, `dim_players`, `fact_game_logs`, and `dim_refreshes`, eliminating duplicate unindexed JSON payloads.
+- Opponent-aware Ridge component projections (`features.py`, `model_ml.py`) score every unplayed weekly game tile with matchup-specific `proj_fp` and overlay same-day lineup profiles.
+- Opponent-aware lock/wait decision probabilities evaluate per-game means across remaining matchups (`future_mus`), tagged with `decision_model: "opponent_ridge"`.
+- Offline evaluation harness (`evaluator.py`) provides per-game error metrics, walk-forward backtests, weekly lock regret vs Oracle, and hyperparameter grid tuning.
+- Biweekly model-check LaunchAgent (`model_check.py`) automatically evaluates live-season drift and fixture tuning sweeps without manual intervention.
 
 ## Credential and Git history handling
 

@@ -28,9 +28,9 @@ The [screenshot notes](screenshots/README.md) distinguish the captured generic l
 - [Agent Architecture & Data Map](agents/ARCHITECTURE_MAP.md): module map, SQLite schema definitions, and data contracts.
 - [Agent Workflows & Testing](agents/WORKFLOWS_AND_TESTING.md): test suite execution, code conventions, and verification steps.
 
-## Future epic proposals
+## Delivered epics and future proposals
 
-- [Model evaluation](epics/MODEL_EVALUATION.md): proposed projection error measurement, sequential weekly-lock policy evaluation, ML calibration experiments, and isolated evaluation datasets; planning only.
-- [Opponent-aware player projections](epics/OPPONENT_AWARE_PROJECTIONS.md): planning only. Audits existing data, investigates additional sources, proposes stat-level player/opponent interactions, and defines sustainable ingestion, evaluation gates, and an implementation backlog. It does not enable matchup adjustments or authorize data subscriptions.
-- [Static export efficiency](epics/STATIC_EXPORT_EFFICIENCY.md): implementation-ready planning for shared player identities, on-demand resources, safe caching and compact JSON; includes measurements, ordered tickets, acceptance criteria and rollout/rollback. No export changes are implemented by this document.
+- [Model evaluation](epics/MODEL_EVALUATION.md): implemented via `evaluator.py` (MAE/RMSE/bias/correlation, walk-forward backtests, and sequential weekly-lock regret vs Oracle) and `model_check.py` biweekly LaunchAgent.
+- [Opponent-aware player projections](epics/OPPONENT_AWARE_PROJECTIONS.md): implemented and promoted to production — pregame features in `features.py`, closed-form Ridge component regressions in `model_ml.py`, per-tile `proj_fp` in `week_games`, and per-game opponent means in lock/wait decisions.
 - [Locked-player pinning](epics/LOCKED_PLAYER_PINNING.md): implemented and live on `main` — serverless write bridge, optimizer pinning semantics, and client-side lineup re-pinning for managers in Sleeper lock-in mode. Manual flags are deployed and tested; the matchup-score auto-detection phase remains planned.
+- [Static export efficiency](epics/STATIC_EXPORT_EFFICIENCY.md): proposed; planning only for shared player identities, on-demand resources, safe caching and compact JSON. No export changes are implemented by this document.

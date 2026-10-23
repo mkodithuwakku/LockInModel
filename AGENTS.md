@@ -59,9 +59,13 @@ To maximize agent effectiveness and minimize unnecessary token expenditure:
 ### Where to look (file routing)
 
 Do not read entire multi-thousand line files speculatively. Consult this index:
-- **Lock / Wait decision heuristics:** `decide.py`, `model.py`
+- **Lock / Wait decision heuristics & per-game means:** `decide.py`, `model.py`
 - **Locked-player pinning & state:** `state/locks.json`, `storage.py` (`load_locks`), `lineup.py` (`recommend_lineup`)
 - **Vercel lock endpoint & shared logic:** `api/lock.ts`, `shared/locks-core.cjs`
+- **Opponent-aware features (Pace, DefRtg, rest, concessions):** `features.py` (`FeatureBuilder`)
+- **Ridge component models & hyperparameter knobs:** `model_ml.py` (`ComponentRidge`, `model_settings`)
+- **Offline model evaluation, backtesting & tuning sweeps:** `evaluator.py`
+- **Biweekly model-check LaunchAgent:** `model_check.py` (`com.lockin.modelcheck`)
 - **Prior-season history blending (<10 games):** `season_history.py`
 - **Daily lineup optimizer & off-day filling:** `lineup.py`, `web/insights.js` (`repinLineup`)
 - **External Sleeper forecasts & Poisson bonuses:** `projections.py`
@@ -72,7 +76,7 @@ Do not read entire multi-thousand line files speculatively. Consult this index:
 - **Waiver pickups & schedule-aware swap cards:** `pickups.py` (`find_pickups`, `suggest_swap`)
 - **Games to watch cross-team matchup ranking:** `web/insights.js` (`gamesToWatch`), `web/app.js`
 - **Sleeper import & fallback box scores:** `sleeper.py`, `sleeper_stats.py`
-- **SQLite game persistence & upserts:** `game_store.py`, `forecast_store.py`
+- **SQLite normalized v2 store (dim/fact) & migrations:** `game_store.py`, `forecast_store.py`, `scripts/migrate_v2_db.py`
 - **Schedule caching & remaining games:** `schedule.py`
 - **Static export & daily GitHub Pages publication:** `pages.py`, `publication.py`
 - **Offline Test Week practice simulator:** `simulation.py`
