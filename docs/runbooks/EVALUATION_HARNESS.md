@@ -1,7 +1,7 @@
 # Implementation Runbook: Epic 2 — Evaluation Framework (Game Accuracy & Weekly Lock Regret)
 
 **Branch:** `architecture-v2`  
-**Status:** Ready for implementation  
+**Status:** Completed & verified (commit `4682fe5`)  
 **Prerequisites:** Epic 3 database normalization completed (`game_store.py` v2).  
 **Reference Document:** `docs/epics/MODEL_EVALUATION.md`
 
