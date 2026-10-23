@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-23T02:15:45.461Z",
+  "updated_at": "2026-10-23T02:15:52.133Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -98,6 +98,16 @@
           "locked_fp": 27,
           "game_date": "2026-10-21",
           "locked_at": "2026-10-23T02:15:45.461Z"
+        },
+        "2458": {
+          "player_id": "2458",
+          "player_name": "Paolo Banchero",
+          "canonical_name": "paolo banchero",
+          "roster_slot": "PF",
+          "slot_index": 4,
+          "locked_fp": 33,
+          "game_date": "2026-10-21",
+          "locked_at": "2026-10-23T02:15:52.133Z"
         }
       }
     }
