@@ -113,8 +113,19 @@ LOCKIN_DB_PATH="data/experiment.sqlite3" .venv/bin/python app.py
 # Weekly lock-policy regret vs Oracle over a season's stored games
 .venv/bin/python evaluator.py --mode weekly --season 2026-27 --db data/experiment.sqlite3
 
-# Saved pregame forecast vs actual FP error (MAE/RMSE/bias/correlation)
-.venv/bin/python evaluator.py --mode game --season 2026-27 --db data/experiment.sqlite3
+# Walk-forward game-forecast backtest: B0 production baseline vs CHALLENGER_C1
+.venv/bin/python evaluator.py --mode game --season 2025-26 --db data/experiment.sqlite3
+```
+Policies: `B0` (production `decide.per_player_week_decision`), `RAW_NORMAL`,
+`ALWAYS_WAIT`, `THRESHOLD_40`, `CHALLENGER_C1` (opponent-aware Ridge model),
+`ORACLE`. `--policies` selects a subset, `--limit` caps player-weeks or slate
+dates. `data/experiment.sqlite3` holds ingested Parquet fixtures for training;
+never point these at `data/lockin.sqlite3`.
+
+### Fixture Ingestion
+```bash
+# Load data/fixtures/<season>/{games,priors}.parquet into the experiment DB
+.venv/bin/python scripts/ingest_fixtures_to_db.py --db data/experiment.sqlite3
 ```
 
 ### Vercel Serverless Lock Endpoint

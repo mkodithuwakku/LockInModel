@@ -273,12 +273,14 @@ class GameStore:
             team_id = str(int(team_id))
         else:
             team_id = str(team_id)
+        position = str(row.get("POSITION") or "").strip().upper() or None
         return dict(
             season=season,
             game_id=gid,
             player_id=pid,
             player_name=str(row["PLAYER_NAME"]),
             sleeper_id=pid.split(":", 1)[1] if pid.startswith("sleeper:") else None,
+            position=position,
             game_date=str(row["GAME_DATE"]),
             team=(team_id, team_abbreviation, row.get("TEAM_NAME")),
             opponent=(None, opponent, None),
@@ -292,33 +294,42 @@ class GameStore:
     def _ingest(self, db, records, reconcile=True):
         from fetch_data import canonical_name
 
+        records = list(records)
+        players = {}
+        for record in records:
+            players[record["player_id"]] = (
+                record["player_id"],
+                record["sleeper_id"],
+                canonical_name(record["player_name"]),
+                record["player_name"],
+                record.get("position"),
+            )
+        db.executemany(
+            """INSERT INTO dim_players
+            (player_id, sleeper_id, canonical_name, display_name, primary_position)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(player_id) DO UPDATE SET
+                sleeper_id=COALESCE(excluded.sleeper_id, dim_players.sleeper_id),
+                canonical_name=excluded.canonical_name,
+                display_name=excluded.display_name,
+                primary_position=COALESCE(
+                    excluded.primary_position, dim_players.primary_position)""",
+            list(players.values()),
+        )
+        team_ids = {}
         rows = []
         for record in records:
-            db.execute(
-                """INSERT INTO dim_players
-                (player_id, sleeper_id, canonical_name, display_name)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(player_id) DO UPDATE SET
-                    sleeper_id=COALESCE(excluded.sleeper_id, dim_players.sleeper_id),
-                    canonical_name=excluded.canonical_name,
-                    display_name=excluded.display_name""",
-                (
-                    record["player_id"],
-                    record["sleeper_id"],
-                    canonical_name(record["player_name"]),
-                    record["player_name"],
-                ),
-            )
-            team_id = self._team_id(db, *record["team"])
-            opponent_id = self._team_id(db, *record["opponent"])
+            for side in ("team", "opponent"):
+                if record[side] not in team_ids:
+                    team_ids[record[side]] = self._team_id(db, *record[side])
             rows.append(
                 (
                     record["season"],
                     record["game_id"],
                     record["player_id"],
                     record["game_date"],
-                    team_id,
-                    opponent_id,
+                    team_ids[record["team"]],
+                    team_ids[record["opponent"]],
                     record["home"],
                     record["wl"],
                     record["minutes"],

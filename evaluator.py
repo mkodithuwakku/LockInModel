@@ -28,7 +28,14 @@ from fetch_data import (
 from model import probability_future_beats_current, rolling_baseline
 from scoring import add_fantasy_points
 
-POLICIES = ("B0", "RAW_NORMAL", "ALWAYS_WAIT", "THRESHOLD_40", "ORACLE")
+POLICIES = (
+    "B0",
+    "RAW_NORMAL",
+    "ALWAYS_WAIT",
+    "THRESHOLD_40",
+    "CHALLENGER_C1",
+    "ORACLE",
+)
 
 
 def compute_forecast_metrics(actuals, predictions):
@@ -128,8 +135,43 @@ def _raw_normal(history, game, remaining, cfg, name):
     return ("LOCK" if p_lock >= 0.5 else "WAIT"), p_lock
 
 
+def _c1_lock_prob(current_fp, predicted_fps, sigma):
+    """P(all remaining games stay at or below current) under independent normals."""
+    from math import erf, sqrt
+
+    preds = [float(p) for p in predicted_fps if np.isfinite(p)]
+    if not preds:
+        return 1.0
+    if not np.isfinite(sigma) or sigma <= 1e-6:
+        return 1.0 if all(p <= current_fp for p in preds) else 0.0
+    p_lock = 1.0
+    for mu in preds:
+        p_lock *= 0.5 * (1.0 + erf((current_fp - mu) / (sigma * sqrt(2.0))))
+    return float(np.clip(p_lock, 0.0, 1.0))
+
+
+def _challenger_c1(context, targets, cutoff, current_fp, weights):
+    """C1: opponent-aware Ridge projections for each remaining game."""
+    if targets is None or len(targets) == 0:
+        return "LOCK", 1.0
+    model = (context or {}).get("model")
+    builder = (context or {}).get("builder")
+    if model is None or builder is None or getattr(model, "n_train", 0) < 100:
+        return "ABSTAIN", None
+    features = builder.features_for(targets, cutoff=cutoff)
+    preds = np.asarray(model.predict_fp(features, weights), dtype=float)
+    p_lock = _c1_lock_prob(current_fp, preds, model.fp_resid_std)
+    return ("LOCK" if p_lock >= 0.5 else "WAIT"), p_lock
+
+
 def simulate_weekly_lock(
-    player_games, weights, cfg, policy="B0", week_start=None, previous_games=None
+    player_games,
+    weights,
+    cfg,
+    policy="B0",
+    week_start=None,
+    previous_games=None,
+    context=None,
 ):
     """Replay one player's week under a lock policy and measure Oracle regret."""
     policy = str(policy).upper()
@@ -179,6 +221,12 @@ def simulate_weekly_lock(
                 history = scored[scored.GAME_DATE <= day]
                 entry["decision"], entry["p_lock"] = _raw_normal(
                     history, game, remaining, cfg, name
+                )
+            elif policy == "CHALLENGER_C1":
+                targets = week.iloc[pos + 1 :]
+                cutoff = day + pd.Timedelta(days=1)
+                entry["decision"], entry["p_lock"] = _challenger_c1(
+                    context, targets, cutoff, float(game.FP), weights
                 )
             else:
                 out = per_player_week_decision(
@@ -249,8 +297,23 @@ def _policy_summary(results):
     }
 
 
-def evaluate_season_weekly_policy(season, game_store, cfg, weights, policies=None):
-    """Simulate every completed player-week of a season across all policies."""
+def evaluate_season_weekly_policy(
+    season,
+    game_store,
+    cfg,
+    weights,
+    policies=None,
+    history=None,
+    positions=None,
+    limit=None,
+):
+    """Simulate every completed player-week of a season across all policies.
+
+    ``history`` may supply extra game rows (e.g. a prior season) used for player
+    form, opponent context and C1 training without adding evaluated weeks.
+    ``positions`` maps player_id to a primary-position label for C1 features.
+    ``limit`` caps the number of evaluated player-weeks (chronological).
+    """
     policies = [str(p).upper() for p in (policies or POLICIES)]
     for policy in policies:
         if policy not in POLICIES:
@@ -266,16 +329,65 @@ def evaluate_season_weekly_policy(season, game_store, cfg, weights, policies=Non
     frame["WEEK"] = frame.GAME_DATE.dt.normalize() - pd.to_timedelta(
         frame.GAME_DATE.dt.weekday, unit="D"
     )
-    combos = frame[["PLAYER_ID", "WEEK"]].drop_duplicates()
+    prior = None
+    if history is not None and len(history):
+        prior = history.copy()
+        prior["GAME_DATE"] = pd.to_datetime(prior.GAME_DATE)
+        prior["PLAYER_ID"] = prior.PLAYER_ID.astype(str)
+        prior = prior[prior.GAME_DATE < frame.GAME_DATE.min()]
+        if prior.empty:
+            prior = None
+    c1 = None
+    if "CHALLENGER_C1" in policies:
+        from features import FeatureBuilder
+        from model_ml import ComponentRidge
+
+        all_games = (
+            pd.concat([prior, frame], ignore_index=True) if prior is not None else frame
+        )
+        builder = FeatureBuilder(all_games, positions=positions)
+        matrix = builder.training_matrix()
+        c1 = {"builder": builder, "matrix": matrix, "models": {}}
+
+        def weekly_model(week_start):
+            key = str(pd.Timestamp(week_start).date())
+            if key not in c1["models"]:
+                train = c1["matrix"][c1["matrix"].GAME_DATE < week_start]
+                c1["models"][key] = ComponentRidge().fit(train, weights)
+            return c1["models"][key]
+
+        c1["weekly_model"] = weekly_model
+    combos = sorted(
+        frame[["PLAYER_ID", "WEEK"]].drop_duplicates().itertuples(index=False),
+        key=lambda c: (c[1], c[0]),
+    )
+    if limit:
+        combos = combos[:limit]
     results = {policy: [] for policy in policies}
-    for pid, week_start in sorted(
-        combos.itertuples(index=False), key=lambda c: (c[1], c[0])
-    ):
+    for pid, week_start in combos:
         player_games = frame[frame.PLAYER_ID == pid].sort_values("GAME_DATE")
+        previous_games = None
+        if prior is not None:
+            prev = prior[prior.PLAYER_ID == pid]
+            previous_games = prev if len(prev) else None
+        context = (
+            {
+                "builder": c1["builder"],
+                "model": c1["weekly_model"](week_start),
+            }
+            if c1
+            else None
+        )
         for policy in policies:
             results[policy].append(
                 simulate_weekly_lock(
-                    player_games, weights, cfg, policy, week_start=week_start
+                    player_games,
+                    weights,
+                    cfg,
+                    policy,
+                    week_start=week_start,
+                    previous_games=previous_games,
+                    context=context,
                 )
             )
     report["player_weeks"] = len(results[policies[0]])
@@ -283,6 +395,93 @@ def evaluate_season_weekly_policy(season, game_store, cfg, weights, policies=Non
         policy: _policy_summary(results[policy]) for policy in policies
     }
     report["weeks"] = {policy: results[policy] for policy in policies}
+    return report
+
+
+def evaluate_game_backtest(
+    games, cfg, weights, builder=None, positions=None, limit=None
+):
+    """Walk-forward per-date game forecasts for B0 and CHALLENGER_C1.
+
+    B0 is the production baseline (lineup.project_players) recomputed as a
+    black box once per slate date; C1 refits closed-form Ridge components on
+    feature rows strictly before each date. Both predict only games actually
+    played that date, so errors are paired and no future data leaks.
+    """
+    from lineup import project_players
+    from model_ml import ComponentRidge
+
+    report = {"dates": 0, "models": {}}
+    if games is None or len(games) == 0:
+        return report
+    games = games.copy()
+    games["GAME_DATE"] = pd.to_datetime(games.GAME_DATE)
+    games["PLAYER_ID"] = games.PLAYER_ID.astype(str)
+    games = games.sort_values("GAME_DATE")
+    if builder is None:
+        from features import FeatureBuilder
+
+        builder = FeatureBuilder(games, positions=positions)
+    matrix = builder.training_matrix()
+    matrix["GAME_DATE"] = pd.to_datetime(matrix.GAME_DATE)
+    matrix["PLAYER_ID"] = matrix.PLAYER_ID.astype(str)
+    scored = add_fantasy_points(normalize_stats_for_scoring(games), weights)
+    dates = sorted(scored.GAME_DATE.unique())
+    if limit:
+        dates = dates[:limit]
+    pairs = {"B0": ([], []), "CHALLENGER_C1": ([], [])}
+    paired = []  # (key, actual, b0_pred, c1_pred) for shared-coverage metrics
+    stat_pairs = {}
+    for date in dates:
+        date = pd.Timestamp(date)
+        day = scored[scored.GAME_DATE == date]
+        baseline = project_players(
+            games[games.GAME_DATE < date], None, weights, cfg, date
+        )
+        train = matrix[matrix.GAME_DATE < date]
+        model = ComponentRidge().fit(train, weights)
+        today = matrix[matrix.GAME_DATE == date].reset_index(drop=True)
+        c1_fp = model.predict_fp(today, weights).reset_index(drop=True)
+        c1_stats = model.predict_components(today)
+        c1_by_key = {
+            (str(row.PLAYER_ID), str(row.GAME_ID)): i for i, row in today.iterrows()
+        }
+        for _, game in day.iterrows():
+            key = (str(game.PLAYER_ID), str(game.GAME_ID))
+            profile = baseline.get(str(game.PLAYER_ID))
+            b0_pred = None
+            if profile and np.isfinite(profile.get("projected_fp", np.nan)):
+                b0_pred = float(profile["projected_fp"])
+                pairs["B0"][0].append(float(game.FP))
+                pairs["B0"][1].append(b0_pred)
+            pos = c1_by_key.get(key)
+            if pos is not None:
+                c1_pred = float(c1_fp.iloc[pos])
+                pairs["CHALLENGER_C1"][0].append(float(game.FP))
+                pairs["CHALLENGER_C1"][1].append(c1_pred)
+                if b0_pred is not None:
+                    paired.append((float(game.FP), b0_pred, c1_pred))
+                for stat in c1_stats.columns:
+                    if stat in game:
+                        pair = stat_pairs.setdefault(stat, ([], []))
+                        pair[0].append(float(game[stat]))
+                        pair[1].append(float(c1_stats.iloc[pos][stat]))
+    report["dates"] = len(dates)
+    report["models"] = {
+        name: compute_forecast_metrics(actual, predicted)
+        for name, (actual, predicted) in pairs.items()
+    }
+    if paired:
+        actual, b0_pred, c1_pred = map(list, zip(*paired))
+        report["paired"] = {
+            "samples": len(paired),
+            "B0": compute_forecast_metrics(actual, b0_pred),
+            "CHALLENGER_C1": compute_forecast_metrics(actual, c1_pred),
+        }
+    report["components"] = {
+        stat: compute_forecast_metrics(a, p)
+        for stat, (a, p) in sorted(stat_pairs.items())
+    }
     return report
 
 
@@ -307,6 +506,57 @@ def _print_weekly_table(report):
         )
 
 
+def _store_seasons(store):
+    with store.connect() as db:
+        return [
+            row[0]
+            for row in db.execute(
+                "SELECT DISTINCT season FROM fact_game_logs ORDER BY season"
+            )
+        ]
+
+
+def _store_positions(store):
+    import sqlite3
+
+    try:
+        with store.connect() as db:
+            rows = db.execute(
+                "SELECT player_id, primary_position FROM dim_players"
+            ).fetchall()
+        return {str(pid): pos for pid, pos in rows if pos}
+    except sqlite3.Error:
+        return {}
+
+
+def _print_game_table(report):
+    print(f"game forecast backtest over {report['dates']} slate dates")
+    header = f"{'model':<14} {'samples':>7} {'MAE':>7} {'RMSE':>7} {'bias':>7} {'r':>6}"
+    print(header)
+    print("-" * len(header))
+    for name, m in report["models"].items():
+        if not m.get("samples"):
+            print(f"{name:<14} {0:>7} {'—':>7} {'—':>7} {'—':>7} {'—':>6}")
+            continue
+        print(
+            f"{name:<14} {m['samples']:>7} {m['mae']:>7.2f} {m['rmse']:>7.2f} "
+            f"{m['bias']:>7.2f} {m['correlation']:>6.3f}"
+        )
+    paired = report.get("paired")
+    if paired:
+        print(f"\npaired comparison on {paired['samples']} shared samples:")
+        for name in ("B0", "CHALLENGER_C1"):
+            m = paired[name]
+            print(
+                f"{name:<14} {m['samples']:>7} {m['mae']:>7.2f} {m['rmse']:>7.2f} "
+                f"{m['bias']:>7.2f} {m['correlation']:>6.3f}"
+            )
+    if report.get("components"):
+        print("\ncomponent MAE (CHALLENGER_C1):")
+        for stat, m in report["components"].items():
+            print(f"  {stat:<5} MAE {m['mae']:>6.2f}  bias {m['bias']:>6.2f}")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Offline evaluation: forecast error and weekly lock regret."
@@ -318,38 +568,87 @@ def main(argv=None):
         default=None,
         help="SQLite path; default LOCKIN_DB_PATH or data/lockin.sqlite3",
     )
+    parser.add_argument(
+        "--policies",
+        default=None,
+        help="comma-separated weekly policies (default: all)",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="cap evaluated player-weeks (weekly) or slate dates (game)",
+    )
     parser.add_argument("--json", action="store_true", help="print full JSON report")
     args = parser.parse_args(argv)
 
     from storage import load_cfg
+    from game_store import GameStore
 
     cfg = load_cfg()
     weights = cfg.get("weights", {})
     season = args.season or _season_for_today()
+    store = GameStore(args.db)
+    seasons = _store_seasons(store)
+    positions = _store_positions(store)
+    if season not in seasons and seasons:
+        season = seasons[-1]
+        print(f"note: evaluated season set to {season} (latest in database)")
+    history = None
+    if len(seasons) > 1:
+        history = pd.concat(
+            [store.read(s) for s in seasons if s != season], ignore_index=True
+        )
     if args.mode == "weekly":
-        from game_store import GameStore
-
-        report = evaluate_season_weekly_policy(season, GameStore(args.db), cfg, weights)
+        policies = (
+            [p.strip() for p in args.policies.split(",")] if args.policies else None
+        )
+        report = evaluate_season_weekly_policy(
+            season,
+            store,
+            cfg,
+            weights,
+            policies=policies,
+            history=history,
+            positions=positions,
+            limit=args.limit,
+        )
         if not args.json:
             _print_weekly_table(report)
         else:
             print(json.dumps(report, indent=2, default=str))
     else:
+        from features import FeatureBuilder
+
+        games = store.read(season)
+        all_games = (
+            pd.concat([history, games], ignore_index=True)
+            if history is not None
+            else games
+        )
+        report = evaluate_game_backtest(
+            games,
+            cfg,
+            weights,
+            positions=positions,
+            builder=FeatureBuilder(all_games, positions=positions),
+            limit=args.limit,
+        )
         from forecast_store import ForecastStore
 
-        store = ForecastStore(args.db)
-        games = store.read(season)
+        fstore = ForecastStore(args.db)
         profiles = {}
         for day in sorted({str(d.date()) for d in pd.to_datetime(games.GAME_DATE)}):
-            for pid, fp in store.read_forecasts(weights, day).items():
+            for pid, fp in fstore.read_forecasts(weights, day).items():
                 profiles[(str(pid), day)] = fp
-        print(
-            json.dumps(
-                evaluate_game_forecasts(games, profiles, weights),
-                indent=2,
-                default=str,
+        if profiles:
+            report["saved_forecasts"] = evaluate_game_forecasts(
+                games, profiles, weights
             )
-        )
+        if not args.json:
+            _print_game_table(report)
+        else:
+            print(json.dumps(report, indent=2, default=str))
     return 0
 
 
