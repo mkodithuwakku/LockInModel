@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-24T16:42:29.538Z",
+  "updated_at": "2026-10-24T16:49:16.798Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -83,6 +83,16 @@
           "locked_fp": 53.4,
           "game_date": "2026-10-23",
           "locked_at": "2026-10-24T16:42:29.538Z"
+        },
+        "2441": {
+          "player_id": "2441",
+          "player_name": "Walker Kessler",
+          "canonical_name": "walker kessler",
+          "roster_slot": "UTIL",
+          "slot_index": 9,
+          "locked_fp": 61.290000000000006,
+          "game_date": "2026-10-23",
+          "locked_at": "2026-10-24T16:49:16.798Z"
         },
         "2449": {
           "player_id": "2449",
