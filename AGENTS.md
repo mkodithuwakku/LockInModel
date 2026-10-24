@@ -59,7 +59,7 @@ To maximize agent effectiveness and minimize unnecessary token expenditure:
 ### Where to look (file routing)
 
 Do not read entire multi-thousand line files speculatively. Consult this index:
-- **Lock / Wait decision heuristics & per-game means:** `decide.py`, `model.py`
+- **Lock / Wait decision heuristics, roster/slot contention & per-game means:** `decide.py`, `model.py`, `docs/runbooks/ROSTER_AWARE_LOCK_DECISIONS.md`
 - **Locked-player pinning & state:** `state/locks.json`, `storage.py` (`load_locks`), `lineup.py` (`recommend_lineup`)
 - **Vercel lock endpoint & shared logic:** `api/lock.ts`, `shared/locks-core.cjs`
 - **Opponent-aware features (Pace, DefRtg, rest, concessions):** `features.py` (`FeatureBuilder`)

@@ -160,7 +160,17 @@ Then clip to [0, 1], set `p_wait = 1 − p_lock`, and choose LOCK at `p_lock ≥
 
 These are hand-tuned preferences. The probability of a future improvement is also different from the expected points obtained by a sequential locking policy: the model does not calculate how much better or worse future games might be or solve an optimal stopping problem.
 
-## 9. Assumptions to evaluate
+## 9. Roster and slot contention (Stage 2)
+
+The solo probability above values a score only against the same player's remaining games. `decide.apply_roster_lock_context(team, rows, locks)` then re-weights each decided row against the rest of the roster, because a locked score permanently occupies one of the league's active slots (`active_slots(team)` minus slots already pinned by `state/locks.json` records or Test Week `banked` scores).
+
+For every unpinned, non-reserve (`IR`/`TAXI`), healthy teammate `j`, a weekly contender distribution is built: any already-scored `last_game_fp` plus a projected mean per remaining game (`week_games` tile `proj_fp`, else `projection.projected_fp`, else `fp_mean_recent`) with `σ_j = max(fp_std_recent, 4)`. Numerical quadrature over the independent-normal product CDF yields the expected weekly ceiling `E[M_j]`; `P(M_j ≤ c) = 1(c_j ≤ c) · Π_m Φ((c − μ_{j,m}) / σ_j)`.
+
+For each candidate `i` with a completed score, the code finds the distinct open slot names the player is eligible for. If none exists, the row is forced to WAIT with an "already pinned" explanation. Otherwise `optimal_assignment()` (the same Hungarian solver as the daily lineup) seats all other contenders across the open slots; removing one instance of each eligible slot name and re-solving finds the slot that maximizes the others' total — and the contender `j*` seated in the baseline but not in the reduced assignment (the marginal displaced starter). The team-aware probability is `p_lock,team(i) = p_lock,solo(i) × P(M_j* ≤ c_i)`; when no contender is displaced (an uncontested open slot), the factor is 1 and the solo decision stands. The solo score is preserved as `p_lock_solo`/`decision_solo`, so the pass is idempotent and reversible.
+
+Explanations surface only inside `row["reason"]` (the player modal): a contested WAIT names the displaced contender, their projected weekly ceiling, remaining games, and the contested slot; a cleared LOCK names the beaten contender. Quick-view roster cards are unchanged.
+
+## 10. Assumptions to evaluate
 
 - Normal scores, independence between games, and an unchanged player role over remaining games.
 - The schedule count is accurate and scheduled games translate into player appearances.
@@ -170,7 +180,7 @@ These are hand-tuned preferences. The probability of a future improvement is als
 
 There are no injury, opponent, minutes-projection, home/away, or back-to-back features. See the [historical replay guide](HISTORICAL_REPLAY.md) for how to evaluate the policy without exposing future results to it.
 
-## 10. Player improvement screening
+## 11. Player improvement screening
 
 The On the rise directory is independent of trend qualification: verified unrostered players remain browsable without history, using empty analysis placeholders. The directory itself is not a recommendation.
 
@@ -188,7 +198,7 @@ The ranking score combines standardized FP improvement, minutes improvement, and
 
 Email pickup alerts require complete scoring, known ownership, and positive estimated fit. They are deduplicated for 72 hours unless the signal increases materially. No player acquisition is submitted automatically.
 
-## 11. Daily lineup projections and assignment
+## 12. Daily lineup projections and assignment
 
 `lineup.project_players()` filters both current and fallback observations to `GAME_DATE < target date`, even in night replay. Each league's original effective scoring policy is applied to those box scores, including derived bonuses and the approved foul/rebound approximations. While there are fewer than `lookback_games` current-season observations (default 10), `season_history.blend_seasons()` fills the window with the latest available prior-season games. The same helper supplies weekly lock baselines, including for a midseason injury return with few appearances. The combined window bypasses `recent_days` and has no additional mean-shrinkage prior, so old games are not counted twice. Actual sample counts remain explicit if historical coverage is sparse. At the target count, the normal model takes up to `lookback_games` from `recent_days`, or the latest available current-season games if that window is empty. `rolling_baseline()` supplies the recency-weighted mean (default decay 0.92); when recent games exist, older current-source observations supply the shrinkage prior with the configured pseudo-game weight. Values are rounded to 0.01 FP for assignment.
 

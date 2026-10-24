@@ -13,7 +13,7 @@ from storage import (
 )
 from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
-from decide import per_player_week_decision
+from decide import per_player_week_decision, apply_roster_lock_context
 from pickups import find_pickups, available_players, suggest_swap
 from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
@@ -664,6 +664,12 @@ def build_dashboard(
                     hit["locked_fp"] = score
                 if record.get("game_date"):
                     hit["lock_game_date"] = record["game_date"]
+        # Stage 2: re-weight solo Lock/Wait rows against the team's open slots
+        # and unpinned contenders (modal reasoning via row["reason"] only).
+        if not team.get("unsupported_scoring") and not getattr(
+            provider, "stats_error", None
+        ):
+            apply_roster_lock_context(team, rows, locks=team_locks)
         daily_lineup = recommend_lineup(
             team,
             rows,

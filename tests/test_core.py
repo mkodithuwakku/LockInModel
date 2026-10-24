@@ -345,3 +345,143 @@ def test_lock_rarity_uses_prior_games_and_excludes_current_performance():
         )
         > 0
     )
+
+
+def _contender_row(name, positions, **kwargs):
+    row = dict(
+        player=name,
+        player_id=name,
+        positions=positions,
+        roster_slot="START",
+        injury_status=None,
+        decision=None,
+        status="NO_GAME",
+        p_lock=None,
+        p_wait=None,
+        remaining_games_est=0,
+        fp_mean_recent=0.0,
+        fp_std_recent=4.0,
+        projection=None,
+        week_games=[],
+        reason=None,
+    )
+    row.update(kwargs)
+    return row
+
+
+def _decided_row(name, positions, fp, rem, mu, p_lock, **kwargs):
+    row = _contender_row(
+        name,
+        positions,
+        decision="LOCK" if p_lock >= 0.5 else "WAIT",
+        status="LOCK" if p_lock >= 0.5 else "WAIT",
+        p_lock=p_lock,
+        p_wait=1.0 - p_lock,
+        last_game_fp=fp,
+        last_game_date="2026-10-21",
+        remaining_games_est=rem,
+        fp_mean_recent=mu,
+        projection={"projected_fp": mu},
+        reason="Latest score test.",
+    )
+    row.update(kwargs)
+    return row
+
+
+def _sasser(**kwargs):
+    row = _decided_row("Marcus Sasser", ["PG"], 28.0, 1, 18.0, 0.95)
+    row["week_games"] = [
+        {"date": "2026-10-21", "status": "complete"},
+        {"date": "2026-10-25", "status": "pre_game", "proj_fp": 18.0},
+    ]
+    row.update(kwargs)
+    return row
+
+
+def _luka(**kwargs):
+    row = _contender_row(
+        "Luka Doncic",
+        ["PG"],
+        remaining_games_est=2,
+        fp_mean_recent=58.0,
+        fp_std_recent=8.0,
+        projection={"projected_fp": 58.0},
+    )
+    row["week_games"] = [
+        {"date": "2026-10-22", "status": "pre_game", "proj_fp": 58.0},
+        {"date": "2026-10-24", "status": "pre_game", "proj_fp": 58.0},
+    ]
+    row.update(kwargs)
+    return row
+
+
+def _big_center(**kwargs):
+    row = _decided_row("Big Center", ["C"], 30.0, 0, 30.0, 0.2)
+    row["week_games"] = [{"date": "2026-10-20", "status": "complete"}]
+    row.update(kwargs)
+    return row
+
+
+def test_roster_context_holds_lock_when_star_contests_slot():
+    from decide import apply_roster_lock_context
+
+    team = {"roster_positions": ["C", "UTIL"], "source": "local"}
+    rows = [_sasser(), _luka(), _big_center()]
+    apply_roster_lock_context(team, rows)
+    sasser = rows[0]
+    assert sasser["decision"] == "WAIT" and sasser["status"] == "WAIT"
+    assert sasser["p_lock_solo"] == 0.95 and sasser["p_lock"] < 0.05
+    assert "Luka Doncic" in sasser["reason"] and "UTIL" in sasser["reason"]
+    assert rows[1]["decision"] is None  # contenders without scores stay undecided
+    assert rows[2]["p_lock"] == 0.2  # uncontested C slot keeps the solo decision
+
+
+def test_roster_context_holds_zero_remaining_score_for_upcoming_star():
+    from decide import apply_roster_lock_context
+
+    team = {"roster_positions": ["C", "UTIL"], "source": "local"}
+    sasser = _sasser(
+        remaining_games_est=0,
+        p_lock=1.0,
+        p_wait=0.0,
+        week_games=[{"date": "2026-10-21", "status": "complete"}],
+    )
+    rows = [sasser, _luka(), _big_center()]
+    apply_roster_lock_context(team, rows)
+    assert sasser["decision"] == "WAIT" and sasser["p_lock"] < 0.05
+    assert "Luka Doncic" in sasser["reason"]
+
+
+def test_roster_context_keeps_solo_lock_with_open_flex_slots():
+    from decide import apply_roster_lock_context
+
+    team = {"roster_positions": ["UTIL", "UTIL", "UTIL"], "source": "local"}
+    rows = [_sasser(), _luka()]
+    apply_roster_lock_context(team, rows)
+    sasser = rows[0]
+    assert sasser["decision"] == "LOCK" and sasser["p_lock"] == 0.95
+    assert sasser["decision_solo"] == "LOCK"
+    # A second pass must reuse the saved solo score, not the adjusted one.
+    apply_roster_lock_context(team, rows)
+    assert rows[0]["p_lock"] == 0.95 and rows[0]["decision"] == "LOCK"
+
+
+def test_roster_context_forces_wait_when_no_eligible_slot_remains():
+    from decide import apply_roster_lock_context
+
+    team = {"roster_positions": ["UTIL"], "source": "local"}
+    luka = _luka()
+    luka["is_locked"] = True
+    locks = {
+        "x": {
+            "player_id": "Luka Doncic",
+            "player_name": "Luka Doncic",
+            "roster_slot": "UTIL",
+            "slot_index": 0,
+        }
+    }
+    rows = [_sasser(), luka]
+    apply_roster_lock_context(team, rows, locks=locks)
+    sasser = rows[0]
+    assert sasser["decision"] == "WAIT" and sasser["p_lock"] == 0.0
+    assert "already pinned" in sasser["reason"]

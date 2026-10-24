@@ -1,6 +1,6 @@
 # Epic proposal: projection, lock-policy, and backend evaluation
 
-**Status:** implemented and merged to `main` — offline evaluation engine in `evaluator.py`, walk-forward game backtests, sequential weekly-lock regret vs Oracle, hyperparameter grid search (`--mode tune`), and biweekly macOS LaunchAgent `model_check.py` (`com.lockin.modelcheck`).
+**Status:** implemented and merged to `main` — offline evaluation engine in `evaluator.py`, walk-forward game backtests, sequential weekly-lock regret vs Oracle, hyperparameter grid search (`--mode tune`), slot-constrained team-weekly lock evaluation (`--mode team-weekly`, added by the [roster-aware lock epic](ROSTER_AWARE_LOCK_DECISIONS.md)), and biweekly macOS LaunchAgent `model_check.py` (`com.lockin.modelcheck`).
 
 **Prepared:** October 21, 2026. Updated October 23, 2026.
 

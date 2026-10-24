@@ -101,7 +101,21 @@ def _live_sections(store, cfg, weights, evaluator):
         history=history,
         positions=positions,
     )
-    return {"season": season, "game": game, "weekly": weekly["policies"]}
+    team_weekly = evaluator.evaluate_season_team_weekly_policy(
+        season,
+        store,
+        cfg,
+        weights,
+        policies=["SOLO_B0", "ROSTER_B0", "SOLO_C1", "ROSTER_C1", "TEAM_ORACLE"],
+        history=history,
+        positions=positions,
+    )
+    return {
+        "season": season,
+        "game": game,
+        "weekly": weekly["policies"],
+        "team_weekly": team_weekly["policies"],
+    }
 
 
 def _tune_section(store, weights, evaluator):
@@ -165,6 +179,14 @@ def summarize(report):
             "weekly regret B0 {b:.1f} vs ridge {c:.1f}".format(
                 b=weekly["B0"].get("regret_total", float("nan")),
                 c=weekly["CHALLENGER_C1"].get("regret_total", float("nan")),
+            )
+        )
+    team_weekly = live.get("team_weekly") or {}
+    if team_weekly.get("ROSTER_B0") and team_weekly.get("SOLO_B0"):
+        parts.append(
+            "team-weekly regret solo {b:.1f} vs roster {r:.1f}".format(
+                b=team_weekly["SOLO_B0"].get("regret_total", float("nan")),
+                r=team_weekly["ROSTER_B0"].get("regret_total", float("nan")),
             )
         )
     results = ((report.get("sections") or {}).get("tune") or {}).get("results") or []

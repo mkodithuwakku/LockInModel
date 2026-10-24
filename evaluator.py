@@ -38,6 +38,21 @@ POLICIES = (
     "ORACLE",
 )
 
+# Slot-constrained team replays: SOLO_* policies decide per player like their
+# weekly counterparts, ROSTER_* add the Stage 2 open-slot contention pass, and
+# TEAM_ORACLE optimally assigns each roster player's weekly best into slots.
+TEAM_POLICIES = (
+    "SOLO_B0",
+    "ROSTER_B0",
+    "SOLO_C1",
+    "ROSTER_C1",
+    "ALWAYS_WAIT",
+    "THRESHOLD_40",
+    "TEAM_ORACLE",
+)
+
+DEFAULT_TEAM_SLOTS = ["PG", "SG", "G", "SF", "PF", "F", "C", "UTIL", "UTIL", "UTIL"]
+
 
 def compute_forecast_metrics(actuals, predictions):
     """MAE, RMSE, signed bias, and Pearson r for paired numeric series."""
@@ -408,6 +423,497 @@ def evaluate_season_weekly_policy(
     return report
 
 
+def _team_position_list(positions, pid):
+    """A roster player's eligible positions; unknown players flex anywhere."""
+    from lineup import POSITIONS
+
+    raw = (positions or {}).get(str(pid))
+    if isinstance(raw, str):
+        raw = [raw]
+    cleaned = [str(p) for p in (raw or []) if str(p) in POSITIONS]
+    return cleaned or sorted(POSITIONS)
+
+
+def _c1_target_mus(context, targets, cutoff, weights):
+    """C1 Ridge means for each remaining target game; None when unavailable."""
+    if targets is None or len(targets) == 0:
+        return []
+    model = (context or {}).get("model")
+    builder = (context or {}).get("builder")
+    if model is None or builder is None or getattr(model, "n_train", 0) < 100:
+        return None
+    try:
+        features = builder.features_for(targets, cutoff=cutoff)
+        preds = np.asarray(model.predict_fp(features, weights), dtype=float)
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return None
+    return [float(p) if np.isfinite(p) else None for p in preds]
+
+
+def simulate_team_weekly_locks(
+    team_games,
+    slots,
+    weights,
+    cfg,
+    policy="ROSTER_B0",
+    week_start=None,
+    previous_games=None,
+    positions=None,
+    context=None,
+):
+    """Replay one roster's week under a slot-constrained team lock policy.
+
+    Sequential policies rebuild every unlocked roster player's decision as of
+    each game day (Stage 1 solo logic; ROSTER_* policies then run the Stage 2
+    open-slot contention pass across the team). LOCKs pin into open slots in
+    (p_lock, fp) order using the same marginal-slot choice as production, and
+    leftover slots fill at week end with each unlocked player's final game.
+    ``TEAM_ORACLE`` optimally assigns every player's weekly best into slots.
+    """
+    from decide import (
+        _contender_future_mus,
+        _expected_contender_max,
+        apply_roster_lock_context,
+    )
+    from lineup import eligible, optimal_assignment
+
+    policy = str(policy).upper()
+    if policy not in TEAM_POLICIES:
+        raise ValueError("Unknown team policy: " + str(policy))
+    result = {"policy": policy, "status": "no_games", "decisions": []}
+    if team_games is None or len(team_games) == 0 or not slots:
+        return result
+    scored = add_fantasy_points(
+        normalize_stats_for_scoring(team_games), weights
+    ).sort_values("GAME_DATE")
+    if scored.empty:
+        return result
+    scored["GAME_DATE"] = pd.to_datetime(scored.GAME_DATE)
+    scored["PLAYER_ID"] = scored.PLAYER_ID.astype(str)
+    slots = [str(s) for s in slots]
+    start, end = get_week_bounds(week_start or scored.GAME_DATE.max())
+    week = scored[scored.GAME_DATE.between(start, end)]
+    result.update(
+        week=[str(start.date()), str(end.date())],
+        slots=list(slots),
+        games=int(len(week)),
+    )
+    if week.empty:
+        return result
+    names = (
+        {
+            str(r.PLAYER_ID): str(r.PLAYER_NAME)
+            for r in scored[["PLAYER_ID", "PLAYER_NAME"]].drop_duplicates().itertuples()
+        }
+        if "PLAYER_NAME" in scored
+        else {}
+    )
+    best = week.groupby(week.PLAYER_ID).FP.max()
+    oracle_candidates = [
+        {
+            "index": pid,
+            "positions": _team_position_list(positions, pid),
+            "projected_fp": float(fp),
+        }
+        for pid, fp in best.items()
+    ]
+    oracle_assign = optimal_assignment(slots, oracle_candidates)
+    oracle_fp = round(
+        sum(
+            oracle_candidates[k]["projected_fp"] for k in oracle_assign if k is not None
+        ),
+        2,
+    )
+    result["oracle_fp"] = oracle_fp
+    if policy == "TEAM_ORACLE":
+        result.update(
+            status="resolved",
+            total_fp=oracle_fp,
+            regret=0.0,
+            efficiency=100.0,
+            locked_count=0,
+        )
+        return result
+
+    prior = None
+    if previous_games is not None and len(previous_games):
+        prior = previous_games.copy()
+        prior["PLAYER_ID"] = prior.PLAYER_ID.astype(str)
+        prior["GAME_DATE"] = pd.to_datetime(prior.GAME_DATE)
+    roster_pids = sorted(str(p) for p in week.PLAYER_ID.unique())
+    pinned = {}  # slot index -> {"pid", "fp", "date"}
+    decisions = []
+    for day in sorted(week.GAME_DATE.unique()):
+        day = pd.Timestamp(day)
+        cutoff = day + pd.Timedelta(days=1)
+        played_fp = {
+            str(r.PLAYER_ID): float(r.FP)
+            for r in week[week.GAME_DATE == day].itertuples()
+        }
+        pinned_pids = {v["pid"] for v in pinned.values()}
+        rows = []
+        for pid in roster_pids:
+            if pid in pinned_pids:
+                continue
+            pweek = week[week.PLAYER_ID == pid]
+            remaining = int((pweek.GAME_DATE > day).sum())
+            future = pweek[pweek.GAME_DATE > day].sort_values("GAME_DATE")
+            future_mus, tile_pred = None, {}
+            if policy in ("SOLO_C1", "ROSTER_C1") and remaining:
+                mus = _c1_target_mus(context, future, cutoff, weights)
+                if mus is not None:
+                    future_mus = mus
+                    tile_pred = {
+                        str(g.GAME_DATE.date()): m
+                        for (_, g), m in zip(future.iterrows(), mus)
+                    }
+            prev = None
+            if prior is not None:
+                prev_g = prior[prior.PLAYER_ID == pid]
+                prev = prev_g if len(prev_g) else None
+            out = per_player_week_decision(
+                names.get(pid, pid),
+                scored[scored.PLAYER_ID == pid],
+                weights,
+                cfg,
+                pid,
+                reference=day,
+                remaining_games=remaining,
+                career_prior=None,
+                previous_games=prev,
+                future_mus=future_mus,
+            )
+            row = dict(out)
+            row.update(
+                player=names.get(pid, pid),
+                player_id=pid,
+                positions=_team_position_list(positions, pid),
+                roster_slot="START",
+                injury_status=None,
+                projection=(
+                    {"projected_fp": float(out["fp_mean_recent"])}
+                    if np.isfinite(out.get("fp_mean_recent") or np.nan)
+                    else None
+                ),
+                week_games=[
+                    {
+                        "date": str(g.GAME_DATE.date()),
+                        "status": "complete" if g.GAME_DATE <= day else "pre_game",
+                        "proj_fp": tile_pred.get(
+                            str(g.GAME_DATE.date()), out.get("fp_mean_recent")
+                        ),
+                    }
+                    for _, g in pweek.iterrows()
+                ],
+            )
+            if pid in played_fp:
+                if policy == "ALWAYS_WAIT":
+                    row.update(decision="WAIT", status="WAIT", p_lock=0.0, p_wait=1.0)
+                elif policy == "THRESHOLD_40":
+                    lock = played_fp[pid] >= 40
+                    row.update(
+                        decision="LOCK" if lock else "WAIT",
+                        status="LOCK" if lock else "WAIT",
+                        p_lock=1.0 if lock else 0.0,
+                        p_wait=0.0 if lock else 1.0,
+                    )
+            rows.append(row)
+        if policy in ("ROSTER_B0", "ROSTER_C1"):
+            apply_roster_lock_context(
+                {"roster_positions": list(slots), "source": "local"},
+                rows,
+                locks={
+                    str(idx): {
+                        "player_id": rec["pid"],
+                        "player_name": names.get(rec["pid"]),
+                        "roster_slot": slots[idx],
+                        "slot_index": idx,
+                        "locked_fp": rec["fp"],
+                        "game_date": rec["date"],
+                    }
+                    for idx, rec in pinned.items()
+                },
+            )
+        by_pid = {str(r["player_id"]): r for r in rows}
+        entry_map = {}
+        for pid, fp in sorted(played_fp.items()):
+            r = by_pid.get(pid) or {}
+            entry = {
+                "date": str(day.date()),
+                "player": names.get(pid, pid),
+                "player_id": pid,
+                "fp": fp,
+                "decision": r.get("decision") or "ABSTAIN",
+            }
+            if r.get("p_lock") is not None:
+                entry["p_lock"] = float(r["p_lock"])
+            decisions.append(entry)
+            entry_map[pid] = entry
+        lockers = sorted(
+            (
+                r
+                for r in rows
+                if str(r["player_id"]) in played_fp and r.get("decision") == "LOCK"
+            ),
+            key=lambda r: (
+                -(r.get("p_lock") or 0.0),
+                -(r.get("last_game_fp") or 0.0),
+                str(r["player_id"]),
+            ),
+        )
+        for r in lockers:
+            pid = str(r["player_id"])
+            open_idx = [i for i in range(len(slots)) if i not in pinned]
+            open_names = [slots[i] for i in open_idx]
+            slot_names = [
+                s for s in dict.fromkeys(open_names) if eligible(r["positions"], s)
+            ]
+            if not slot_names:
+                continue
+            contenders = []
+            for other in rows:
+                opid = str(other["player_id"])
+                if opid == pid or opid in pinned_pids:
+                    continue
+                mus = _contender_future_mus(other)
+                curr = (
+                    other.get("last_game_fp")
+                    if other.get("decision") in ("LOCK", "WAIT")
+                    else None
+                )
+                ceiling = _expected_contender_max(
+                    curr, mus, other.get("fp_std_recent") or 4.0
+                )
+                if ceiling > float("-inf"):
+                    contenders.append(
+                        {
+                            "index": opid,
+                            "positions": other["positions"],
+                            "projected_fp": max(0.0, ceiling),
+                        }
+                    )
+            best_name, best_total = None, float("-inf")
+            for s in slot_names:
+                reduced = list(open_names)
+                reduced.remove(s)
+                assign = optimal_assignment(reduced, contenders)
+                total = sum(
+                    contenders[k]["projected_fp"] for k in assign if k is not None
+                )
+                if total > best_total:
+                    best_total, best_name = total, s
+            if best_name is None:
+                continue
+            idx = next(i for i in open_idx if slots[i] == best_name)
+            pinned[idx] = {
+                "pid": pid,
+                "fp": played_fp[pid],
+                "date": str(day.date()),
+            }
+            pinned_pids.add(pid)
+            entry_map[pid]["slot"] = best_name
+
+    open_idx = [i for i in range(len(slots)) if i not in pinned]
+    pinned_pids = {v["pid"] for v in pinned.values()}
+    fillers = [
+        {
+            "index": pid,
+            "positions": _team_position_list(positions, pid),
+            "projected_fp": float(week[week.PLAYER_ID == pid].iloc[-1].FP),
+        }
+        for pid in roster_pids
+        if pid not in pinned_pids
+    ]
+    fill_assign = optimal_assignment([slots[i] for i in open_idx], fillers)
+    fill_fp = sum(fillers[k]["projected_fp"] for k in fill_assign if k is not None)
+    total_fp = round(sum(v["fp"] for v in pinned.values()) + fill_fp, 2)
+    result.update(
+        status="resolved",
+        total_fp=total_fp,
+        regret=round(oracle_fp - total_fp, 2),
+        efficiency=(
+            round(total_fp / oracle_fp * 100, 1)
+            if oracle_fp > 0
+            else 100.0 if total_fp == oracle_fp else 0.0
+        ),
+        locked_count=len(pinned),
+        decisions=decisions,
+    )
+    return result
+
+
+def _team_policy_summary(results):
+    resolved = [r for r in results if r["status"] == "resolved"]
+    if not resolved:
+        return {"team_weeks": 0}
+    return {
+        "team_weeks": len(resolved),
+        "total_fp": round(sum(r["total_fp"] for r in resolved), 2),
+        "oracle_fp": round(sum(r["oracle_fp"] for r in resolved), 2),
+        "regret_total": round(sum(r["regret"] for r in resolved), 2),
+        "regret_mean": round(np.mean([r["regret"] for r in resolved]), 2),
+        "efficiency_mean": round(
+            float(np.mean([r["efficiency"] for r in resolved])), 1
+        ),
+        "locked_slots": int(sum(r["locked_count"] for r in resolved)),
+    }
+
+
+def _partition_rosters(pids, positions, size):
+    """Deal the week's active players into position-balanced rosters."""
+    ordered = sorted(
+        (str(p) for p in pids),
+        key=lambda p: (_team_position_list(positions, p)[0], p),
+    )
+    count = max(1, -(-len(ordered) // max(int(size), 1)))
+    rosters = [[] for _ in range(count)]
+    for i, pid in enumerate(ordered):
+        rosters[i % count].append(pid)
+    return rosters
+
+
+def _cfg_rosters(cfg, frame):
+    """(pids, slots) per configured team when every rostered player is stored."""
+    from fetch_data import canonical_name
+    from lineup import active_slots
+
+    teams = (cfg or {}).get("teams") or []
+    if not teams or "PLAYER_NAME" not in frame:
+        return None
+    ids = {
+        canonical_name(str(r.PLAYER_NAME)): str(r.PLAYER_ID)
+        for r in frame[["PLAYER_ID", "PLAYER_NAME"]].drop_duplicates().itertuples()
+    }
+    rosters = []
+    for team in teams:
+        players = [str(p) for p in team.get("players") or []]
+        if not players:
+            return None
+        pids = [ids.get(canonical_name(p)) for p in players]
+        if any(p is None for p in pids):
+            return None
+        slots = active_slots(team) or list(DEFAULT_TEAM_SLOTS)
+        rosters.append((pids, [str(s) for s in slots]))
+    return rosters or None
+
+
+def evaluate_season_team_weekly_policy(
+    season,
+    game_store,
+    cfg,
+    weights,
+    policies=None,
+    history=None,
+    positions=None,
+    limit=None,
+):
+    """Simulate slot-constrained team lock weeks across a season.
+
+    Each week's active players are dealt into deterministic position-balanced
+    rosters (or the configured ``cfg['teams']`` rosters with their own slots
+    when every listed player resolves in the store), then replayed per policy.
+    ``limit`` caps the number of evaluated weeks (chronological).
+    """
+    policies = [str(p).upper() for p in (policies or TEAM_POLICIES)]
+    for policy in policies:
+        if policy not in TEAM_POLICIES:
+            raise ValueError("Unknown team policy: " + policy)
+    games = game_store.read(season) if hasattr(game_store, "read") else game_store
+    report = {"season": season, "team_weeks": 0, "policies": {}, "weeks": []}
+    if games is None or len(games) == 0:
+        report["policies"] = {p: _team_policy_summary([]) for p in policies}
+        return report
+    frame = games.copy()
+    frame["GAME_DATE"] = pd.to_datetime(frame.GAME_DATE)
+    frame["PLAYER_ID"] = frame.PLAYER_ID.astype(str)
+    frame["WEEK"] = frame.GAME_DATE.dt.normalize() - pd.to_timedelta(
+        frame.GAME_DATE.dt.weekday, unit="D"
+    )
+    prior = None
+    if history is not None and len(history):
+        prior = history.copy()
+        prior["GAME_DATE"] = pd.to_datetime(prior.GAME_DATE)
+        prior["PLAYER_ID"] = prior.PLAYER_ID.astype(str)
+        prior = prior[prior.GAME_DATE < frame.GAME_DATE.min()]
+        if prior.empty:
+            prior = None
+    c1 = None
+    if {"SOLO_C1", "ROSTER_C1"} & set(policies):
+        from features import FeatureBuilder
+        from model_ml import ComponentRidge, model_settings
+
+        settings = model_settings(cfg)
+        all_games = (
+            pd.concat([prior, frame], ignore_index=True) if prior is not None else frame
+        )
+        builder = FeatureBuilder(
+            all_games,
+            positions=positions,
+            window=settings["feature_window"],
+            decay=settings["player_decay"],
+            lookback=settings["player_lookback"],
+        )
+        matrix = builder.training_matrix()
+        matrix["GAME_DATE"] = pd.to_datetime(matrix.GAME_DATE)
+        c1 = {"builder": builder, "matrix": matrix, "models": {}}
+
+        def weekly_model(week_start):
+            key = str(pd.Timestamp(week_start).date())
+            if key not in c1["models"]:
+                train = c1["matrix"][c1["matrix"].GAME_DATE < week_start]
+                c1["models"][key] = ComponentRidge(lam=settings["ridge_lambda"]).fit(
+                    train, weights
+                )
+            return c1["models"][key]
+
+        c1["weekly_model"] = weekly_model
+    configured = _cfg_rosters(cfg, frame)
+    week_starts = sorted(frame.WEEK.unique())
+    if limit:
+        week_starts = week_starts[:limit]
+    results = {policy: [] for policy in policies}
+    for ws in week_starts:
+        wk = frame[frame.WEEK == ws]
+        active = set(wk.PLAYER_ID.unique())
+        rosters = configured or [
+            (roster, DEFAULT_TEAM_SLOTS)
+            for roster in _partition_rosters(
+                wk.PLAYER_ID.unique(), positions, len(DEFAULT_TEAM_SLOTS)
+            )
+        ]
+        context = (
+            {"builder": c1["builder"], "model": c1["weekly_model"](ws)} if c1 else None
+        )
+        for roster_pids, slots in rosters:
+            roster_pids = [p for p in roster_pids if p in active]
+            if not roster_pids:
+                continue
+            team_games = frame[frame.PLAYER_ID.isin(roster_pids)]
+            prev = (
+                prior[prior.PLAYER_ID.isin(roster_pids)] if prior is not None else None
+            )
+            for policy in policies:
+                results[policy].append(
+                    simulate_team_weekly_locks(
+                        team_games,
+                        slots,
+                        weights,
+                        cfg,
+                        policy,
+                        week_start=ws,
+                        previous_games=prev,
+                        positions=positions,
+                        context=context,
+                    )
+                )
+    report["team_weeks"] = len(results[policies[0]])
+    report["policies"] = {
+        policy: _team_policy_summary(results[policy]) for policy in policies
+    }
+    report["weeks"] = {policy: results[policy] for policy in policies}
+    return report
+
+
 def evaluate_game_backtest(
     games, cfg, weights, builder=None, positions=None, limit=None, settings=None
 ):
@@ -617,6 +1123,24 @@ def _print_weekly_table(report):
         )
 
 
+def _print_team_weekly_table(report):
+    header = (
+        f"{'policy':<12} {'weeks':>5} {'retained':>9} {'oracle':>9} "
+        f"{'regret':>7} {'eff%':>6} {'slots':>6}"
+    )
+    print(header)
+    print("-" * len(header))
+    for name, s in report["policies"].items():
+        if not s.get("team_weeks"):
+            print(f"{name:<12} {0:>5} {'—':>9} {'—':>9} {'—':>7} {'—':>6} {'—':>6}")
+            continue
+        print(
+            f"{name:<12} {s['team_weeks']:>5} {s['total_fp']:>9.1f} "
+            f"{s['oracle_fp']:>9.1f} {s['regret_total']:>7.1f} "
+            f"{s['efficiency_mean']:>6.1f} {s['locked_slots']:>6d}"
+        )
+
+
 def _store_seasons(store):
     with store.connect() as db:
         return [
@@ -672,7 +1196,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Offline evaluation: forecast error and weekly lock regret."
     )
-    parser.add_argument("--mode", choices=["weekly", "game", "tune"], default="weekly")
+    parser.add_argument(
+        "--mode",
+        choices=["weekly", "team-weekly", "game", "tune"],
+        default="weekly",
+    )
     parser.add_argument("--season", default=None)
     parser.add_argument(
         "--db",
@@ -726,6 +1254,24 @@ def main(argv=None):
         )
         if not args.json:
             _print_weekly_table(report)
+        else:
+            print(json.dumps(report, indent=2, default=str))
+    elif args.mode == "team-weekly":
+        policies = (
+            [p.strip() for p in args.policies.split(",")] if args.policies else None
+        )
+        report = evaluate_season_team_weekly_policy(
+            season,
+            store,
+            cfg,
+            weights,
+            policies=policies,
+            history=history,
+            positions=positions,
+            limit=args.limit,
+        )
+        if not args.json:
+            _print_team_weekly_table(report)
         else:
             print(json.dumps(report, indent=2, default=str))
     elif args.mode == "tune":

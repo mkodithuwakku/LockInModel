@@ -217,3 +217,117 @@ def test_tune_ridge_ranks_grid_by_walkforward_mae():
     assert results[0]["mae"] <= results[1]["mae"]
     assert {"lam", "window", "decay", "mae", "rmse", "samples"} <= set(results[0])
     assert tune_ridge(games.iloc[:0], {"PTS": 1}) == []
+
+
+PRE_WEEK = [str(d.date()) for d in pd.date_range("2026-09-01", periods=10)]
+
+
+def team_games():
+    """Role locks his only game Monday; Star still has Friday's game left."""
+    return pd.concat(
+        [
+            frame([18] * 10 + [28], PRE_WEEK + ["2026-10-19"], pid="R1", name="Role"),
+            frame([60] * 10 + [60], PRE_WEEK + ["2026-10-23"], pid="S1", name="Star"),
+        ]
+    )
+
+
+def test_team_weekly_roster_beats_solo_when_star_contests_slot():
+    from evaluator import simulate_team_weekly_locks
+
+    slots, positions = ["UTIL"], {"R1": "PG", "S1": "PG"}
+    args = dict(week_start="2026-10-19", positions=positions)
+    solo = simulate_team_weekly_locks(
+        team_games(), slots, WEIGHTS, CFG, "SOLO_B0", **args
+    )
+    roster = simulate_team_weekly_locks(
+        team_games(), slots, WEIGHTS, CFG, "ROSTER_B0", **args
+    )
+    oracle = simulate_team_weekly_locks(
+        team_games(), slots, WEIGHTS, CFG, "TEAM_ORACLE", **args
+    )
+    # Solo locks Role's 28 into the only slot, blocking Star's 60.
+    assert solo["status"] == "resolved" and solo["total_fp"] == 28.0
+    assert solo["oracle_fp"] == 60.0 and solo["regret"] == 32.0
+    # Roster policy waits on Role because Star still contests UTIL.
+    assert roster["total_fp"] == 60.0 and roster["regret"] == 0.0
+    assert roster["locked_count"] == 1 and roster["regret"] < solo["regret"]
+    role_decisions = [d for d in roster["decisions"] if d["player_id"] == "R1"]
+    assert role_decisions[0]["decision"] == "WAIT"
+    star_locks = [d for d in roster["decisions"] if d.get("slot") == "UTIL"]
+    assert [d["player_id"] for d in star_locks] == ["S1"]
+    # The oracle seats the weekly best into the slots directly.
+    assert oracle["total_fp"] == 60.0 and oracle["efficiency"] == 100.0
+
+
+def test_team_weekly_open_slots_leave_solo_decisions_intact():
+    from evaluator import simulate_team_weekly_locks
+
+    # Two UTIL slots for two players: nobody is displaced by either lock.
+    positions = {"R1": "PG", "S1": "PG"}
+    solo = simulate_team_weekly_locks(
+        team_games(),
+        ["UTIL", "UTIL"],
+        WEIGHTS,
+        CFG,
+        "SOLO_B0",
+        week_start="2026-10-19",
+        positions=positions,
+    )
+    roster = simulate_team_weekly_locks(
+        team_games(),
+        ["UTIL", "UTIL"],
+        WEIGHTS,
+        CFG,
+        "ROSTER_B0",
+        week_start="2026-10-19",
+        positions=positions,
+    )
+    assert solo["total_fp"] == roster["total_fp"] == 88.0
+    assert roster["regret"] == 0.0
+
+
+def test_evaluate_season_team_weekly_policy_uses_configured_rosters(tmp_path):
+    from evaluator import evaluate_season_team_weekly_policy
+    from game_store import GameStore
+
+    store = GameStore(tmp_path / "games.sqlite3")
+    season = "2026-27"
+    # Star opens the season Monday; Role's only game is Wednesday; Star plays
+    # again Friday. One UTIL slot means Role's Wednesday lock would block Star.
+    week_only = pd.concat(
+        [
+            frame([60, 60], ["2026-10-19", "2026-10-23"], pid="S1", name="Star"),
+            frame([28], ["2026-10-21"], pid="R1", name="Role"),
+        ]
+    )
+    store.refresh(season, lambda _: week_only, "2026-10-25")
+    cfg = dict(
+        CFG,
+        teams=[
+            {
+                "id": "t1",
+                "name": "Test",
+                "players": ["Role", "Star"],
+                "starters": ["Role"],
+                "roster_positions": ["UTIL"],
+                "source": "local",
+            }
+        ],
+    )
+    positions = {"R1": "PG", "S1": "PG"}
+    report = evaluate_season_team_weekly_policy(
+        season,
+        store,
+        cfg,
+        WEIGHTS,
+        policies=["SOLO_B0", "ROSTER_B0", "TEAM_ORACLE"],
+        positions=positions,
+    )
+    assert report["team_weeks"] == 1
+    solo = report["policies"]["SOLO_B0"]
+    roster = report["policies"]["ROSTER_B0"]
+    oracle = report["policies"]["TEAM_ORACLE"]
+    assert solo["total_fp"] == 28.0 and roster["total_fp"] == 60.0
+    assert roster["regret_total"] == 0.0 and solo["regret_total"] == 32.0
+    assert oracle["regret_total"] == 0.0 and oracle["efficiency_mean"] == 100.0

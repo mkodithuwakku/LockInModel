@@ -61,10 +61,19 @@ def report(run, provider):
         banked = run["locks"].get(team["id"], {})
         if banked:
             from lineup import unavailable_lineup
+            from decide import apply_roster_lock_context
 
             team["recommended_lineup"] = unavailable_lineup(
                 run["date"],
                 "Practice scores are banked. Restart the week to preview an unrestricted pregame lineup.",
+            )
+            apply_roster_lock_context(
+                team,
+                team["results"],
+                locks={
+                    name: dict(record, player_name=name)
+                    for name, record in banked.items()
+                },
             )
         for row in team["results"]:
             row["banked"] = banked.get(row["player"])
