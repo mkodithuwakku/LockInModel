@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-24T16:49:16.798Z",
+  "updated_at": "2026-10-24T16:49:34.841Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -83,6 +83,16 @@
           "locked_fp": 53.4,
           "game_date": "2026-10-23",
           "locked_at": "2026-10-24T16:42:29.538Z"
+        },
+        "2156": {
+          "player_id": "2156",
+          "player_name": "Jalen Smith",
+          "canonical_name": "jalen smith",
+          "roster_slot": "PF",
+          "slot_index": 7,
+          "locked_fp": 44.9,
+          "game_date": "2026-10-23",
+          "locked_at": "2026-10-24T16:49:34.841Z"
         },
         "2441": {
           "player_id": "2441",
