@@ -23,10 +23,14 @@
 | `transport.py` | Persistent response cache, request serialization/pacing, cooldown circuit |
 | `scoring.py` | Validated league weights, generic milestone bonuses, foul/rebound fallback policy, FP calculation |
 | `pages.py` | Live report generation, public field allowlist, static asset export |
-| `decide.py` | One player's weekly result and failure states |
+| `decide.py` | One player's weekly result, Stage 2 roster/slot contention pass (`apply_roster_lock_context`), and failure states |
 | `model.py` | Weighted baseline, variance guards, rarity, future-score probability |
 | `season_history.py` | Observed-history bootstrap blending prior-season games into sparse current projections and lock baselines |
-| `lineup.py` | Daily pregame projections and exact maximum-weight slot assignment using the Hungarian algorithm |
+| `lineup.py` | Daily pregame projections, opponent-aware Ridge tile overlay (`apply_opponent_model`), and exact maximum-weight slot assignment using the Hungarian algorithm |
+| `features.py` | Pregame opponent/team context features (Dean Oliver possessions/pace, rolling 15-game DefRtg and positional concessions, rest/home flags) |
+| `model_ml.py` | Closed-form Ridge component regressions (`ComponentRidge`) rescored through league formulas |
+| `evaluator.py` | Offline evaluation harness: per-game forecast metrics, walk-forward game backtests, solo weekly lock regret (`--mode weekly`), slot-constrained team-weekly lock regret (`--mode team-weekly`), and Ridge hyperparameter grid search (`--mode tune`) |
+| `model_check.py` | Biweekly prospective evaluation and tuning LaunchAgent (`com.lockin.modelcheck`) |
 | `projections.py` | Validated Sleeper / RotoWire per-game forecasts, expected milestone bonuses via Poisson approximation |
 | `pickups.py` | Separate-window improvement screening, roster fit, and history-independent available-player directory |
 | `sleeper.py` | Read-only roster/scoring import, ordered lineup slots, NBA team/injury metadata, complete ownership snapshot |

@@ -30,7 +30,8 @@ The [screenshot notes](screenshots/README.md) distinguish the captured generic l
 
 ## Delivered epics and future proposals
 
-- [Model evaluation](epics/MODEL_EVALUATION.md): implemented via `evaluator.py` (MAE/RMSE/bias/correlation, walk-forward backtests, and sequential weekly-lock regret vs Oracle) and `model_check.py` biweekly LaunchAgent.
+- [Model evaluation](epics/MODEL_EVALUATION.md): implemented via `evaluator.py` (MAE/RMSE/bias/correlation, walk-forward backtests, sequential solo weekly-lock regret vs Oracle, and `--mode team-weekly` slot-constrained roster regret vs `TEAM_ORACLE`) and `model_check.py` biweekly LaunchAgent.
 - [Opponent-aware player projections](epics/OPPONENT_AWARE_PROJECTIONS.md): implemented and promoted to production — pregame features in `features.py`, closed-form Ridge component regressions in `model_ml.py`, per-tile `proj_fp` in `week_games`, and per-game opponent means in lock/wait decisions.
 - [Locked-player pinning](epics/LOCKED_PLAYER_PINNING.md): implemented and live on `main` — serverless write bridge, optimizer pinning semantics, and client-side lineup re-pinning for managers in Sleeper lock-in mode. Manual flags are deployed and tested; the matchup-score auto-detection phase remains planned.
+- [Roster- and slot-aware lock decisions](epics/ROSTER_AWARE_LOCK_DECISIONS.md): implemented and merged to `main` — Stage 2 open-slot contention pass (`decide.apply_roster_lock_context`) using Hungarian maximum-weight assignment over teammates' expected weekly ceilings, modal-only contention reasoning in `row["reason"]`, and `--mode team-weekly` evaluation.
 - [Static export efficiency](epics/STATIC_EXPORT_EFFICIENCY.md): proposed; planning only for shared player identities, on-demand resources, safe caching and compact JSON. No export changes are implemented by this document.

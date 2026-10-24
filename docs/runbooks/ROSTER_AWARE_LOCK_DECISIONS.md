@@ -1,7 +1,7 @@
 # Implementation Runbook: Epic 4 — Roster- & Slot-Aware Lock Decisions & Team Evaluation
 
-**Branch:** `feature/roster-aware-locks` (create and switch to this dedicated git branch before making any code edits; do NOT work directly on `main`)  
-**Status:** Implemented — all steps below landed on `feature/roster-aware-locks`; verification checklist passed  
+**Branch:** `feature/roster-aware-locks` (merged to `main`)  
+**Status:** Completed & verified (commit `2676e9b`); 252 Python tests, Black formatting, and 52 Node tests pass  
 **Reference Document:** `docs/epics/ROSTER_AWARE_LOCK_DECISIONS.md`  
 **Python Runtime:** Always run `.venv/bin/python` from inside `LockInModel/`.
 

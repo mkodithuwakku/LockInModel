@@ -22,7 +22,7 @@ source .venv/bin/activate
 Always run all three checks before completing non-documentation changes:
 
 ```bash
-# 1. Python unit and regression tests (245 tests)
+# 1. Python unit and regression tests (252 tests)
 .venv/bin/python -m pytest -q
 
 # 2. Code formatting check
@@ -112,8 +112,11 @@ LOCKIN_DB_PATH="data/experiment.sqlite3" .venv/bin/python app.py
 
 ### Offline Evaluation CLI
 ```bash
-# Weekly lock-policy regret vs Oracle over a season's stored games
+# Weekly lock-policy regret vs Oracle over a season's stored games (solo player-weeks)
 .venv/bin/python evaluator.py --mode weekly --season 2026-27 --db data/experiment.sqlite3
+
+# Slot-constrained team-weekly lock regret (SOLO_B0/C1 vs ROSTER_B0/C1 vs TEAM_ORACLE)
+.venv/bin/python evaluator.py --mode team-weekly --season 2025-26 --db data/experiment.sqlite3
 
 # Walk-forward game-forecast backtest: B0 production baseline vs CHALLENGER_C1
 .venv/bin/python evaluator.py --mode game --season 2025-26 --db data/experiment.sqlite3
@@ -121,12 +124,15 @@ LOCKIN_DB_PATH="data/experiment.sqlite3" .venv/bin/python app.py
 # Hyperparameter grid search (lam x window x decay) ranked by walk-forward MAE
 .venv/bin/python evaluator.py --mode tune --db data/experiment.sqlite3
 ```
-Policies: `B0` (production `decide.per_player_week_decision`), `RAW_NORMAL`,
+Policies (`--mode weekly`): `B0` (production `decide.per_player_week_decision`), `RAW_NORMAL`,
 `ALWAYS_WAIT`, `THRESHOLD_40`, `CHALLENGER_C1` (opponent-aware Ridge model),
-`ORACLE`. `--policies` selects a subset, `--limit` caps player-weeks or slate
-dates. `data/experiment.sqlite3` holds ingested Parquet fixtures for training.
-The evaluator is read-only, so `--db data/lockin.sqlite3` is safe for
-prospective live-season metrics — but never train/tune against it.
+`ORACLE`. Team policies (`--mode team-weekly`): `SOLO_B0`, `ROSTER_B0` (with Stage 2
+`decide.apply_roster_lock_context` slot contention), `SOLO_C1`, `ROSTER_C1`,
+`ALWAYS_WAIT`, `THRESHOLD_40`, `TEAM_ORACLE`. `--policies` selects a subset,
+`--limit` caps player-weeks, team-weeks, or slate dates. `data/experiment.sqlite3`
+holds ingested Parquet fixtures for training. The evaluator is read-only, so
+`--db data/lockin.sqlite3` is safe for prospective live-season metrics — but
+never train/tune against it.
 
 ### Biweekly model check
 

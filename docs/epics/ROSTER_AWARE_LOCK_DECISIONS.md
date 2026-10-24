@@ -1,8 +1,8 @@
 # Epic proposal: roster- and slot-aware lock/wait decisions
 
-**Status:** implemented on `feature/roster-aware-locks` — Stage 2 slot-contention pass in `decide.py` (`apply_roster_lock_context`), wired into `engine.py` and `simulation.py`, modal-only reasoning via `row["reason"]`, and `--mode team-weekly` in `evaluator.py` plus `team_weekly` reporting in `model_check.py`.  
+**Status:** implemented and merged to `main` (developed on `feature/roster-aware-locks`, commit `2676e9b`) — Stage 2 slot-contention pass in `decide.py` (`apply_roster_lock_context`), wired into `engine.py` and `simulation.py`, modal-only reasoning via `row["reason"]`, and `--mode team-weekly` in `evaluator.py` plus `team_weekly` reporting in `model_check.py`.  
 **Prepared:** October 23, 2026.  
-**Target branch:** `feature/roster-aware-locks` (all implementation work must occur on a dedicated git branch, never directly on `main`).  
+**Target branch:** `feature/roster-aware-locks` (merged into `main`).  
 **Implementation runbook:** [`docs/runbooks/ROSTER_AWARE_LOCK_DECISIONS.md`](../runbooks/ROSTER_AWARE_LOCK_DECISIONS.md).
 
 ---
