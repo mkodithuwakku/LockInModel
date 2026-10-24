@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-24T16:49:34.841Z",
+  "updated_at": "2026-10-24T16:49:41.334Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -74,6 +74,16 @@
     "1417002266736513024": {
       "schedule_week": 1,
       "locks": {
+        "1739": {
+          "player_id": "1739",
+          "player_name": "Domantas Sabonis",
+          "canonical_name": "domantas sabonis",
+          "roster_slot": "PF",
+          "slot_index": 6,
+          "locked_fp": 80.7,
+          "game_date": "2026-10-23",
+          "locked_at": "2026-10-24T16:49:41.334Z"
+        },
         "1945": {
           "player_id": "1945",
           "player_name": "Trae Young",
