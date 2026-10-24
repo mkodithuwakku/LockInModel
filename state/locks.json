@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-24T16:53:21.808Z",
+  "updated_at": "2026-10-24T16:54:48.235Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -53,6 +53,16 @@
           "locked_fp": 34,
           "game_date": "2026-10-21",
           "locked_at": "2026-10-23T02:14:19.493Z"
+        },
+        "2289": {
+          "player_id": "2289",
+          "player_name": "Scottie Barnes",
+          "canonical_name": "scottie barnes",
+          "roster_slot": "SF",
+          "slot_index": 3,
+          "locked_fp": 43,
+          "game_date": "2026-10-23",
+          "locked_at": "2026-10-24T16:54:48.235Z"
         }
       }
     },
