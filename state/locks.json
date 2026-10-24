@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-24T16:55:41.291Z",
+  "updated_at": "2026-10-24T16:55:44.186Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -9,6 +9,16 @@
     "1415115155703926784": {
       "schedule_week": 1,
       "locks": {
+        "2029": {
+          "player_id": "2029",
+          "player_name": "P.J. Washington",
+          "canonical_name": "p.j. washington",
+          "roster_slot": "SF",
+          "slot_index": 2,
+          "locked_fp": 29,
+          "game_date": "2026-10-23",
+          "locked_at": "2026-10-24T16:55:44.186Z"
+        },
         "2133": {
           "player_id": "2133",
           "player_name": "Anthony Edwards",
