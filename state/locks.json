@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-24T16:53:16.245Z",
+  "updated_at": "2026-10-24T16:53:21.808Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -59,6 +59,16 @@
     "1416464779651899392": {
       "schedule_week": 1,
       "locks": {
+        "1822": {
+          "player_id": "1822",
+          "player_name": "Jayson Tatum",
+          "canonical_name": "jayson tatum",
+          "roster_slot": "F",
+          "slot_index": 5,
+          "locked_fp": 39.5,
+          "game_date": "2026-10-23",
+          "locked_at": "2026-10-24T16:53:21.808Z"
+        },
         "2029": {
           "player_id": "2029",
           "player_name": "P.J. Washington",
