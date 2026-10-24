@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-24T16:41:00.992Z",
+  "updated_at": "2026-10-24T16:42:29.538Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -74,6 +74,16 @@
     "1417002266736513024": {
       "schedule_week": 1,
       "locks": {
+        "1945": {
+          "player_id": "1945",
+          "player_name": "Trae Young",
+          "canonical_name": "trae young",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 53.4,
+          "game_date": "2026-10-23",
+          "locked_at": "2026-10-24T16:42:29.538Z"
+        },
         "2449": {
           "player_id": "2449",
           "player_name": "Dyson Daniels",
