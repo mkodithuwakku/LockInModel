@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-25T17:20:52.414Z",
+  "updated_at": "2026-10-25T17:20:54.161Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -113,6 +113,16 @@
           "locked_fp": 43,
           "game_date": "2026-10-23",
           "locked_at": "2026-10-24T16:54:48.235Z"
+        },
+        "2422": {
+          "player_id": "2422",
+          "player_name": "Collin Gillespie",
+          "canonical_name": "collin gillespie",
+          "roster_slot": "UTIL",
+          "slot_index": 8,
+          "locked_fp": 24,
+          "game_date": "2026-10-24",
+          "locked_at": "2026-10-25T17:20:54.161Z"
         }
       }
     },
