@@ -184,7 +184,7 @@ There are no injury, opponent, minutes-projection, home/away, or back-to-back fe
 
 The On the rise directory is independent of trend qualification: verified unrostered players remain browsable without history, using empty analysis placeholders. The directory itself is not a recommendation.
 
-`pickups.py` uses five recent observed games and a disjoint baseline of eight to twenty earlier games, within 90 days. Recent means use exponential decay 0.92. Candidates require at least 4 FP improvement, at least 0.5 baseline SD improvement, 60% of recent games above baseline, 18 recent minutes per game, and an appearance within seven days.
+`pickups.py` uses five recent observed games and a disjoint baseline of eight to twenty earlier games, within 90 days. Early in the season — when fewer than thirteen current-season games exist — verified prior-season games (strictly before the season's October boundary) supply the baseline window and the recent window shrinks to the observed current games, with a two-game minimum. Such candidates carry an explicit small early-season sample risk label. Recent means use exponential decay 0.92. Candidates require at least 4 FP improvement, at least 0.5 baseline SD improvement, 60% of recent games above baseline, 18 recent minutes per game, and an appearance within seven days.
 
 The estimated future FP is:
 

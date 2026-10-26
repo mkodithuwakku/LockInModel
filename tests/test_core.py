@@ -431,7 +431,8 @@ def test_roster_context_holds_lock_when_star_contests_slot():
     sasser = rows[0]
     assert sasser["decision"] == "WAIT" and sasser["status"] == "WAIT"
     assert sasser["p_lock_solo"] == 0.95 and sasser["p_lock"] < 0.05
-    assert "Luka Doncic" in sasser["reason"] and "UTIL" in sasser["reason"]
+    assert "Luka Doncic" in sasser["reason"]
+    assert "without a lineup slot" in sasser["reason"]
     assert rows[1]["decision"] is None  # contenders without scores stay undecided
     assert rows[2]["p_lock"] == 0.2  # uncontested C slot keeps the solo decision
 

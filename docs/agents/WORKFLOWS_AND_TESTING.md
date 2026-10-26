@@ -22,7 +22,7 @@ source .venv/bin/activate
 Always run all three checks before completing non-documentation changes:
 
 ```bash
-# 1. Python unit and regression tests (252 tests)
+# 1. Python unit and regression tests (256 tests)
 .venv/bin/python -m pytest -q
 
 # 2. Code formatting check

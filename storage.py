@@ -167,6 +167,50 @@ def _older_week(stored, current):
     return False
 
 
+LOCK_HISTORY_WEEKS = 30
+
+
+def _archive_week(container, new_week):
+    """Move a league's expiring-week locks into its own bounded history."""
+    container = dict(container or {})
+    old_week = container.get("schedule_week")
+    history = dict(container.get("history") or {})
+    if old_week is not None and container.get("locks"):
+        history[str(old_week)] = {
+            "schedule_week": old_week,
+            "locks": dict(container["locks"]),
+            "archived_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }
+        history = dict(
+            sorted(
+                history.items(),
+                key=lambda kv: (
+                    (
+                        0,
+                        kv[1].get("schedule_week"),
+                    )
+                    if isinstance((kv[1] or {}).get("schedule_week"), int)
+                    else (1, str((kv[1] or {}).get("schedule_week") or ""))
+                ),
+            )
+        )
+        while len(history) > LOCK_HISTORY_WEEKS:
+            history.pop(next(iter(history)))
+    if new_week is None:
+        container["locks"] = {}
+    else:
+        container = {"schedule_week": new_week, "locks": {}}
+    container["history"] = history
+    return container
+
+
+def lock_history_for_league(locks, league_id):
+    """Archived per-week lock records for one league, oldest to newest."""
+    record = (locks.get("leagues") or {}).get(str(league_id))
+    history = (record or {}).get("history")
+    return dict(history) if isinstance(history, dict) else {}
+
+
 def apply_lock(doc, payload):
     """Validate and apply one phone-reported lock/unlock to the document."""
     from fetch_data import canonical_name
@@ -196,7 +240,7 @@ def apply_lock(doc, payload):
     leagues = dict(doc.get("leagues") or {})
     container = dict(leagues.get(league) or {})
     if container.get("schedule_week") != week:
-        container = {"schedule_week": week, "locks": {}}
+        container = _archive_week(container, week)
     records = dict(container.get("locks") or {})
     if action == "lock":
         slot_index = player.get("slot_index")
@@ -219,14 +263,16 @@ def apply_lock(doc, payload):
         if name:
             records.pop(canonical_name(name), None)
     container["locks"] = records
-    # Expired weeks never linger; only compare keys of the same kind.
+    # Expired weeks are archived into each league's own history instead of
+    # being dropped, so the weekly film review can audit past lock calls.
     leagues = {
-        str(lid): record
-        for lid, record in leagues.items()
-        if not _older_week(
-            (record or {}).get("schedule_week") if isinstance(record, dict) else None,
-            week,
+        str(lid): (
+            _archive_week(record, None)
+            if isinstance(record, dict)
+            and _older_week(record.get("schedule_week"), week)
+            else record
         )
+        for lid, record in leagues.items()
     }
     leagues[league] = container
     doc.update(

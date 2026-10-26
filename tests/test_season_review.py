@@ -102,6 +102,166 @@ def test_completed_season_boundaries_and_public_allowlist():
     assert out["total_fp"] == review["total_fp"]
 
 
+def _film_game(pid, name, date, points, gid):
+    return dict(
+        PLAYER_ID=pid,
+        PLAYER_NAME=name,
+        GAME_ID=gid,
+        GAME_DATE=pd.Timestamp(date),
+        PTS=points,
+        REB=0,
+        AST=0,
+        STL=0,
+        BLK=0,
+        TOV=0,
+        FG3M=0,
+        FGM=0,
+        FGA=0,
+        FTM=0,
+        FTA=0,
+        MIN=30,
+    )
+
+
+def _film_rows():
+    return [
+        {
+            "player_id": "1",
+            "player": "Locker",
+            "sleeper_id": "101",
+            "positions": ["PG"],
+            "roster_slot": "PG",
+            "lineup_order": 0,
+        },
+        {
+            "player_id": "2",
+            "player": "Star",
+            "sleeper_id": "102",
+            "positions": ["PG"],
+            "roster_slot": "BN",
+            "lineup_order": 1,
+        },
+    ]
+
+
+def _film_games():
+    return pd.DataFrame(
+        [
+            _film_game("1", "Locker", "2026-10-21", 20, "g1"),
+            _film_game("1", "Locker", "2026-10-24", 30, "g2"),
+            _film_game("2", "Star", "2026-10-22", 50, "g3"),
+        ]
+    )
+
+
+def _film_lock(fp=20, slot="PG", slot_index=0):
+    return {
+        "101": {
+            "player_id": "101",
+            "player_name": "Locker",
+            "canonical_name": "locker",
+            "roster_slot": slot,
+            "slot_index": slot_index,
+            "locked_fp": fp,
+            "game_date": "2026-10-21",
+        }
+    }
+
+
+def test_weekly_film_flags_locking_a_player_before_their_better_game():
+    from season_review import weekly_film
+
+    film = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG", "UTIL"],
+        _film_lock(),
+        ["2026-10-20", "2026-10-26"],
+        {"PTS": 1},
+    )
+    assert film["status"] == "ready"
+    assert film["retained_fp"] == 70  # locked 20 + Star's 50 fills UTIL
+    assert film["oracle_fp"] == 80  # Locker's 30 at PG + Star's 50 at UTIL
+    assert film["regret_fp"] == 10 and film["efficiency"] == 87.5
+    assert film["locked_count"] == 1 and film["clean_count"] == 0
+    mistake = film["mistakes"][0]
+    assert mistake["kind"] == "timing"
+    assert mistake["better_player"] == "Locker"
+    assert mistake["better_fp"] == 30 and mistake["better_date"] == "2026-10-24"
+    assert mistake["cost_fp"] == 10
+
+
+def test_weekly_film_flags_locking_the_wrong_player_for_a_slot():
+    from season_review import weekly_film
+
+    film = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG"],
+        _film_lock(),
+        ["2026-10-20", "2026-10-26"],
+        {"PTS": 1},
+    )
+    assert film["retained_fp"] == 20 and film["oracle_fp"] == 50
+    assert film["regret_fp"] == 30
+    mistake = film["mistakes"][0]
+    assert mistake["kind"] == "player"
+    assert mistake["better_player"] == "Star" and mistake["better_fp"] == 50
+    assert mistake["cost_fp"] == 30
+
+
+def test_weekly_film_clean_lock_and_empty_states():
+    from season_review import weekly_film
+
+    clean = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG", "UTIL"],
+        _film_lock(fp=30),
+        ["2026-10-20", "2026-10-26"],
+        {"PTS": 1},
+    )
+    assert clean["status"] == "ready" and clean["clean_count"] == 1
+    assert clean["mistakes"] == [] and clean["retained_fp"] == 80
+    unlocked = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG", "UTIL"],
+        {},
+        ["2026-10-20", "2026-10-26"],
+        {"PTS": 1},
+    )
+    assert unlocked["status"] == "ready" and unlocked["locked_count"] == 0
+    assert unlocked["retained_fp"] == unlocked["oracle_fp"] == 80
+    assert unlocked["mistakes"] == []
+    empty = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG", "UTIL"],
+        _film_lock(),
+        ["2026-11-02", "2026-11-08"],
+        {"PTS": 1},
+    )
+    assert empty["status"] == "empty"
+    assert (
+        weekly_film(None, [], ["PG"], {}, ["2026-10-20", "2026-10-26"], {"PTS": 1})[
+            "status"
+        ]
+        == "empty"
+    )
+    assert (
+        weekly_film(
+            _film_games(),
+            _film_rows(),
+            [],
+            {},
+            ["2026-10-20", "2026-10-26"],
+            {"PTS": 1},
+        )["status"]
+        == "unavailable"
+    )
+
+
 def test_completed_roster_dashboard_reads_saved_season(monkeypatch):
     import engine
     from game_store import GameStore

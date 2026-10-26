@@ -35,6 +35,73 @@ def test_tiny_history_not_ranked():
     assert analyze_player(history().tail(5), load_cfg()) is None
 
 
+def _frame(player_id, name, dates, points, minutes=None):
+    n = len(dates)
+    return pd.DataFrame(
+        {
+            "GAME_DATE": pd.to_datetime(dates),
+            "PLAYER_ID": player_id,
+            "PLAYER_NAME": name,
+            "TEAM_ABBREVIATION": "AAA",
+            "GAME_ID": [f"{player_id}-{i}" for i in range(n)],
+            "PTS": points,
+            "REB": [5] * n,
+            "AST": [5] * n,
+            "STL": [1] * n,
+            "BLK": [0] * n,
+            "TOV": [1] * n,
+            "FGM": [4] * n,
+            "FGA": [10] * n,
+            "FG3M": [1] * n,
+            "FTM": [2] * n,
+            "FTA": [3] * n,
+            "MIN": minutes or [25] * n,
+        }
+    )
+
+
+def test_prior_season_blends_into_short_current_history():
+    """Early in the season, prior games seed the baseline for rising signals."""
+    cfg = load_cfg()
+    current = _frame(
+        1,
+        "Riser",
+        ["2026-10-21", "2026-10-23", "2026-10-24"],
+        [45, 48, 42],
+        minutes=[30, 32, 31],
+    )
+    prior = _frame(
+        "1",
+        "Riser",
+        pd.date_range("2026-03-01", periods=18).strftime("%Y-%m-%d"),
+        [10] * 18,
+        minutes=[15] * 18,
+    )
+    team = {
+        "players": [],
+        "starters": [],
+        "owned_players": [],
+        "weights": {"PTS": 1},
+        "ownership_complete": True,
+    }
+    candidates = find_pickups(current, team, cfg, "2026-10-25", prior=prior)
+    assert candidates and candidates[0]["player"] == "Riser"
+    assert candidates[0]["games_recent"] == 3
+    assert candidates[0]["baseline_fp"] == 10
+    assert any("early-season" in r for r in candidates[0]["risks"])
+    # A single current-season game is still too thin to call a riser.
+    lone = _frame(2, "One Game", ["2026-10-24"], [80])
+    assert not [
+        c
+        for c in find_pickups(
+            pd.concat([current, lone]), team, cfg, "2026-10-25", prior=prior
+        )
+        if c["player"] == "One Game"
+    ]
+    # Without priors the short history cannot qualify at all.
+    assert find_pickups(current, team, cfg, "2026-10-25") == []
+
+
 def test_candidates_and_scoring_are_specific_to_each_league():
     h = history().drop(columns="FP")
     h["PTS"] = [20] * 15 + [40] * 5

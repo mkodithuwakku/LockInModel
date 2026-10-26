@@ -15,12 +15,15 @@ def weighted(values, decay=0.92):
     return float(np.average(values, weights=w))
 
 
-def analyze_player(history, cfg):
+def analyze_player(history, cfg, current_games=None):
     history = history.sort_values("GAME_DATE").tail(25)
-    if len(history) < 13 or "MIN" not in history:
+    # current_games marks how many trailing rows belong to this season; the
+    # earlier rows are prior-season games blended in to seed the baseline.
+    n_recent = min(5, int(current_games)) if current_games is not None else 5
+    if len(history) < 13 or n_recent < 2 or "MIN" not in history:
         return None
-    recent = history.tail(5)
-    previous = history.iloc[:-5].tail(20)
+    recent = history.tail(n_recent)
+    previous = history.iloc[:-n_recent].tail(20)
     base = rolling_baseline(previous, 20, cfg=cfg)
     mean = float(base["fp_mean"])
     sd = max(4, float(base["fp_std"]))
@@ -62,6 +65,11 @@ def analyze_player(history, cfg):
         )
     )
     risks = []
+    if n_recent < 5:
+        risks.append(
+            f"Small early-season sample ({n_recent} games); "
+            "the baseline leans on prior-season play."
+        )
     if shooting_spike:
         risks.append("Recent shooting efficiency may regress.")
     if stock_spike:
@@ -78,7 +86,7 @@ def analyze_player(history, cfg):
         "consistency": consistency,
         "projected_fp": round(projection, 2),
         "signal_score": round(signal),
-        "games_recent": 5,
+        "games_recent": n_recent,
         "games_baseline": len(previous),
         "risks": risks,
         "qualifies": lift >= 4
@@ -100,31 +108,60 @@ def positions_compatible(a, b):
     return bool(expand(a) & expand(b)) if a and b else False
 
 
-def find_pickups(games, team, cfg, reference, positions=None):
+def find_pickups(games, team, cfg, reference, positions=None, prior=None):
     team = apply_scoring_policy(dict(team))
     weights = team.get("weights") or cfg["weights"]
+    reference = pd.Timestamp(reference)
     observed = games[
-        (games.GAME_DATE <= pd.Timestamp(reference))
-        & (games.GAME_DATE >= pd.Timestamp(reference) - pd.Timedelta(days=90))
+        (games.GAME_DATE <= reference)
+        & (games.GAME_DATE >= reference - pd.Timedelta(days=90))
     ]
     scored = add_fantasy_points(normalize_stats_for_scoring(observed), weights)
     positions = positions or {}
+    # Early in the season few players reach the 13-game minimum. Prior-season
+    # games (strictly before the October boundary) seed each short baseline so
+    # rising signals exist as soon as two current-season games are observed.
+    boundary = pd.Timestamp(
+        year=reference.year if reference.month >= 10 else reference.year - 1,
+        month=10,
+        day=1,
+    )
+    priors = {}
+    if prior is not None and not prior.empty:
+        earlier = prior[prior.GAME_DATE < min(reference, boundary)]
+        if not earlier.empty:
+            scored_prior = add_fantasy_points(
+                normalize_stats_for_scoring(earlier), weights
+            )
+            scored_prior["PLAYER_ID"] = scored_prior.PLAYER_ID.astype(str)
+            priors = {pid: h for pid, h in scored_prior.groupby("PLAYER_ID")}
     owned = {canonical_name(n) for n in team.get("owned_players", team["players"])}
     mine = {canonical_name(n) for n in team["players"]}
     starters = {canonical_name(n) for n in team["starters"]}
     profiles = {}
     for pid, h in scored.groupby("PLAYER_ID"):
-        signal = analyze_player(h, cfg)
+        h = h.sort_values("GAME_DATE")
+        history = h
+        current_games = None
+        if len(h) < 13:
+            before = priors.get(str(pid))
+            if before is None or len(h) < 2:
+                continue
+            history = pd.concat([before.tail(20), h], ignore_index=True)
+            current_games = len(h)
+        signal = analyze_player(history, cfg, current_games=current_games)
         if signal:
-            name = str(h.iloc[-1].PLAYER_NAME)
+            name = str(history.iloc[-1].PLAYER_NAME)
+            listed = history.iloc[-1].get("POSITION")
             profiles[canonical_name(name)] = {
                 "player": name,
                 "player_id": str(pid),
-                "nba_team": str(h.iloc[-1].get("TEAM_ABBREVIATION", "")),
+                "nba_team": str(history.iloc[-1].get("TEAM_ABBREVIATION", "")),
                 "positions": positions.get(
-                    canonical_name(name), [str(h.iloc[-1].get("POSITION", ""))]
+                    canonical_name(name),
+                    [listed] if isinstance(listed, str) and listed else [],
                 ),
-                "last_played": str(h.GAME_DATE.max().date()),
+                "last_played": str(history.GAME_DATE.max().date()),
                 **signal,
             }
     candidates = []
@@ -245,7 +282,14 @@ def suggest_swap(rows, candidates, calendar, reference, week):
     if best is None:
         return {
             "status": "hold",
-            "explanation": "No position-compatible waiver candidate has a verified schedule this week.",
+            "explanation": (
+                "No position-compatible waiver candidate has a verified "
+                "schedule this week."
+                if candidates
+                else "No qualifying risers yet — the early-season sample "
+                "is still small. Candidates appear once rising players "
+                "have a couple of observed games."
+            ),
         }
     _, add, drop, sched, week_gain, net = best
     pg = float(add["projected_fp"])

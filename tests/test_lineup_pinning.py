@@ -5,7 +5,13 @@ import pytest
 import lineup
 import storage
 from lineup import lock_match, recommend_lineup
-from storage import apply_lock, load_locks, locks_for_league, save_locks
+from storage import (
+    apply_lock,
+    load_locks,
+    lock_history_for_league,
+    locks_for_league,
+    save_locks,
+)
 
 DATE = "2026-10-21"
 
@@ -181,18 +187,27 @@ def test_apply_lock_lock_unlock_and_week_rollover():
     assert locks_for_league(doc, "1180000000000000000", 3) == {"8155": record}
     # A different week ignores the stored locks entirely.
     assert locks_for_league(doc, "1180000000000000000", 4) == {}
-    # A new-week write resets that league's container.
+    # A new-week write resets that league's container and archives the old one.
     doc = apply_lock(doc, payload(schedule_week=4))
     assert locks_for_league(doc, "1180000000000000000", 3) == {}
     assert locks_for_league(doc, "1180000000000000000", 4)
+    history = lock_history_for_league(doc, "1180000000000000000")
+    assert history["3"]["schedule_week"] == 3
+    assert history["3"]["locks"]["8155"]["locked_fp"] == 41.5
     doc = apply_lock(doc, payload(action="unlock"))
     assert locks_for_league(doc, "1180000000000000000", 4) == {}
+    # Removing a lock does not erase the previous week's archive.
+    assert lock_history_for_league(doc, "1180000000000000000")["3"]["locks"]
 
 
-def test_apply_lock_validates_and_purges_older_league_weeks():
+def test_apply_lock_validates_and_archives_older_league_weeks():
     doc = {"leagues": {"1": {"schedule_week": 2, "locks": {"x": {}}}}}
     doc = apply_lock(doc, payload(league_id="2", schedule_week=3))
-    assert "1" not in doc["leagues"]  # Week 2 is older than week 3.
+    # Week 2 is older than week 3: the locks stop applying but stay auditable.
+    stale = doc["leagues"]["1"]
+    assert stale["locks"] == {}
+    assert stale["history"]["2"]["locks"] == {"x": {}}
+    assert locks_for_league(doc, "1", 2) == {}
     for bad in (
         payload(league_id=""),
         payload(action="hold"),

@@ -26,6 +26,7 @@ let state = {
   insightsExpanded: false,
   badgeScope: "nba",
   badgeMetric: "total",
+  reviewTab: "review",
 };
 const statuses = {
   BANKED: ["BANKED", "lock"],
@@ -433,7 +434,7 @@ function seasonBadgePanel(t) {
     }).join("")}</details>
     <details class="badge-race-rules"><summary>Coverage & counting</summary><p>${review.tracked_days || 0} NBA game nights · ${review.player_games || 0} observed player games${review.first_date ? ` · ${esc(review.first_date)} to ${esc(review.last_date)}` : ""}. Totals cover stored observations through ${esc(review.as_of || "the last refresh")}.</p><p>Negative indicators: ${(review.negative_keys || []).map(key=>guide.find(b=>b.key===key)?.name).filter(Boolean).map(esc).join(", ") || "Not available"}. A high fantasy score in a loss is not a negative badge.</p><p>Milestones include double-/triple-doubles and stat thresholds. Only the highest stat tier earned that night counts. Variety counts distinct badge types. A qualifying streak earns a badge on every qualifying game night.</p><p>Projection comparisons need saved pregame forecasts: ${review.forecast_player_games || 0}/${review.player_games || 0} observed player games have matching snapshots. Historical awards can be rebuilt from stored results; missing pregame forecasts are never invented. Corrections replace previous awards, and changing league scoring recalculates a separate season tally.</p></details>`;
 }
-function renderSeasonReview(t) {
+function seasonReviewHtml(t) {
   const r = t.season_review || {}, players = LockInInsights.seasonContributors(t);
   const highlights = LockInInsights.seasonHighlights(players);
   const number = (n, digits = 1) => Number.isFinite(n) ? n.toLocaleString(undefined, {maximumFractionDigits: digits}) : "—";
@@ -447,7 +448,7 @@ function renderSeasonReview(t) {
   const y = v => 126 - (v - low) / (high - low) * 108;
   const points = weeks.map((w, i) => [weeks.length === 1 ? 300 : 12 + i * 576 / (weeks.length - 1), y(w.average_fp)]);
   const chart = `<svg class="review-chart" viewBox="0 0 600 144" role="img" aria-label="Weekly fantasy points per player appearance. Exact values in weekly details below."><path class="review-chart-guide" d="M0 ${y(0)}H600"/><polyline points="${points.map(p => p.join(",")).join(" ")}"/>${points.map(([x, py], i) => `<circle cx="${x}" cy="${py}" r="4"><title>${esc(date(weeks[i].date))}: ${number(weeks[i].average_fp)} FP per appearance, ${weeks[i].games} appearances</title></circle>`).join("")}</svg>`;
-  $("#content").innerHTML = `<div class="season-review">
+  return `<div class="season-review">
     <div class="review-section-heading"><h3>${esc(t.team_name)}</h3><span>${esc(r.season || t.season || "Season")} · through ${esc(date(r.as_of))}</span></div>
     <p class="review-scope">Current roster’s observed season production, including games before joining. Not Sleeper locked scores or standings. Each team uses its own scoring formula.</p>
     ${r.status !== "ready" ? `<div class="review-empty">${r.status === "unavailable" ? "Season statistics are unavailable in this report." : "No season games recorded for this roster yet."} Players remain listed below; the next successful refresh fills their numbers.</div>` : ""}
@@ -459,6 +460,116 @@ function renderSeasonReview(t) {
     <div class="review-section-heading"><h3>Season contributors <small>${players.length}</small></h3><span>Sorted by total fantasy points</span></div>
     <div class="review-contributors">${players.map(p => `<article class="review-contributor">${person(p)}<div class="review-player-metrics">${metric("Total FP", number(p.total_fp))}${metric("FP / game", number(p.average_fp))}${metric(`Last ${p.recent_games || "5"}`, number(p.recent_fp))}${metric("Games", p.games ? number(p.games, 0) : "—")}</div><div class="review-contribution"><span style="width:${Math.max(0, Math.min(100, p.share || 0))}%;background:${teamAccent(p.nba_team)}"></span></div></article>`).join("")}</div>
     <p class="review-footnote">Bars show each player’s share of positive fantasy-point totals. — means no observed data. Last 5 averages use up to five season games; prior-season projection history is excluded. The badge race has its own tab.</p>
+  </div>`;
+}
+
+const REVIEW_TABS = [
+  ["review", "Season review"],
+  ["compare", "Compare teams"],
+  ["film", "Shaqtin' a fool"],
+];
+function reviewTabsHtml() {
+  return `<div class="review-tabs" role="tablist" aria-label="Season review sections">${REVIEW_TABS.map(
+    ([key, label]) =>
+      `<button role="tab" class="tab review-tab ${state.reviewTab === key ? "active" : ""}" data-review-tab="${key}" aria-selected="${state.reviewTab === key}">${esc(label)}</button>`,
+  ).join("")}</div>`;
+}
+function renderReviewHub(t) {
+  const body =
+    state.reviewTab === "compare"
+      ? teamComparisonHtml()
+      : state.reviewTab === "film"
+        ? filmReviewHtml(t)
+        : seasonReviewHtml(t);
+  $("#content").innerHTML = `<div class="review-hub">${reviewTabsHtml()}${body}</div>`;
+  attachImageFallback();
+}
+function teamComparisonHtml() {
+  const comparison = state.data?.comparison || { teams: [] };
+  const number = (n, digits = 1) =>
+    Number.isFinite(n)
+      ? n.toLocaleString(undefined, { maximumFractionDigits: digits })
+      : "—";
+  const teams = [...(comparison.teams || [])].sort(
+    (a, b) => (b.total_fp || 0) - (a.total_fp || 0),
+  );
+  const rows = teams
+    .map((tm, i) => {
+      const top = (tm.leaders || [])[0];
+      return `<tr>
+        <td class="compare-rank">${i + 1}</td>
+        <th scope="row"><strong>${esc(tm.team_name)}</strong><small>${esc(tm.league_name || "")}</small></th>
+        <td><b>${number(tm.total_fp)}</b></td>
+        <td>${number(tm.fp_per_game)}</td>
+        <td>${tm.appearances ?? "—"}</td>
+        <td>${tm.covered_players ?? "—"}/${tm.roster_count ?? "—"}</td>
+        <td>${top ? `${esc(top.player)} <small>${number(top.total_fp)} FP</small>` : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+  const leaders = teams
+    .filter((tm) => (tm.leaders || []).length)
+    .map(
+      (tm) => `<article class="review-highlight"><span class="review-kicker">${esc(tm.team_name)}</span>
+        ${tm.leaders
+          .map(
+            (p) => `<div class="compare-leader"><span>${esc(p.player)}</span><b>${number(p.total_fp)} <small>FP</small></b><small>${number(p.average_fp)} / game · ${p.games} ${p.games === 1 ? "game" : "games"}</small></div>`,
+          )
+          .join("")}</article>`,
+    )
+    .join("");
+  return `<div class="season-review compare-view">
+    <div class="review-section-heading"><h3>Every team, equal footing</h3><span>${esc(comparison.teams?.length || 0)} teams · ${esc(comparison.weights_label || "default scoring")}</span></div>
+    <p class="review-scope">All of your teams scored with the same default fantasy formula, so totals compare fairly across leagues with different custom rules. Counts observed season games for each team's current roster — not standings or locked scores.</p>
+    ${teams.length ? `<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>#</th><th>Team</th><th>Total FP</th><th>FP / app</th><th>Apps</th><th>Players</th><th>Top scorer</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="review-empty">No teams with season data in this report.</div>'}
+    ${leaders ? `<div class="review-section-heading"><h3>Normalized leaders</h3><span>Top 3 scorers per team under default scoring</span></div><div class="review-highlights">${leaders}</div>` : ""}
+  </div>`;
+}
+function filmReviewHtml(t) {
+  const f = t.film_review || {};
+  const number = (n, digits = 1) =>
+    Number.isFinite(n)
+      ? n.toLocaleString(undefined, { maximumFractionDigits: digits })
+      : "—";
+  const date = (d) =>
+    d
+      ? new Date(d + "T12:00:00").toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        })
+      : "—";
+  const metric = (label, value, detail = "") =>
+    `<div class="review-metric"><span>${esc(label)}</span><strong>${esc(value)}</strong>${detail ? `<small>${esc(detail)}</small>` : ""}</div>`;
+  const weekLabel =
+    f.week?.start && f.week?.end
+      ? `${date(f.week.start)} – ${date(f.week.end)}${f.week.key != null ? ` · week ${esc(f.week.key)}` : ""}`
+      : "This week";
+  if (f.status !== "ready") {
+    const note =
+      f.status === "unavailable"
+        ? f.note || "Lock review is unavailable in this report."
+        : "No recorded locks or completed roster games to review for this week yet.";
+    return `<div class="season-review film-view">
+      <div class="review-section-heading"><h3>Shaqtin' a fool</h3><span>${esc(t.team_name)} · ${weekLabel}</span></div>
+      <p class="review-scope">A hindsight audit of this week's lock calls against each roster player's best game.</p>
+      <div class="review-empty">${esc(note)}</div>
+    </div>`;
+  }
+  const mistakeCard = (m) => {
+    const timing = m.kind === "timing";
+    const title = timing ? "Right player, wrong night" : "Wrong call";
+    const body = timing
+      ? `Locked ${m.locked_fp} FP into ${m.slot} on ${date(m.locked_date)}; ${m.better_player || m.player}'s ${number(m.better_fp)} FP on ${date(m.better_date)} was the play.`
+      : `Locked ${m.player}'s ${m.locked_fp} FP into ${m.slot} on ${date(m.locked_date)}; ${m.better_player || "a teammate"}'s ${number(m.better_fp)} FP on ${date(m.better_date)} was open.`;
+    return `<article class="film-mistake"><span class="review-kicker">${title}</span><p>${esc(body)}</p><b class="film-cost">−${number(m.cost_fp)} FP</b></article>`;
+  };
+  return `<div class="season-review film-view">
+    <div class="review-section-heading"><h3>Shaqtin' a fool</h3><span>${esc(t.team_name)} · ${weekLabel}</span></div>
+    <p class="review-scope">What actually got locked plus the best legal fill of the open slots, versus the perfect hindsight lineup from everyone's best game this week. Heuristic replay — not a judgment of the calls available at the time.</p>
+    <div class="review-metrics">${metric("Retained FP", number(f.retained_fp), "Locked scores + optimal fill")}${metric("Perfect week", number(f.oracle_fp), "Hindsight-optimal lineup")}${metric("Left on table", number(f.regret_fp), "Points the locks gave up")}${metric("Efficiency", f.efficiency == null ? "—" : number(f.efficiency) + "%", "Retained vs perfect")}</div>
+    <div class="review-section-heading"><h3>Mistakes <small>${(f.mistakes || []).length}</small></h3><span>${f.clean_count || 0} of ${f.locked_count || 0} locks were clean</span></div>
+    ${(f.mistakes || []).length ? `<div class="film-mistakes">${f.mistakes.map(mistakeCard).join("")}</div>` : `<p class="review-pending">Every recorded lock held up against the week’s hindsight best. Nothing to roast.</p>`}
+    ${(f.locked || []).length ? `<details class="film-tape"><summary>The tape · ${f.locked.length} recorded locks</summary><div class="film-tape-list">${f.locked.map((l) => `<div><span>${esc(l.slot)}</span><strong>${esc(l.player)}</strong><b>${number(l.fp)} <small>FP</small></b><small>${esc(date(l.date))}</small></div>`).join("")}</div></details>` : ""}
   </div>`;
 }
 
@@ -747,7 +858,7 @@ function renderContent() {
   let t = team();
   if (!t) return;
   const search = state.search.trim().toLowerCase();
-  if (state.view === "review") { renderSeasonReview(t); return; }
+  if (state.view === "review") { renderReviewHub(t); return; }
   if (state.view === "badges") {
     $("#content").innerHTML = `<div class="season-review"><section id="season-badge-board" class="season-badge-board" aria-labelledby="badge-race-title">${seasonBadgePanel(t)}</section></div>`;
     attachImageFallback();
@@ -1098,6 +1209,12 @@ document.addEventListener("click", (e) => {
       if (["review", "badges"].includes(state.view) && state.mode === "test") { state.mode = "live"; load(); return; }
       render();
     }
+    return;
+  }
+  b = e.target.closest("[data-review-tab]");
+  if (b) {
+    state.reviewTab = b.dataset.reviewTab;
+    renderContent();
     return;
   }
   b = e.target.closest("[data-filter]");

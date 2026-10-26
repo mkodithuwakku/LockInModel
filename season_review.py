@@ -1,5 +1,6 @@
 """Season production for the current roster, not historical ownership/locked totals."""
 
+import math
 import pandas as pd
 from fetch_data import normalize_stats_for_scoring
 from scoring import add_fantasy_points
@@ -147,4 +148,184 @@ def season_review(games, roster, weights, reference, unavailable=False, season=N
         stats=stats,
         weeks=weeks,
         players=players,
+    )
+
+
+def weekly_film(games, rows, slots, locks, week, weights):
+    """Hindsight audit of one matchup week's recorded lock calls.
+
+    Retained total = recorded locked scores + the best legal end-of-week fill
+    of the remaining slots using each unlocked roster player's best game.
+    Oracle = the best legal assignment of everyone's best game over every slot.
+    A lock is flagged when unpinning it and re-filling would have scored more:
+    the same player refilling means a timing mistake, someone else means the
+    wrong player was locked. Scores are heuristics over completed games, not
+    predictive claims.
+    """
+    from lineup import lock_match, optimal_assignment, _pin_index
+
+    base = dict(
+        status="empty",
+        locked_count=0,
+        clean_count=0,
+        retained_fp=None,
+        oracle_fp=None,
+        regret_fp=None,
+        efficiency=None,
+        mistakes=[],
+        locked=[],
+        note=None,
+    )
+    if not slots:
+        return dict(base, status="unavailable", note="Lineup slots unavailable.")
+    if not week or not week[0] or not week[1]:
+        return dict(base, status="unavailable", note="Review week unavailable.")
+    if games is None or games.empty:
+        return base
+    ids = {str(r.get("player_id")) for r in rows if r.get("player_id")}
+    frame = games[
+        games.PLAYER_ID.astype(str).isin(ids)
+        & games.GAME_DATE.between(pd.Timestamp(week[0]), pd.Timestamp(week[1]))
+    ]
+    if frame.empty:
+        return base
+    try:
+        scored = add_fantasy_points(normalize_stats_for_scoring(frame), weights)
+    except (DataUnavailable, ValueError, KeyError, TypeError):
+        return dict(base, status="unavailable", note="Scoring inputs unavailable.")
+    best = {}
+    for pid, h in scored.groupby("PLAYER_ID"):
+        top = h.loc[h.FP.idxmax()]
+        best[str(pid)] = {
+            "fp": float(top.FP),
+            "date": str(top.GAME_DATE.date()),
+            "by_date": {str(g.GAME_DATE.date()): float(g.FP) for g in h.itertuples()},
+        }
+    candidates = []
+    for row in rows:
+        pid = str(row.get("player_id") or "")
+        b = best.get(pid)
+        if not b or row.get("roster_slot") in {"IR", "TAXI"}:
+            continue
+        candidates.append(
+            {
+                "row": row,
+                "player": row.get("player"),
+                "player_id": pid,
+                "positions": row.get("positions") or [],
+                "projected_fp": b["fp"],
+                "best_date": b["date"],
+            }
+        )
+
+    pinned = {}
+    locked = []
+    for record in (locks or {}).values():
+        if not isinstance(record, dict):
+            continue
+        row = next((r for r in rows if lock_match(r, record)), None)
+        if row is None:
+            continue
+        index = _pin_index(row, record, slots, set(pinned))
+        if index is None:
+            continue
+        pid = str(row.get("player_id") or "")
+        fp = record.get("locked_fp")
+        if not isinstance(fp, (int, float)) or not math.isfinite(fp):
+            day = best.get(pid, {}).get("by_date", {}).get(record.get("game_date"))
+            fp = day if day is not None else best.get(pid, {}).get("fp")
+        if not isinstance(fp, (int, float)) or not math.isfinite(fp):
+            continue
+        pinned[index] = {"row": row, "record": record, "fp": float(fp)}
+        locked.append(
+            {
+                "player": row.get("player"),
+                "player_id": pid,
+                "slot": slots[index],
+                "fp": round(float(fp), 2),
+                "date": record.get("game_date"),
+            }
+        )
+    open_index = [i for i in range(len(slots)) if i not in pinned]
+    pinned_ids = {str(p["row"].get("player_id")) for p in pinned.values()}
+    free = [c for c in candidates if c["player_id"] not in pinned_ids]
+    fill = optimal_assignment([slots[i] for i in open_index], free)
+    retained = sum(p["fp"] for p in pinned.values()) + sum(
+        free[j]["projected_fp"] for j in fill if j is not None
+    )
+    oracle_fill = optimal_assignment(slots, candidates)
+    oracle = sum(candidates[j]["projected_fp"] for j in oracle_fill if j is not None)
+    mistakes = []
+    clean = 0
+    for index, p in pinned.items():
+        alt_index = [i for i in range(len(slots)) if i != index and i not in pinned]
+        # Unpin this lock: its slot rejoins the open pool and the player
+        # re-enters contention with their weekly best. Other pinned players
+        # stay locked at their recorded scores, so they leave the pool.
+        other_ids = pinned_ids - {str(p["row"].get("player_id"))}
+        alt_pool = [c for c in candidates if c["player_id"] not in other_ids]
+        alt_slots = [slots[index]] + [slots[i] for i in alt_index]
+        alt_fill = optimal_assignment(alt_slots, alt_pool)
+        alt_total = sum(v["fp"] for k, v in pinned.items() if k != index) + sum(
+            alt_pool[j]["projected_fp"] for j in alt_fill if j is not None
+        )
+        cost = alt_total - retained
+        if cost <= 0.5:
+            clean += 1
+            continue
+        pid_i = str(p["row"].get("player_id"))
+        kept = {alt_pool[j]["player_id"] for j in alt_fill if j is not None}
+        own_best = best.get(pid_i)
+        timing = (
+            pid_i in kept
+            and own_best is not None
+            and own_best["fp"] > p["fp"] + 0.5
+            and (
+                not p["record"].get("game_date")
+                or own_best["date"] > p["record"]["game_date"]
+            )
+        )
+        j = alt_fill[0]
+        better = alt_pool[j] if j is not None else None
+        mistakes.append(
+            {
+                "player": p["row"].get("player"),
+                "player_id": pid_i,
+                "slot": slots[index],
+                "locked_fp": round(p["fp"], 2),
+                "locked_date": p["record"].get("game_date"),
+                "kind": "timing" if timing else "player",
+                "better_player": (
+                    p["row"].get("player")
+                    if timing
+                    else better["player"] if better else None
+                ),
+                "better_player_id": (
+                    pid_i if timing else (better["player_id"] if better else None)
+                ),
+                "better_fp": (
+                    round(own_best["fp"], 2)
+                    if timing
+                    else round(better["projected_fp"], 2) if better else None
+                ),
+                "better_date": (
+                    own_best["date"]
+                    if timing
+                    else better["best_date"] if better else None
+                ),
+                "cost_fp": round(float(cost), 1),
+            }
+        )
+    mistakes.sort(key=lambda m: -m["cost_fp"])
+    return dict(
+        base,
+        status="ready",
+        locked_count=len(locked),
+        clean_count=clean,
+        retained_fp=round(retained, 1),
+        oracle_fp=round(oracle, 1),
+        regret_fp=round(oracle - retained, 1),
+        efficiency=round(retained / oracle * 100, 1) if oracle else None,
+        mistakes=mistakes,
+        locked=sorted(locked, key=lambda l: (l["date"] or "", l["slot"])),
     )

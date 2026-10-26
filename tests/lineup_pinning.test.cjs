@@ -174,3 +174,33 @@ test("locks-core validates payloads and applies lock, unlock and week expiry", a
     assert.throws(() => validatePayload(bad));
   }
 });
+
+test("locks-core archives expiring weeks instead of dropping them", async () => {
+  const { validatePayload, applyLock, emptyDocument } = await import("../shared/locks-core.cjs");
+  const body = {
+    league_id: "1", schedule_week: 3, action: "lock",
+    player: { player_id: "p1", player_name: "One", roster_slot: "PG", slot_index: 0, locked_fp: 20 },
+  };
+  let doc = applyLock(emptyDocument(), validatePayload(body), new Date("2026-10-22T04:00:00Z"));
+  doc = applyLock(
+    doc,
+    validatePayload({ ...body, schedule_week: 4, player: { ...body.player, player_id: "p2", locked_fp: 30 } }),
+    new Date("2026-10-29T04:00:00Z"),
+  );
+  let league = doc.leagues["1"];
+  assert.equal(league.schedule_week, 4);
+  assert.deepEqual(Object.keys(league.locks), ["p2"]);
+  assert.equal(league.history["3"].schedule_week, 3);
+  assert.equal(league.history["3"].locks["p1"].locked_fp, 20);
+  // Another league's stale week is archived into its own history, not deleted.
+  doc = applyLock(
+    doc,
+    validatePayload({ league_id: "2", schedule_week: 5, action: "lock", player: { player_id: "q", player_name: "Two" } }),
+    new Date("2026-11-05T04:00:00Z"),
+  );
+  league = doc.leagues["1"];
+  assert.equal(league.schedule_week, 4);
+  assert.deepEqual(league.locks, {});
+  assert.equal(league.history["4"].locks["p2"].locked_fp, 30);
+  assert.equal(league.history["3"].locks["p1"].locked_fp, 20);
+});

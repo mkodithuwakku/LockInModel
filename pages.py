@@ -91,6 +91,29 @@ def public_report(report):
                 )
                 for p in review.get("players", [])
             ]
+        if team.get("film_review"):
+            film = team["film_review"]
+            item["film_review"] = select(
+                film,
+                "status locked_count clean_count retained_fp oracle_fp "
+                "regret_fp efficiency note".split(),
+            )
+            item["film_review"]["week"] = select(
+                film.get("week", {}), "key start end".split()
+            )
+            item["film_review"]["mistakes"] = [
+                select(
+                    m,
+                    "player player_id slot locked_fp locked_date kind "
+                    "better_player better_player_id better_fp better_date "
+                    "cost_fp".split(),
+                )
+                for m in film.get("mistakes", [])
+            ]
+            item["film_review"]["locked"] = [
+                select(l, "player player_id slot fp date".split())
+                for l in film.get("locked", [])
+            ]
         if team.get("season_badges"):
             from badge_store import BADGE_KEYS, NEGATIVE_KEYS, MILESTONE_KEYS
 
@@ -177,6 +200,33 @@ def public_report(report):
         select(alert, ["severity", "team", "message"])
         for alert in report.get("alerts", [])
     ]
+    comparison = report.get("comparison")
+    if isinstance(comparison, dict):
+        out["comparison"] = {
+            "weights_label": comparison.get("weights_label"),
+            "teams": [
+                dict(
+                    select(
+                        t,
+                        "team_id team_name league_name status total_fp "
+                        "fp_per_game appearances covered_players "
+                        "roster_count".split(),
+                    ),
+                    leaders=[
+                        select(
+                            p,
+                            "player player_id total_fp average_fp games".split(),
+                        )
+                        for p in t.get("leaders", [])
+                    ],
+                    weeks=[
+                        select(w, "date total_fp average_fp games".split())
+                        for w in t.get("weeks", [])
+                    ],
+                )
+                for t in comparison.get("teams", [])
+            ],
+        }
     # Fail before deployment on NaN/Infinity or unexpected non-JSON values.
     json.dumps(out, allow_nan=False)
     return out

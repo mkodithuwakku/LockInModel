@@ -9,7 +9,7 @@
 | `daily_badges.py` | NBA-wide stat and league-scored badges, saved-forecast comparisons, and tie handling |
 | `badge_awards.py` | Previous-night per-game milestones, assist/turnover lows, season streaks and league-scored contextual leaders; cached birthdays and confirmed game results |
 | `badge_store.py` | Cached season award ledger in the existing SQLite file, correction replacement, formula isolation, and public aggregate counts |
-| `season_review.py` | Full-season current-roster production, weekly aggregates, and descriptive player metrics; see [Season review](SEASON_REVIEW.md) |
+| `season_review.py` | Full-season current-roster production, weekly aggregates, descriptive player metrics, and the weekly lock-film hindsight audit; see [Season review](SEASON_REVIEW.md) |
 | `web/insights.js` | Pure observed-form calculations and sparklines from scored report history; shared by local and hosted views |
 | `storage.py` | Canonical YAML loading/validation; atomic JSON/YAML writes |
 | `simulation.py` | Persistent morning/night replay, isolated practice roster snapshot, revision checks, banked scores |
@@ -32,7 +32,7 @@
 | `evaluator.py` | Offline evaluation harness: per-game forecast metrics, walk-forward game backtests, solo weekly lock regret (`--mode weekly`), slot-constrained team-weekly lock regret (`--mode team-weekly`), and Ridge hyperparameter grid search (`--mode tune`) |
 | `model_check.py` | Biweekly prospective evaluation and tuning LaunchAgent (`com.lockin.modelcheck`) |
 | `projections.py` | Validated Sleeper / RotoWire per-game forecasts, expected milestone bonuses via Poisson approximation |
-| `pickups.py` | Separate-window improvement screening, roster fit, and history-independent available-player directory |
+| `pickups.py` | Separate-window improvement screening (prior-season baselines early in the season), roster fit, and history-independent available-player directory |
 | `sleeper.py` | Read-only roster/scoring import, ordered lineup slots, NBA team/injury metadata, complete ownership snapshot |
 | `schedule.py` | Validated, cached full-season schedule; weekly opponents and remaining-game counts |
 | `capture.py` | Resumable immutable archive capture and fixture manifest |
@@ -216,12 +216,19 @@ This occurs before public player histories are limited to 25 games. Completed
 leagues use their saved season in `GameStore`; no extra provider requests occur.
 
 `pages.py` allowlists every nested review field. The separate Season review tab
-shows all-team cards, a selected-team breakdown, sample-gated key-player cards,
-weekly details, and all roster members including missing-history placeholders.
-`web/insights.js` preserves original result indexes for player-detail links and
-selects leaders without changing roster order. Home remains roster-first. These
-are current-roster observed totals, not historical ownership or Sleeper locked
-scores; see [metric definitions and limitations](SEASON_REVIEW.md).
+holds three switchable views: the per-team review (all-team cards, a
+selected-team breakdown, sample-gated key-player cards, weekly details, and all
+roster members including missing-history placeholders), **Compare teams**
+(a report-level `comparison` block re-scoring every team under the configured
+default `weights`, not each league's formula), and **Shaqtin' a fool**
+(a per-team `film_review` auditing the most recent week's recorded locks against
+hindsight-optimal slot fills; `weekly_film` reuses `optimal_assignment` and the
+same pinning rules as the daily lineup). `web/app.js` keeps the active sub-view
+in `state.reviewTab` and `web/insights.js` preserves original result indexes for
+player-detail links and selects leaders without changing roster order. Home
+remains roster-first. These are current-roster observed totals, not historical
+ownership or Sleeper locked scores; see
+[metric definitions and limitations](SEASON_REVIEW.md).
 
 ## Season badge persistence
 
@@ -250,7 +257,7 @@ website database, or scheduled job is needed. See [Badge race](SEASON_REVIEW.md#
 
 Sleeper lock-in leagues freeze a starter in their assigned slot once locked. Because the Sleeper API exposes no lock flag, managers flag locks manually.
 
-- **Storage (`state/locks.json`):** The one `state/` file intentionally committed to Git. Maps league IDs and matchup weeks to locked player records with slot index, timestamp, and locked FP. Mismatched weeks auto-expire.
+- **Storage (`state/locks.json`):** The one `state/` file intentionally committed to Git. Maps league IDs and matchup weeks to locked player records with slot index, timestamp, and locked FP. Mismatched weeks auto-expire: expiring weeks move into a bounded per-league `history` (30 weeks) so the weekly film review can audit past lock calls, and history keys compare by native week type (integer weeks numerically, not string-sorted).
 - **Serverless Bridge (`api/lock.ts` / `shared/locks-core.cjs`):** Deployed on Vercel at `https://lock-in-model.vercel.app/api/lock`. Handles CORS preflight, optional passcode check, and uses the GitHub Contents API to commit updates to `main` with 3x retry on 409 Conflict. Answers GET to return current locks.
 - **Daily Publication Sync:** `publication.py` runs `sync_remote_locks()` (`git fetch origin main && git merge --ff-only`) before refreshing reports so phone-written locks reach the static export.
 - **Optimizer Pinning:** `lineup.py` pre-filters pinned starters, removes them and their slots from Hungarian candidates, and renders their banked FP. When scheduled candidates are fewer than active slots, healthy idle players fill remaining slots as zero-projection placeholders.

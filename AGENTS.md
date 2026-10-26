@@ -60,7 +60,7 @@ To maximize agent effectiveness and minimize unnecessary token expenditure:
 
 Do not read entire multi-thousand line files speculatively. Consult this index:
 - **Lock / Wait decision heuristics, roster/slot contention & per-game means:** `decide.py`, `model.py`, `docs/runbooks/ROSTER_AWARE_LOCK_DECISIONS.md`
-- **Locked-player pinning & state:** `state/locks.json`, `storage.py` (`load_locks`), `lineup.py` (`recommend_lineup`)
+- **Locked-player pinning & state:** `state/locks.json`, `storage.py` (`load_locks`, `lock_history_for_league`), `lineup.py` (`recommend_lineup`)
 - **Vercel lock endpoint & shared logic:** `api/lock.ts`, `shared/locks-core.cjs`
 - **Opponent-aware features (Pace, DefRtg, rest, concessions):** `features.py` (`FeatureBuilder`)
 - **Ridge component models & hyperparameter knobs:** `model_ml.py` (`ComponentRidge`, `model_settings`)
@@ -72,8 +72,8 @@ Do not read entire multi-thousand line files speculatively. Consult this index:
 - **Daily badges (15 stat + 4 fantasy leaders):** `daily_badges.py`
 - **Milestones & contextual awards (Butterfingers, streaks):** `badge_awards.py`
 - **Season badge ledger in SQLite:** `badge_store.py`
-- **Season Review aggregations & key players:** `season_review.py`
-- **Waiver pickups & schedule-aware swap cards:** `pickups.py` (`find_pickups`, `suggest_swap`)
+- **Season Review aggregations, team comparison & weekly lock audit:** `season_review.py` (`season_review`, `weekly_film`), `engine.py` (`_film_review`), `web/app.js` (`state.reviewTab`)
+- **Waiver pickups & schedule-aware swap cards:** `pickups.py` (`find_pickups` with `prior=` early-season blending, `suggest_swap`)
 - **Games to watch cross-team matchup ranking:** `web/insights.js` (`gamesToWatch`), `web/app.js`
 - **Sleeper import & fallback box scores:** `sleeper.py`, `sleeper_stats.py`
 - **SQLite normalized v2 store (dim/fact) & migrations:** `game_store.py`, `forecast_store.py`, `scripts/migrate_v2_db.py`

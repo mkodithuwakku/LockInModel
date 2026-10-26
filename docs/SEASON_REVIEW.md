@@ -4,6 +4,15 @@ Open **Season review** to see the selected team's season production; switch
 teams with the usual team selector at the top. The default **My teams** view
 still opens on the recommended roster sheet.
 
+The tab holds three switchable views:
+
+- **Season review** — the selected team's production under its own league
+  formula, described below.
+- **Compare teams** — every loaded team scored with the same default fantasy
+  formula, so leagues with different custom rules compare fairly.
+- **Shaqtin' a fool** — a hindsight audit of the most recent matchup week's
+  recorded lock calls.
+
 ## What the numbers mean
 
 This is the **current roster's observed NBA production**, scored under that
@@ -42,6 +51,37 @@ even the strongest eligible change is a decline. These are descriptive summaries
 not forecasts, awards, or evidence of predictive accuracy. All roster members are
 listed below in total-FP order; selecting a player opens the existing details.
 
+## Compare teams
+
+**Compare teams** re-scores every loaded team's current roster under one default
+fantasy formula (the configured `weights`, not each league's custom rules) and
+ranks them by season total FP. It also shows FP per appearance, appearance and
+coverage counts, and each team's top three normalized scorers. The scope matches
+the main review — observed season games for each team's current roster — so it
+compares production, not Sleeper standings or locked scores.
+
+## Shaqtin' a fool
+
+**Shaqtin' a fool** is a hindsight audit of the most recent matchup week with
+recorded locks: the current week when locks exist, otherwise the newest archived
+week. Expired matchup weeks are archived per league in `state/locks.json`
+(bounded at 30 weeks), so completed weeks remain reviewable after rollover.
+
+- **Retained FP:** every recorded locked score plus the best legal fill of the
+  remaining lineup slots using each unlocked roster player's best game that week.
+- **Perfect week:** the hindsight-optimal assignment of everyone's best game
+  across every slot.
+- **Left on table / efficiency:** the gap between the two, and retained as a
+  share of perfect.
+
+A lock is flagged only when unpinning it and re-filling its slot would have
+scored more. If the same player refills the slot with a better later game it is
+a *timing* mistake ("right player, wrong night"); if a teammate takes the slot it
+is a *wrong-player* mistake. The audit uses each roster player's best observed
+game of that week — a replay heuristic over completed games, not a judgment of
+the information available when the locks were made. Weeks without recorded locks
+or completed roster games show an empty review rather than invented conclusions.
+
 ## Data and boundaries
 
 `season_review.py` receives the engine's cutoff-filtered observations and uses the
@@ -60,8 +100,8 @@ Archived leagues remain excluded from the public report; local archive visibilit
 follows the existing team controls. This tab does not provide a cross-season
 selector or historical roster ownership reconstruction.
 
-The public JSON exports only allowlisted summary, box-score, weekly, and player
-fields. The static site needs no database or additional scheduled job. It updates
+The public JSON exports only allowlisted summary, box-score, weekly, player,
+cross-team comparison, and lock-audit fields. The static site needs no database or additional scheduled job. It updates
 with the existing daily publication and manual local refresh workflow. A retained
 or expired report is historical information, dated by the report and review.
 
@@ -75,7 +115,8 @@ and unavailable ten-game trends. No personal account details are included.
 Tests cover full-season windows beyond 25 games, current/prior/future boundaries,
 corrections, scoring bonuses, weighted shooting percentages, missing data,
 negative totals, completed-season reads, export privacy, key-player sample gates,
-and player-detail identity mapping. Responsive browser checks cover the team
+weekly lock-audit timing/player mistakes and empty states, lock-week archival on
+rollover, and player-detail identity mapping. Responsive browser checks cover the team
 cards, contributor details, weekly disclosure, and returning to the roster.
 
 ## Season Badge race

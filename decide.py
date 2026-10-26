@@ -286,26 +286,26 @@ def _roster_reason(row_i, challenger, challenger_profile, p_le, slot, decision):
         curr_j = challenger_profile.get("current_fp")
         if curr_j is not None and curr_j > c_i and not challenger_profile["future_mus"]:
             return (
-                f"Latest score {c_i:.1f} FP trails unlocked contender {name} "
-                f"({float(curr_j):.1f} FP) for {slot}."
+                f"Latest score {c_i:.1f} FP trails {name} ({float(curr_j):.1f} "
+                f"FP); locking now would leave them without a lineup slot."
             )
         rem_j = len(challenger_profile["future_mus"])
         rem_txt = f"{rem} remaining" if rem else "no remaining games"
         return (
-            f"Latest score {c_i:.1f} FP{base_txt} ({rem_txt}); wait for {name} "
-            f"({challenger_profile['expected_max']:.1f} proj FP, {rem_j} remaining) "
-            f"contesting {slot}."
+            f"Latest score {c_i:.1f} FP{base_txt} ({rem_txt}); wait — locking "
+            f"now would leave {name} ({challenger_profile['expected_max']:.1f} "
+            f"proj FP, {rem_j} remaining) without a lineup slot."
         )
     if decision == "LOCK" and challenger is not None:
         name = challenger.get("player") or "a roster contender"
         if rem:
             return (
                 f"Latest score {c_i:.1f} FP{base_txt} ({rem} remaining) "
-                f"clears {slot} contender {name}."
+                f"clears lineup contender {name}."
             )
         return (
             f"No further team games in the verified week; {c_i:.1f} FP "
-            f"clears {slot} contender {name}."
+            f"clears lineup contender {name}."
         )
     return row_i.get("reason")
 

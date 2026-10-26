@@ -11,7 +11,7 @@ The project-level [README](../README.md) is the portfolio overview and technical
 7. [Test Week](TEST_WEEK.md): practice morning/night decisions with banked scores and isolated rosters.
 8. [Historical replay](HISTORICAL_REPLAY.md): understand immutable fixtures and their separation from live history.
 9. [Known issues](KNOWN_ISSUES.md): review unresolved limitations honestly.
-10. [Season review](SEASON_REVIEW.md): all-team production summaries, weekly production per appearance, key player highlights, full-season Badge race, and player season badge cards.
+10. [Season review](SEASON_REVIEW.md): all-team production summaries, weekly production per appearance, key player highlights, normalized cross-team comparison, the weekly Shaqtin' a fool lock audit, full-season Badge race, and player season badge cards.
 
 The historical fixture was captured from an immutable third-party archive of NBA API responses after one direct NBA bulk request timed out. Sleeper NBA league import was verified against the user's account. Local tests prohibit network access. No test email was sent; the previously exposed credential is blocked locally.
 

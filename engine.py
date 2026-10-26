@@ -10,6 +10,7 @@ from storage import (
     read_json,
     load_locks,
     locks_for_league,
+    lock_history_for_league,
 )
 from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
@@ -18,6 +19,7 @@ from pickups import find_pickups, available_players, suggest_swap
 from scoring import apply_scoring_policy, effective_weights
 from transport import DataUnavailable
 from lineup import (
+    active_slots,
     project_players,
     apply_opponent_model,
     recommend_lineup,
@@ -27,7 +29,7 @@ from lineup import (
 )
 from daily_badges import previous_night_badges, fantasy_night_badges, combine_badges
 from badge_awards import raw_awards, fantasy_awards
-from season_review import season_review
+from season_review import season_review, weekly_film
 
 
 def today():
@@ -51,6 +53,59 @@ def fantasy_week_key(provider, reference):
         if len(weeks) == 1:
             return int(weeks.pop())
     return bounds[0]
+
+
+def _week_bounds_for_key(key, calendar):
+    """Date bounds for an archived lock week: Sleeper week ints map through
+    the calendar; date-string keys cover a Monday-Sunday span."""
+    if isinstance(key, bool):
+        return None
+    if isinstance(key, int) and getattr(calendar, "games", None):
+        dates = sorted(g["date"] for g in calendar.games if g.get("week") == key)
+        return [dates[0], dates[-1]] if dates else None
+    if isinstance(key, str) and key:
+        try:
+            start = dt.date.fromisoformat(key)
+        except ValueError:
+            return None
+        return [key, str(start + dt.timedelta(days=6))]
+    return None
+
+
+def _film_review(
+    provider, reference, week_key, team, locks_doc, team_locks, rows, weights, observed
+):
+    """Pick the most recent matchup week with recorded locks (current first)
+    and audit it; falls back to the current week when nothing is locked yet."""
+    if team.get("source") != "sleeper":
+        return None
+    calendar = getattr(provider, "calendar", None)
+    bounds = (
+        calendar.display_week(reference)
+        if calendar
+        else [str(d.date()) for d in get_week_bounds(reference)]
+    )
+    history = lock_history_for_league(locks_doc, team.get("league_id"))
+    history = sorted(
+        history.values(),
+        key=lambda r: (
+            (0, r["schedule_week"])
+            if isinstance(r.get("schedule_week"), int)
+            else (1, str(r.get("schedule_week") or ""))
+        ),
+        reverse=True,
+    )
+    candidates = [(week_key, bounds, team_locks)]
+    for record in history:
+        hb = _week_bounds_for_key(record.get("schedule_week"), calendar)
+        if hb:
+            candidates.append(
+                (record.get("schedule_week"), hb, record.get("locks") or {})
+            )
+    key, week, locks = next((c for c in candidates if c[2]), candidates[0])
+    film = weekly_film(observed, rows, active_slots(team), locks, week, weights)
+    film["week"] = {"key": key, "start": week[0], "end": week[1]}
+    return film
 
 
 def build_dashboard(
@@ -457,7 +512,7 @@ def build_dashboard(
             rows.append(row)
         try:
             candidates = (
-                find_pickups(observed, team, cfg, reference, positions)
+                find_pickups(observed, team, cfg, reference, positions, prior=fallback)
                 if not observed.empty and not getattr(provider, "stats_error", None)
                 else []
             )
@@ -670,6 +725,21 @@ def build_dashboard(
             provider, "stats_error", None
         ):
             apply_roster_lock_context(team, rows, locks=team_locks)
+        film = (
+            _film_review(
+                provider,
+                reference,
+                week_key,
+                team,
+                locks_doc,
+                team_locks,
+                rows,
+                weights,
+                observed,
+            )
+            if mode == "live"
+            else None
+        )
         daily_lineup = recommend_lineup(
             team,
             rows,
@@ -735,6 +805,7 @@ def build_dashboard(
                 ),
                 "recommended_lineup": daily_lineup,
                 "locks": team_locks,
+                "film_review": film,
                 "pickups": candidates,
                 "swap_suggestion": swap_suggestion,
                 "available_players": (
@@ -751,6 +822,40 @@ def build_dashboard(
                     if mode == "live"
                     else []
                 ),
+            }
+        )
+    comparison = {"weights_label": "Default scoring", "teams": []}
+    for item in results:
+        review = season_review(
+            observed,
+            item.get("results") or [],
+            cfg["weights"],
+            cutoff.date(),
+            unavailable=bool(getattr(provider, "stats_error", None)),
+            season=item.get("season"),
+        )
+        comparison["teams"].append(
+            {
+                "team_id": item.get("id"),
+                "team_name": item.get("team_name"),
+                "league_name": item.get("league_name"),
+                "status": review["status"],
+                "total_fp": review["total_fp"],
+                "fp_per_game": review["fp_per_game"],
+                "appearances": review["appearances"],
+                "covered_players": review["covered_players"],
+                "roster_count": review["roster_count"],
+                "leaders": [
+                    {
+                        "player": p["player"],
+                        "player_id": p["player_id"],
+                        "total_fp": p["total_fp"],
+                        "average_fp": p["average_fp"],
+                        "games": p["games"],
+                    }
+                    for p in review.get("players", [])[:3]
+                ],
+                "weeks": review.get("weeks", []),
             }
         )
     return {
@@ -771,6 +876,7 @@ def build_dashboard(
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "teams": results,
         "alerts": alerts,
+        "comparison": comparison,
         "dataset": provider.manifest,
         "sleeper": cfg.get("sleeper", {}),
         "notice": (

@@ -64,13 +64,46 @@ function validatePayload(body) {
   };
 }
 
+const LOCK_HISTORY_WEEKS = 30;
+
+function weekSortValue(entry) {
+  const week = entry && typeof entry === "object" ? entry.schedule_week : null;
+  return typeof week === "number" ? [0, week] : [1, String(week ?? "")];
+}
+
+function archiveWeek(container, newWeek, now) {
+  // Expired weeks move into the league's own bounded history so the weekly
+  // film review can audit past lock calls instead of losing them on rollover.
+  container = {...(container || {})};
+  const oldWeek = container.schedule_week;
+  const history = {...(container.history || {})};
+  if (oldWeek != null && container.locks && Object.keys(container.locks).length) {
+    history[String(oldWeek)] = {
+      schedule_week: oldWeek,
+      locks: {...container.locks},
+      archived_at: now.toISOString(),
+    };
+    const ordered = Object.entries(history).sort((a, b) => {
+      const [ta, va] = weekSortValue(a[1]), [tb, vb] = weekSortValue(b[1]);
+      return ta - tb || (va < vb ? -1 : va > vb ? 1 : 0);
+    });
+    while (ordered.length > LOCK_HISTORY_WEEKS) ordered.shift();
+    for (const key of Object.keys(history)) delete history[key];
+    for (const [key, value] of ordered) history[key] = value;
+  }
+  if (newWeek == null) container.locks = {};
+  else container = {schedule_week: newWeek, locks: {}};
+  container.history = history;
+  return container;
+}
+
 function applyLock(doc, payload, now = new Date()) {
   const {league_id, schedule_week: week, action, player} = payload;
   const next = doc && typeof doc === "object" ? {...doc} : emptyDocument();
   const leagues = {...(next.leagues || {})};
   let container = {...(leagues[league_id] || {})};
   if (container.schedule_week !== week)
-    container = {schedule_week: week, locks: {}};
+    container = archiveWeek(container, week, now);
   const records = {...(container.locks || {})};
   const key = player.player_id || player.canonical_name;
   if (action === "lock") {
@@ -85,7 +118,7 @@ function applyLock(doc, payload, now = new Date()) {
   container.locks = records;
   for (const [lid, record] of Object.entries(leagues)) {
     if (record && typeof record === "object" && olderWeek(record.schedule_week, week))
-      delete leagues[lid];
+      leagues[lid] = archiveWeek(record, null, now);
   }
   leagues[league_id] = container;
   next.version = 1;
