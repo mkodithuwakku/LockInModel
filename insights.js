@@ -477,7 +477,216 @@
       .sort((a, b) => b[key] - a[key] || a.player.localeCompare(b.player))[0];
     return {anchor: best("total_fp", 1), scorer: best("average_fp", 1), mover: best("change", 10), swing: best("spread", 5)};
   }
-  const helpers = { badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, repinLineup, teamForm, sparkline, dailyBadges, previousDate, badgeGuide, varietyCap, lockMatches, gamesToWatch };
+  function comparisonTeams(comparison, metric = "roster_average") {
+    const mean = values => values.length ? values.reduce((a,b) => a+b, 0) / values.length : null;
+    const teams = (comparison?.teams || []).map(t => {
+      const players = (t.players || []).filter(p => p.games > 0 && Number.isFinite(p.average_fp))
+        .sort((a,b) => b.average_fp-a.average_fp || a.player.localeCompare(b.player));
+      return {...t, ranked_players: players,
+        roster_average: mean(players.map(p => p.average_fp)),
+        top_five: players.length >= 5 ? mean(players.slice(0,5).map(p => p.average_fp)) : null,
+        depth: mean(players.slice(5).map(p => p.average_fp))};
+    });
+    return teams.sort((a,b) => (b[metric] ?? -Infinity) - (a[metric] ?? -Infinity) || a.team_name.localeCompare(b.team_name));
+  }
+  function comparisonPlayers(comparison, filters = {}) {
+    const unique = new Map();
+    for (const t of comparison?.teams || []) {
+      if (filters.team && t.team_id !== filters.team) continue;
+      for (const p of t.players || []) {
+        const key = `${t.season || ""}:${p.player_id}`;
+        if (!unique.has(key)) unique.set(key, {...p, season:t.season, teams:[], team_id:t.team_id});
+        unique.get(key).teams.push(t.team_name);
+      }
+    }
+    const metric = filters.metric || "average_fp";
+    const value = p => metric.startsWith("pergame:") ? (p.stats?.[metric.slice(8)] != null && p.games ? p.stats[metric.slice(8)]/p.games : null)
+      : metric.startsWith("stat:") ? p.stats?.[metric.slice(5)] : p[metric];
+    const ascending = metric === "spread";
+    const rows = [...unique.values()].filter(p =>
+      p.games >= (Number(filters.minimum) || 1) &&
+      (!filters.position || p.positions?.includes(filters.position)) &&
+      (!filters.search || p.player.toLowerCase().includes(filters.search.toLowerCase())));
+    rows.sort((a,b) => {
+      const av = value(a), bv = value(b);
+      if (!Number.isFinite(av)) return Number.isFinite(bv) ? 1 : a.player.localeCompare(b.player);
+      if (!Number.isFinite(bv)) return -1;
+      return (ascending ? av-bv : bv-av) || a.player.localeCompare(b.player);
+    });
+    let rank = 0, last;
+    return rows.map((p,i) => {
+      const v = value(p);
+      if (v !== last) rank = i+1;
+      last = v;
+      return {...p, rank:Number.isFinite(v) ? rank : null};
+    });
+  }
+  function filmSpotlight(film, margin = null) {
+    // A baseline shortfall affects the banked total only for that exact locked game.
+    const candidates = (film?.performances || []).filter(p => Number.isFinite(p.delta) && p.delta < 0 &&
+      (film.locked || []).some(l => String(l.player_id) === String(p.player_id) && l.date === p.date && Math.abs(l.fp-p.fp) < 0.01))
+      .sort((a,b) => a.delta-b.delta || a.player.localeCompare(b.player));
+    return {player:candidates[0], flips: Number.isFinite(margin) && margin >= 0
+      ? candidates.filter(p => -p.delta > margin) : []};
+  }
+  const SEASON_STATS = ["MIN","PTS","REB","AST","STL","BLK","FG3M","TOV","FGM","FGA","FTM","FTA","FG3A","OREB","DREB","PF"];
+  const average = values => values.length ? values.reduce((a,b)=>a+b,0)/values.length : null;
+  function quantile(values, q) {
+    if (!values.length) return null;
+    const sorted = [...values].sort((a,b)=>a-b), index=(sorted.length-1)*q, low=Math.floor(index);
+    return sorted[low]+(sorted[Math.ceil(index)]-sorted[low])*(index-low);
+  }
+  function seasonAggregate(games) {
+    const n=games.length, fp=games.map(g=>g.fp), mean=average(fp), stats={}, coverage={}, scoring={};
+    for(const key of SEASON_STATS) {
+      const values=games.map(g=>g.stats?.[key]).filter(Number.isFinite);
+      coverage[key]=values.length;
+      stats[key]=n && values.length===n ? values.reduce((a,b)=>a+b,0) : null;
+    }
+    const ratio=(a,b,scale=1)=>Number.isFinite(a) && Number.isFinite(b) && b>0 ? a/b*scale : null;
+    const sum=(a,b)=>Number.isFinite(a)&&Number.isFinite(b) ? a+b : null;
+    stats.FG_PCT=ratio(stats.FGM,stats.FGA,100);
+    stats.FG3_PCT=ratio(stats.FG3M,stats.FG3A,100);
+    stats.FT_PCT=ratio(stats.FTM,stats.FTA,100);
+    stats.EFG_PCT=ratio(sum(stats.FGM,Number.isFinite(stats.FG3M)?stats.FG3M*.5:null),stats.FGA,100);
+    stats.TS_PCT=ratio(stats.PTS,Number.isFinite(stats.FGA)&&Number.isFinite(stats.FTA)?2*(stats.FGA+.44*stats.FTA):null,100);
+    stats.AST_TOV=ratio(stats.AST,stats.TOV);
+    const total=n?fp.reduce((a,b)=>a+b,0):null;
+    stats.FP_PER_MIN=ratio(total,stats.MIN);
+    stats.FP_PER36=ratio(total,stats.MIN,36);
+    for(const key of ["PTS","REB","AST"]) stats[`${key}_PER36`]=ratio(stats[key],stats.MIN,36);
+    stats.THREE_RATE=ratio(stats.FG3A,stats.FGA,100);
+    stats.FT_RATE=ratio(stats.FTA,stats.FGA);
+    stats.STOCKS=sum(stats.STL,stats.BLK);
+    stats.FG_MISSES=sum(stats.FGA,stats.FGM==null?null:-stats.FGM);
+    stats.FT_MISSES=sum(stats.FTA,stats.FTM==null?null:-stats.FTM);
+    for(const game of games) for(const [key,value] of Object.entries(game.scoring || {})) {
+      if(Number.isFinite(value)) scoring[key]=(scoring[key] || 0)+value;
+    }
+    const benchmarks=games.filter(g=>Number.isFinite(g.delta));
+    const countKnown=key=>n && games.every(g=>typeof g[key]==="boolean") ? games.filter(g=>g[key]).length : null;
+    return {games:n,total_fp:total,average_fp:mean,stats,coverage,scoring,
+      median_fp:quantile(fp,.5),floor_fp:n>=5?quantile(fp,.25):null,ceiling_fp:n>=5?quantile(fp,.75):null,
+      spread:n>=5?Math.sqrt(average(fp.map(v=>(v-mean)**2))):null,
+      best_fp:n?Math.max(...fp):null,worst_fp:n?Math.min(...fp):null,
+      recent_fp:average(fp.slice(-5)),recent_games:Math.min(n,5),
+      change:n>=10?average(fp.slice(-5))-average(fp.slice(-10,-5)):null,
+      forty:games.filter(g=>g.fp>=40).length,sixty:games.filter(g=>g.fp>=60).length,
+      negative:games.filter(g=>g.fp<0).length,
+      double_doubles:countKnown("double_double"),triple_doubles:countKnown("triple_double"),
+      benchmark_games:benchmarks.length,above_baseline:benchmarks.filter(g=>g.delta>0).length,
+      below_baseline:benchmarks.filter(g=>g.delta<0).length,
+      baseline_delta:average(benchmarks.map(g=>g.delta))};
+  }
+  function seasonPeriod(date, period="week") {
+    if(period==="month") return date.slice(0,7);
+    if(period==="day") return date;
+    const d=new Date(date+"T12:00:00Z");
+    d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));
+    return d.toISOString().slice(0,10);
+  }
+  function seasonGroups(games, key) {
+    const groups=new Map();
+    for(const g of games) { const value=key(g); if(!groups.has(value)) groups.set(value,[]); groups.get(value).push(g); }
+    return [...groups].map(([label,entries])=>({label,entries,...seasonAggregate(entries)}));
+  }
+  function seasonExplorer(team, filters={}) {
+    const review=team.season_review || {};
+    const full=(review.game_log || []).filter(g=>Number.isFinite(g.fp)).slice()
+      .sort((a,b)=>a.date.localeCompare(b.date) || String(a.player_id).localeCompare(String(b.player_id)));
+    let from=filters.from || "", to=filters.to || review.as_of || "";
+    if(filters.range && filters.range!=="custom") {
+      from=""; to=review.as_of || full.at(-1)?.date || "";
+      if(to && ["7","30"].includes(filters.range)) {
+        const d=new Date(to+"T12:00:00Z");d.setUTCDate(d.getUTCDate()-Number(filters.range)+1);from=d.toISOString().slice(0,10);
+      }
+    }
+    const games=full.filter(g=>(!from || g.date>=from) && (!to || g.date<=to) &&
+      (!filters.player || String(g.player_id)===filters.player) &&
+      (!filters.venue || g.venue===filters.venue) && (!filters.result || g.result===filters.result));
+    const summary=seasonAggregate(games);
+    const byPlayer=new Map(seasonGroups(games,g=>String(g.player_id)).map(g=>[g.label,g]));
+    const seen=new Set();
+    const players=(team.results || []).map((p,index)=>({...p,index})).filter(p=>{
+      const id=String(p.player_id || p.player);
+      if(seen.has(id) || (filters.player && String(p.player_id)!==filters.player)) return false;
+      seen.add(id); return true;
+    }).map(p=>{
+      const group=byPlayer.get(String(p.player_id)), entries=group?.entries || [];
+      let streak=0, direction=null;
+      for(const g of [...entries].reverse()) {
+        if(!Number.isFinite(g.delta) || g.delta===0) break;
+        const sign=g.delta>0?"above":"below";
+        if(direction && direction!==sign) break;
+        direction=sign;streak++;
+      }
+      return {...p,...seasonAggregate(entries),entries,streak,streak_direction:direction,
+        first_played:entries[0]?.date,last_played:entries.at(-1)?.date};
+    }).sort((a,b)=>(b.total_fp ?? -Infinity)-(a.total_fp ?? -Infinity) || a.player.localeCompare(b.player));
+    const positive=players.reduce((s,p)=>s+Math.max(0,p.total_fp || 0),0);
+    players.forEach(p=>p.share=positive ? Math.max(0,p.total_fp || 0)/positive*100 : null);
+    const roles=seasonGroups(games,g=>{
+      const p=players.find(p=>String(p.player_id)===String(g.player_id));
+      return ["IR","TAXI"].includes(p?.roster_slot)?"Current reserves":p?.starter?"Current starters":"Current bench";
+    });
+    const periods=seasonGroups(games,g=>seasonPeriod(g.date,filters.period || "week")).sort((a,b)=>a.label.localeCompare(b.label));
+    const weeks=seasonGroups(games,g=>seasonPeriod(g.date)).sort((a,b)=>a.label.localeCompare(b.label));
+    const splits=[
+      ...seasonGroups(games,g=>g.venue==="home"?"Home":g.venue==="away"?"Away":"Venue unknown").map(g=>({...g,group:"Venue"})),
+      ...seasonGroups(games,g=>g.result==="W"?"NBA wins":g.result==="L"?"NBA losses":"Result unknown").map(g=>({...g,group:"NBA result"})),
+      ...seasonGroups(games,g=>g.days_since_previous==null?"No preceding appearance":g.days_since_previous===1?"Consecutive days":g.days_since_previous===2?"1 day between":g.days_since_previous>2?"2+ days between":"Same-day appearances").map(g=>({...g,group:"Player game spacing"})),
+    ];
+    const rankedGames=[...games].sort((a,b)=>b.fp-a.fp || a.date.localeCompare(b.date));
+    const deltas=games.filter(g=>Number.isFinite(g.delta)).sort((a,b)=>b.delta-a.delta);
+    const bands=[[-Infinity,0,"Below 0"],[0,10,"0–9.9"],[10,20,"10–19.9"],[20,30,"20–29.9"],[30,40,"30–39.9"],[40,50,"40–49.9"],[50,60,"50–59.9"],[60,Infinity,"60+"]];
+    return {available:Array.isArray(review.game_log),full,games,from,to,summary,players,periods,weeks,roles,splits,
+      days:seasonGroups(games,g=>g.date),
+      opponents:seasonGroups(games,g=>g.opponent || "Unknown").sort((a,b)=>b.games-a.games || a.label.localeCompare(b.label)),
+      distribution:bands.map(([low,high,label])=>({label,count:games.filter(g=>g.fp>=low && g.fp<high).length})),
+      top_three_share:positive?players.slice(0,3).reduce((s,p)=>s+Math.max(0,p.total_fp || 0),0)/positive*100:null,
+      effective_contributors:positive?1/players.reduce((s,p)=>s+(p.share/100)**2,0):null,
+      records:{best:rankedGames[0],worst:rankedGames.at(-1),above:deltas.find(g=>g.delta>0),below:[...deltas].reverse().find(g=>g.delta<0)}};
+  }
+  function seasonPlayerRows(explorer, filters={}) {
+    const metric=filters.metric || "total_fp";
+    const value=p=>metric.startsWith("pergame:") ? (p.games && Number.isFinite(p.stats[metric.slice(8)])?p.stats[metric.slice(8)]/p.games:null)
+      : metric.startsWith("stat:")?p.stats[metric.slice(5)]:p[metric];
+    return explorer.players.filter(p=>(!filters.search || p.player.toLowerCase().includes(filters.search.toLowerCase())) &&
+      (!filters.position || (p.positions || []).includes(filters.position)) && p.games>=(Number(filters.minimum)||0))
+      .sort((a,b)=>{
+        const av=value(a),bv=value(b);
+        if(!Number.isFinite(av)) return Number.isFinite(bv)?1:a.player.localeCompare(b.player);
+        if(!Number.isFinite(bv)) return -1;
+        return (metric==="spread"?av-bv:bv-av) || a.player.localeCompare(b.player);
+      });
+  }
+  function seasonLogRows(explorer, filters={}) {
+    const search=(filters.search || "").toLowerCase();
+    const rows=explorer.games.filter(g=>(!search || `${g.player} ${g.opponent || ""} ${g.date}`.toLowerCase().includes(search)) &&
+      (filters.kind==="forty"?g.fp>=40:filters.kind==="below"?g.delta<0:filters.kind==="dd"?g.double_double:filters.kind==="td"?g.triple_double:true));
+    const metric=filters.metric || "date";
+    return rows.sort((a,b)=>{
+      if(metric==="date") return b.date.localeCompare(a.date) || b.fp-a.fp;
+      const av=metric==="low_fp"?a.fp:metric.startsWith("stat:")?a.stats?.[metric.slice(5)]:a[metric];
+      const bv=metric==="low_fp"?b.fp:metric.startsWith("stat:")?b.stats?.[metric.slice(5)]:b[metric];
+      if(!Number.isFinite(av)) return Number.isFinite(bv)?1:0;
+      if(!Number.isFinite(bv)) return -1;
+      return (metric==="low_fp"?a.fp-b.fp:bv-av) || b.date.localeCompare(a.date);
+    });
+  }
+  function seasonCsv(rows) {
+    const keys=["date","player","player_id","opponent","venue","result","fp","baseline_fp","baseline_games","delta","double_double","triple_double"];
+    const scoring=[...new Set(rows.flatMap(g=>Object.keys(g.scoring || {})))].sort();
+    const cell=value=>{
+      let text=value==null?"":String(value);
+      if(typeof value==="string" && /^[=+\-@\t\r\n]/.test(text)) text="'"+text;
+      return `"${text.replace(/"/g,'""')}"`;
+    };
+    return [keys.concat(SEASON_STATS,scoring.map(k=>`FP_FROM_${k}`)),
+      ...rows.map(g=>[...keys.map(k=>g[k]),...SEASON_STATS.map(k=>g.stats?.[k]),...scoring.map(k=>g.scoring?.[k])])]
+      .map(row=>row.map(cell).join(",")).join("\r\n");
+  }
+  const helpers = { seasonExplorer, seasonAggregate, seasonPlayerRows, seasonLogRows, seasonPeriod, seasonCsv, comparisonTeams, comparisonPlayers, filmSpotlight, badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, repinLineup, teamForm, sparkline, dailyBadges, previousDate, badgeGuide, varietyCap, lockMatches, gamesToWatch };
   helpers._test = {optimalAssignment, eligibleSlot, lockMatches};
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;

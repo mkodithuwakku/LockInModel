@@ -27,6 +27,11 @@ let state = {
   badgeScope: "nba",
   badgeMetric: "total",
   reviewTab: "review",
+  compareMetric: "roster_average",
+  compareFilters: {team:"", position:"", minimum:1, metric:"average_fp", search:""},
+  filmMargins: {},
+  filmFilter: "all",
+  seasonContexts: {},
 };
 const statuses = {
   BANKED: ["BANKED", "lock"],
@@ -434,7 +439,7 @@ function seasonBadgePanel(t) {
     }).join("")}</details>
     <details class="badge-race-rules"><summary>Coverage & counting</summary><p>${review.tracked_days || 0} NBA game nights · ${review.player_games || 0} observed player games${review.first_date ? ` · ${esc(review.first_date)} to ${esc(review.last_date)}` : ""}. Totals cover stored observations through ${esc(review.as_of || "the last refresh")}.</p><p>Negative indicators: ${(review.negative_keys || []).map(key=>guide.find(b=>b.key===key)?.name).filter(Boolean).map(esc).join(", ") || "Not available"}. A high fantasy score in a loss is not a negative badge.</p><p>Milestones include double-/triple-doubles and stat thresholds. Only the highest stat tier earned that night counts. Variety counts distinct badge types. A qualifying streak earns a badge on every qualifying game night.</p><p>Projection comparisons need saved pregame forecasts: ${review.forecast_player_games || 0}/${review.player_games || 0} observed player games have matching snapshots. Historical awards can be rebuilt from stored results; missing pregame forecasts are never invented. Corrections replace previous awards, and changing league scoring recalculates a separate season tally.</p></details>`;
 }
-function seasonReviewHtml(t) {
+function seasonSummaryHtml(t) {
   const r = t.season_review || {}, players = LockInInsights.seasonContributors(t);
   const highlights = LockInInsights.seasonHighlights(players);
   const number = (n, digits = 1) => Number.isFinite(n) ? n.toLocaleString(undefined, {maximumFractionDigits: digits}) : "—";
@@ -463,6 +468,154 @@ function seasonReviewHtml(t) {
   </div>`;
 }
 
+function seasonContext(t=team()) {
+  return state.seasonContexts[t.id] ||= {
+    range:"season",from:"",to:"",player:"",venue:"",result:"",period:"week",
+    trendMetric:"average_fp",tableView:"production",minimum:0,position:"",search:"",
+    metric:"total_fp",logSearch:"",logKind:"all",logMetric:"date",logLimit:40,
+  };
+}
+function seasonSelect(key, label, options, value, group="context") {
+  return `<label>${esc(label)}<select data-season-${group}="${key}">${Object.entries(options).map(([k,v])=>`<option value="${esc(k)}" ${String(value)===k?"selected":""}>${esc(v)}</option>`).join("")}</select></label>`;
+}
+const seasonSigned = n => n == null ? "—" : `${n>0?"+":""}${fmt(n)}`;
+const seasonTone = n => n>0?"stat-positive":n<0?"stat-negative":"";
+const seasonNumber = (n,d=1) => Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:d}):"—";
+function seasonTable(label, headers, rows) {
+  return `<div class="compare-table-wrap season-table-wrap" tabindex="0" role="region" aria-label="${esc(label)}"><table class="compare-table"><thead><tr>${headers.map(h=>`<th scope="col">${h}</th>`).join("")}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}">No observations match this selection.</td></tr>`}</tbody></table></div>`;
+}
+function seasonReviewHtml(t) {
+  const r=t.season_review || {}, c=seasonContext(t);
+  if(!Array.isArray(r.game_log) || (r.status==="ready" && !r.game_log.length)) return `<p class="review-empty">This saved report has summary statistics only. A data refresh adds the season explorer and complete game history.</p>${seasonSummaryHtml(t)}`;
+  const roster=Object.fromEntries((t.results || []).filter(p=>p.player_id).map(p=>[p.player_id,p.player]));
+  return `<div class="season-review season-explorer">
+    <div class="season-intro"><div><span class="review-kicker">The season, under a microscope</span><h3>${esc(t.team_name)}</h3><p>${esc(r.season || t.season || "Season")} · observations through ${esc(r.as_of || state.data.date)} · your league’s scoring</p></div><span class="season-scope-chip">Current roster</span></div>
+    <p class="review-scope">Explore the production, patterns and people behind your season. Includes these players’ games before joining your roster; historical ownership, Sleeper standings and locked totals are separate.</p>
+    ${r.status==="unavailable"?'<p class="review-empty">Season scoring is unavailable. Missing statistics or unsupported rules must be resolved before this report can be calculated.</p>':""}
+    <div class="season-toolbar">
+      ${seasonSelect("range","Time window",{season:"Full season","7":"Last 7 days","30":"Last 30 days",custom:"Custom dates"},c.range)}
+      ${seasonSelect("player","Player focus",{"":"Entire roster",...roster},c.player)}
+      ${seasonSelect("venue","Venue",{"":"Home + away",home:"Home",away:"Away"},c.venue)}
+      ${seasonSelect("result","NBA result",{"":"All results",W:"NBA wins",L:"NBA losses"},c.result)}
+      ${c.range==="custom"?`<label>From<input type="date" data-season-context="from" value="${esc(c.from)}" max="${esc(r.as_of || "")}"></label><label>Through<input type="date" data-season-context="to" value="${esc(c.to)}" max="${esc(r.as_of || "")}"></label>`:""}
+      <button class="season-reset" data-season-reset>Reset view</button>
+    </div>
+    <nav class="season-jumps" aria-label="Jump to season analysis">${[["pulse","Season pulse"],["dna","Scoring DNA"],["trends","Trends"],["roster","Roster lab"],["matrix","Weekly map"],["splits","Situational splits"],["records","Record book"],["logs","Game archive"]].map(([id,label])=>`<a href="#season-${id}">${label}</a>`).join("")}</nav>
+    <div id="season-explorer-body">${seasonDashboardHtml(t)}</div>
+  </div>`;
+}
+function seasonDashboardHtml(t) {
+  const c=seasonContext(t), x=LockInInsights.seasonExplorer(t,c), s=x.summary;
+  const metric=(label,value,detail="")=>`<article class="season-stat"><span>${label}</span><strong>${value}</strong><small>${detail}</small></article>`;
+  const heading=(id,kicker,title,detail="")=>`<div class="review-section-heading" id="season-${id}"><div><span class="review-kicker">${kicker}</span><h3>${title}</h3></div>${detail?`<span>${detail}</span>`:""}</div>`;
+  if(!x.games.length) return `<div class="review-empty"><h3>${x.from && x.to && x.from>x.to?"The start date is after the end date.":"No observed games in this selection."}</h3><p>Try a broader time window or reset the player, venue and result filters. No games is not a zero-point performance.</p></div>
+    <div class="season-empty-roster">${(t.results || []).map(p=>`<article>${comparisonPerson(p,t.id)}<small>No matching season observations</small></article>`).join("")}</div>`;
+  const covered=x.players.filter(p=>p.games), anchor=covered[0];
+  const movers=covered.filter(p=>p.change!=null).sort((a,b)=>b.change-a.change), mover=movers[0];
+  const bestDay=[...x.days].sort((a,b)=>b.total_fp-a.total_fp)[0];
+  const statPerGame=k=>s.games && Number.isFinite(s.stats[k])?s.stats[k]/s.games:null;
+  const known=s.benchmark_games;
+  return `
+    <div class="season-selection-note" aria-live="polite">${esc(x.from || x.games[0].date)} – ${esc(x.to || x.games.at(-1).date)} · ${x.games.length} player appearances · ${x.days.length} observed nights · ${c.player?"Single-player focus":"Entire roster"}${c.venue?` · ${esc(c.venue)}`:""}${c.result?` · NBA ${c.result==="W"?"wins":"losses"}`:""}</div>
+    ${heading("pulse","01 / The big picture","Your season pulse","All panels follow the filters above")}
+    <div class="season-stat-grid">${metric("Fantasy production",seasonNumber(s.total_fp),"Total FP · volume matters")}${metric("FP per appearance",fmt(s.average_fp),"Every observed player-game")}${metric("Players with games",`${covered.length} / ${x.players.length}`,"Within the selected scope")}${metric("40+ FP games",`${s.forty} <em>/ ${s.games}</em>`,`${fmt(s.forty/s.games*100)}% of appearances`)}${metric("Double / triple doubles",`${s.double_doubles ?? "—"} <em>/ ${s.triple_doubles ?? "—"}</em>`,"Triple-doubles also count as doubles")}${metric("FP per observed night",fmt(s.total_fp/x.days.length),`${x.days.length} nights · schedule dependent`)}</div>
+    <div class="season-stories">
+      <article><span class="review-kicker">Carrying the load</span>${comparisonPerson(anchor,t.id)}<strong>${fmt(anchor.share)}<small>% of positive roster FP</small></strong><p>The top three supply ${fmt(x.top_three_share)}%. Concentration is equivalent to ${fmt(x.effective_contributors)} equal contributors.</p></article>
+      <article><span class="review-kicker">The form watch</span>${mover?`${comparisonPerson(mover,t.id)}<strong class="${seasonTone(mover.change)}">${seasonSigned(mover.change)}<small>FP/G · last five vs previous five</small></strong><p>${mover.change>0?"Your strongest recent improvement in this selection.":mover.change<0?"Even the strongest eligible trend is declining.":"The strongest eligible trend is flat."} ${mover.games} observed games.</p>`:'<h4>Let the sample grow.</h4><p>Ten games per player unlock two five-game windows. Short histories stay visible without an invented trend.</p>'}</article>
+      <article><span class="review-kicker">The benchmark check</span><strong class="${seasonTone(s.baseline_delta)}">${seasonSigned(s.baseline_delta)}<small>FP per game vs preceding baseline</small></strong><p>${s.above_baseline} above · ${s.below_baseline} below · ${known-s.above_baseline-s.below_baseline} level, across ${known}/${s.games} games with a baseline. Uses 3–10 earlier season appearances, never later results.</p></article>
+    </div>
+    ${heading("dna","02 / Where your points come from","Your scoring DNA","Actual league weights, including deductions")}
+    <div class="season-dna-grid"><article class="season-panel"><h4>Fantasy-point sources</h4>${seasonScoringBars(s.scoring,t.season_review?.scoring_rules)}<div class="season-scoring-total"><span>Net production</span><b>${seasonNumber(s.total_fp)} FP</b></div><p class="season-help">Bars compare absolute contributions; rose bars subtract points. Bonuses are separate and can stack.</p>${(t.season_review?.scoring_notes || []).map(n=>`<p class="season-help">${esc(n)}</p>`).join("")}</article>
+    <article class="season-panel"><h4>The box-score fingerprint</h4><div class="season-box-grid">${[["PTS","Points"],["REB","Rebounds"],["AST","Assists"],["STL","Steals"],["BLK","Blocks"],["FG3M","Threes"],["TOV","Turnovers"],["MIN","Minutes"]].map(([k,label])=>metric(label,fmt(statPerGame(k)),`${seasonNumber(s.stats[k],0)} total · ${s.coverage[k]}/${s.games} covered`)).join("")}</div><p class="season-help">Large values are per appearance. Totals require complete inputs; missing box stats stay blank.</p></article></div>
+    <div class="season-efficiency-strip">${[["FG_PCT","FG%"],["FG3_PCT","3P%"],["FT_PCT","FT%"],["EFG_PCT","eFG%"],["TS_PCT","TS%"],["AST_TOV","AST / TO"],["FP_PER_MIN","FP / min"]].map(([k,label])=>metric(label,fmt(s.stats[k],k.includes("PCT")?1:2))).join("")}</div>
+    ${heading("trends","03 / The shape of the season","Momentum, week by week","Volume and efficiency tell different stories")}
+    ${seasonTrendHtml(x,c)}
+    <div class="season-dna-grid"><article class="season-panel"><h4>Your performance distribution</h4><p class="season-help">Every appearance has one place. These are fixed FP bands under your league’s formula.</p><div class="season-histogram">${x.distribution.map(b=>`<div><b>${b.count}</b><span><i style="height:${b.count/Math.max(1,...x.distribution.map(b=>b.count))*100}%"></i></span><small>${b.label}</small></div>`).join("")}</div><div class="season-mini-metrics">${metric("Median",fmt(s.median_fp),"Middle observed score")}${metric("Middle 50%",`${fmt(s.floor_fp)}–${fmt(s.ceiling_fp)}`,"25th–75th percentiles · 5+ games")}${metric("60+ FP nights",s.sixty,`${s.negative} negative-FP games`)}</div></article>
+    <article class="season-panel"><h4>How the roster is built</h4>${seasonTable("Production by current roster role",["Current role","GP","Total FP","FP/G"],x.roles.map(r=>`<tr><th>${esc(r.label)}</th><td>${r.games}</td><td>${seasonNumber(r.total_fp)}</td><td>${fmt(r.average_fp)}</td></tr>`).join(""))}<p class="season-help">Groups use today’s starter, bench and reserve labels. These are not historical lineup starts or points left on your bench.</p><div class="season-mini-metrics">${metric("Busiest scoring night",seasonNumber(bestDay.total_fp),`${esc(bestDay.label)} · ${bestDay.games} appearances`)}${metric("Average game spread",fmt(s.spread),"Pooled standard deviation · 5+ games")}</div></article></div>
+    ${heading("roster","04 / The roster laboratory","Every player, every dimension","League-scored · missing histories remain visible")}
+    <div class="season-toolbar season-local-controls">
+      <label>Find a player<input type="search" data-season-roster="search" value="${esc(c.search)}" placeholder="Player name"></label>
+      ${seasonSelect("position","Position",{"":"All positions",PG:"PG",SG:"SG",SF:"SF",PF:"PF",C:"C"},c.position,"roster")}
+      ${seasonSelect("minimum","Minimum games",{"0":"Include missing","1":"1+","5":"5+","10":"10+","20":"20+"},c.minimum,"roster")}
+      ${seasonSelect("metric","Sort by",{total_fp:"Total FP",average_fp:"FP / game",recent_fp:"Last five",change:"Form change",spread:"Consistency (lowest SD)",floor_fp:"Floor",ceiling_fp:"Ceiling","stat:TS_PCT":"True shooting","stat:EFG_PCT":"Effective FG%","stat:AST_TOV":"Assist / turnover","stat:FP_PER_MIN":"FP / minute","stat:PTS_PER36":"Points / 36 min",...Object.fromEntries(["PTS","REB","AST","STL","BLK","FG3M","TOV","STOCKS","OREB","DREB","PF"].map(k=>[`pergame:${k}`,`${k==="STOCKS"?"Steals + blocks":k} / game`]))},c.metric,"roster")}
+      ${seasonSelect("tableView","Statistics",{production:"Production",shooting:"Shooting & efficiency",reliability:"Reliability & form",all:"All statistics"},c.tableView,"roster")}
+    </div><div id="season-roster-table">${seasonRosterHtml(t,x)}</div>
+    <p class="season-help">Recent form and quartiles use the selected window. Floor/ceiling and spread need 5 games; form change needs 10. Streaks compare each game with its own preceding baseline, not a future season average. Focus a player to update every panel.</p>
+    ${heading("matrix","05 / Your weekly map","Who showed up, and when?","FP per appearance · colour vs each player’s selected-window mean")}
+    ${seasonMatrixHtml(t,x)}
+    ${heading("splits","06 / The conditions","Where does this roster thrive?","Observed NBA context · small samples are visible")}
+    ${seasonSplitsHtml(x)}
+    ${heading("records","07 / The record book","The nights you remember","Extremes within your selected window")}
+    ${seasonRecordsHtml(t,x)}
+    ${heading("logs","08 / The full archive","Every game behind the numbers","Full stored season · not the 25-game player-card limit")}
+    <div class="season-toolbar season-local-controls"><label>Search the archive<input type="search" data-season-log="logSearch" value="${esc(c.logSearch)}" placeholder="Player, opponent or date"></label>
+      ${seasonSelect("logKind","Performances",{all:"All games",forty:"40+ FP",below:"Below prior baseline",dd:"Double-doubles",td:"Triple-doubles"},c.logKind,"log")}
+      ${seasonSelect("logMetric","Sort games",{date:"Newest first",fp:"Highest FP",low_fp:"Lowest FP",delta:"Largest baseline lift",...Object.fromEntries(["PTS","REB","AST","STL","BLK","FG3M","TOV","MIN","OREB","DREB","PF"].map(k=>[`stat:${k}`,`Most ${k==="FG3M"?"3PM":k}`]))},c.logMetric,"log")}
+      <button class="season-reset" data-season-csv>Download filtered CSV</button>
+    </div><div id="season-game-table">${seasonGamesHtml(t,x)}</div>
+    <details class="season-method"><summary>Definitions, sample rules and the limits of this view</summary><p>All counts are observed NBA player-games for the current roster, including games before joining. They are not Sleeper matchup points, transaction history, a win/loss record for your fantasy team, or projected results. Date filters are inclusive; last 7/30 days end at the report’s observation cutoff.</p><p>eFG% = (FGM + 0.5 × 3PM) / FGA. TS% = PTS / (2 × (FGA + 0.44 × FTA)). Both are attempt-weighted percentages. AST/TO and FP/min require positive denominators. Per-36 stats normalize observed production to 36 minutes; they are not playing-time projections. 3PA share is 3PA / FGA, and FT rate is FTA / FGA. Stocks are steals + blocks. Missing or imputed inputs remain blank. Category totals require every selected game’s input; coverage appears in the box-score fingerprint.</p><p>Effective contributors = 1 / sum of squared positive player-total shares. It describes concentration as an equivalent number of equal contributors. No positive totals means no share estimate. Full-season baselines use 3–10 strictly earlier observed games, even when you narrow the display filters. Recent form, medians and quartiles instead use only the selected games. No injury duration, games missed, usage rate or on/off rating is inferred from absent records.</p></details>`;
+}
+function seasonScoringBars(scoring, rules=[]) {
+  const entries=Object.entries(scoring).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  const max=Math.max(1,...entries.map(([,v])=>Math.abs(v)));
+  return entries.map(([key,value])=>`<div class="season-source ${seasonTone(value)}"><span>${esc(key)}<small>${fmt(rules.find(r=>r.stat===key)?.weight,2)} FP / unit</small></span><div><i style="width:${Math.abs(value)/max*100}%"></i></div><b>${seasonSigned(value)}</b></div>`).join("") || '<p class="season-help">Scoring components are unavailable.</p>';
+}
+function seasonTrendHtml(x,c) {
+  const periods=x.periods, metric=c.trendMetric, low=Math.min(0,...periods.map(p=>p[metric])), high=Math.max(1,...periods.map(p=>p[metric]));
+  const y=v=>146-(v-low)/(high-low)*120;
+  const points=periods.map((p,i)=>[periods.length===1?360:24+i*672/(periods.length-1),y(p[metric])]);
+  const rows=periods.map((p,i)=>`<tr><th>${esc(p.label)}</th><td>${p.games}</td><td>${new Set(p.entries.map(g=>g.player_id)).size}</td><td>${seasonNumber(p.total_fp)}</td><td>${fmt(p.average_fp)}</td><td class="${seasonTone(i?p.average_fp-periods[i-1].average_fp:null)}">${i?seasonSigned(p.average_fp-periods[i-1].average_fp):"—"}</td><td>${p.forty}</td><td>${p.double_doubles ?? "—"}</td></tr>`).join("");
+  return `<article class="season-panel season-trend"><div class="season-chart-heading"><div><span class="review-kicker">${c.period==="week"?"Weekly":"Monthly"} production</span><strong>${seasonNumber(x.summary.total_fp)} <small>FP across ${periods.length} observed ${c.period==="week"?"weeks":"months"}</small></strong></div><div class="season-toolbar">${seasonSelect("period","Group by",{week:"Week (Monday)",month:"Month"},c.period)}${seasonSelect("trendMetric","Chart metric",{average_fp:"FP per appearance",total_fp:"Total FP"},c.trendMetric)}</div></div>
+    <svg class="season-trend-chart" viewBox="0 0 720 174" role="img" aria-label="${esc(metric==="total_fp"?"Total fantasy points":"Fantasy points per appearance")} by observed ${c.period}. Exact values in the table below."><path class="season-chart-axis" d="M20 ${y(0)}H700"/><polyline points="${points.map(p=>p.join(",")).join(" ")}"/>${points.map(([px,py],i)=>`<circle cx="${px}" cy="${py}" r="4"><title>${esc(periods[i].label)}: ${fmt(periods[i][metric])} FP · ${periods[i].games} appearances</title></circle>`).join("")}<text x="20" y="14">${fmt(high)} FP</text></svg>
+    <div class="review-chart-labels"><span>${esc(periods[0]?.label)}</span><span>${esc(periods.at(-1)?.label)}</span></div>
+    <details class="season-method"><summary>Open ${c.period==="week"?"weekly":"monthly"} totals & changes</summary>${seasonTable("Period production details",["Period starts","GP","Players","Total FP","FP/G","Δ FP/G","40+","DD"],rows)}</details><p class="season-help">Only periods with observed games are plotted. Partial periods and gaps are not full weeks or zeroes; changes compare consecutive observed periods.</p></article>`;
+}
+function seasonRosterHtml(t,x=LockInInsights.seasonExplorer(t,seasonContext(t))) {
+  const c=seasonContext(t), players=LockInInsights.seasonPlayerRows(x,c);
+  const production=[["GP",p=>p.games],["Total FP",p=>seasonNumber(p.total_fp)],["FP/G",p=>fmt(p.average_fp)],["Share",p=>p.share==null?"—":fmt(p.share)+"%"],...["MIN","PTS","REB","AST","STL","BLK","FG3M","TOV","STOCKS","OREB","DREB","PF"].map(k=>[`${k==="FG3M"?"3PM":k==="STOCKS"?"STL+BLK":k}/G`,p=>fmt(p.games&&p.stats[k]!=null?p.stats[k]/p.games:null)])];
+  const shooting=[["FGM/FGA",p=>p.stats.FGM==null||p.stats.FGA==null?"—":`${seasonNumber(p.stats.FGM,0)}/${seasonNumber(p.stats.FGA,0)}`],["3PM/3PA",p=>p.stats.FG3M==null||p.stats.FG3A==null?"—":`${seasonNumber(p.stats.FG3M,0)}/${seasonNumber(p.stats.FG3A,0)}`],["FTM/FTA",p=>p.stats.FTM==null||p.stats.FTA==null?"—":`${seasonNumber(p.stats.FTM,0)}/${seasonNumber(p.stats.FTA,0)}`],...Object.entries({FG_PCT:"FG%",FG3_PCT:"3P%",FT_PCT:"FT%",EFG_PCT:"eFG%",TS_PCT:"TS%",AST_TOV:"AST/TO",FP_PER_MIN:"FP/min",THREE_RATE:"3PA share %",FT_RATE:"FTA/FGA",FP_PER36:"FP/36",PTS_PER36:"PTS/36",REB_PER36:"REB/36",AST_PER36:"AST/36",FG_MISSES:"FG misses",FT_MISSES:"FT misses"}).map(([k,label])=>[label,p=>fmt(p.stats[k],["AST_TOV","FP_PER_MIN","FT_RATE"].includes(k)?2:1)])];
+  const reliability=[["GP",p=>p.games],["Last 5",p=>fmt(p.recent_fp)],["Δ form",p=>`<span class="${seasonTone(p.change)}">${seasonSigned(p.change)}</span>`],["Median",p=>fmt(p.median_fp)],["Floor",p=>fmt(p.floor_fp)],["Ceiling",p=>fmt(p.ceiling_fp)],["Spread",p=>fmt(p.spread)],["Best",p=>fmt(p.best_fp)],["Worst",p=>fmt(p.worst_fp)],["40+ rate",p=>p.games?fmt(p.forty/p.games*100)+"%":"—"],["DD / TD",p=>`${p.double_doubles ?? "—"} / ${p.triple_doubles ?? "—"}`],["Streak",p=>p.streak?`${p.streak} ${p.streak_direction}`:"—"],["Last played",p=>esc(p.last_played || "—")]];
+  const columns=c.tableView==="shooting"?[production[0],...shooting]:c.tableView==="reliability"?reliability:c.tableView==="all"?[...production,...shooting,...reliability.slice(1)]:production;
+  return `<p class="compare-result-count">${players.length} players · scroll horizontally for every statistic · player names open their profile</p>${seasonTable("Season roster laboratory",["Player",...columns.map(([label])=>label),"Explore"],players.map(p=>`<tr><th scope="row">${comparisonPerson(p,t.id)}<div class="season-roster-spark">${p.entries.length>1?seasonMiniSpark(p.entries.map(g=>g.fp)):""}<small>${p.games?`${p.games} observed games`:"No matching history"}</small></div></th>${columns.map(([,value])=>`<td>${value(p)}</td>`).join("")}<td>${p.player_id?`<button class="season-focus" data-season-focus="${esc(p.player_id)}">Focus →</button>`:"—"}</td></tr>`).join(""))}`;
+}
+function seasonMiniSpark(values) {
+  const recent=values.slice(-10), low=Math.min(...recent), high=Math.max(...recent), span=high-low || 1;
+  return `<svg viewBox="0 0 84 22" aria-label="Last ${recent.length} selected game scores" role="img"><polyline points="${recent.map((v,i)=>`${i*84/(recent.length-1 || 1)},${20-(v-low)/span*18}`).join(" ")}"/></svg>`;
+}
+function seasonMatrixHtml(t,x) {
+  const headers=["Player",...x.weeks.map(w=>esc(w.label.slice(5)))];
+  return `${seasonTable("Player by week production heatmap",headers,x.players.map(p=>`<tr><th>${comparisonPerson(p,t.id)}</th>${x.weeks.map(w=>{
+    const entries=w.entries.filter(g=>String(g.player_id)===String(p.player_id));
+    if(!entries.length) return '<td class="season-heat-empty">—</td>';
+    const mean=entries.reduce((s,g)=>s+g.fp,0)/entries.length, delta=mean-p.average_fp;
+    const tone=Math.abs(delta)<=Math.max(2,Math.abs(p.average_fp)*.1)?"level":delta>0?"above":"below";
+    return `<td class="season-heat" data-tone="${tone}" title="${esc(w.label)}: ${fmt(mean)} FP/G over ${entries.length} games; ${seasonSigned(delta)} vs selected-window mean"><b>${fmt(mean)}</b><small>${entries.length} GP</small></td>`;
+  }).join("")}</tr>`).join(""))}<p class="season-help"><span class="stat-positive">Green: above personal mean</span> · <span class="stat-negative">Rose: below</span> · neutral within ±10% (minimum 2 FP). A dash means no observed games. Each cell includes its sample size.</p>`;
+}
+function seasonSplitsHtml(x) {
+  const row=(g,label)=>`<tr><th>${label}</th><td>${g.games}</td><td>${fmt(g.average_fp)}</td><td>${seasonNumber(g.total_fp)}</td>${["MIN","PTS","REB","AST"].map(k=>`<td>${fmt(g.stats[k]!=null?g.stats[k]/g.games:null)}</td>`).join("")}<td>${fmt(g.stats.TS_PCT)}%</td><td>${fmt(g.stats.FP_PER_MIN,2)}</td></tr>`;
+  const columns=["Split","GP","FP/G","Total FP","MIN/G","PTS/G","REB/G","AST/G","TS%","FP/min"];
+  return `${seasonTable("Situational performance splits",columns,x.splits.map(g=>row(g,`${esc(g.label)}<small>${esc(g.group)}</small>`)).join(""))}
+    <p class="season-help">Wins/losses describe NBA game results, not your fantasy matchup. Spacing measures days between this player’s observed appearances; it is not a verified team rest or injury classification. Unknown context stays in its own row.</p>
+    <details class="season-method season-opponents"><summary>Opponent scouting · ${x.opponents.filter(g=>g.label!=="Unknown").length} known opponents</summary>${seasonTable("Production by NBA opponent",["Opponent",...columns.slice(1)],x.opponents.map(g=>row(g,esc(g.label))).join(""))}<p class="season-help">Descriptive results against opponents; roster mix and small samples affect every comparison.</p></details>`;
+}
+function seasonRecordsHtml(t,x) {
+  const record=(title,g,value,note)=>`<article class="season-record"><span class="review-kicker">${title}</span>${g?`${comparisonPerson(g,t.id)}<strong>${value}</strong><p>${esc(g.date)} · ${g.venue==="away"?"@":g.venue==="home"?"vs":""} ${esc(g.opponent || "opponent unknown")}<br>${note}</p>`:'<p class="season-help">Not enough qualifying observations.</p>'}</article>`;
+  const r=x.records;
+  const categories=[["PTS","Scoring"],["REB","Glass cleaner"],["AST","Playmaker"],["STL","Ball hawk"],["BLK","Rim protector"],["FG3M","From deep"]];
+  return `<div class="season-records">${record("Highest game",r.best,fmt(r.best?.fp)+" FP","Best observed single-game score")}${record("Lowest game",r.worst,fmt(r.worst?.fp)+" FP","Lowest observed score; no DNPs invented")}${record("Biggest step up",r.above,seasonSigned(r.above?.delta)+" FP",`${fmt(r.above?.fp)} actual vs ${fmt(r.above?.baseline_fp)} prior baseline`)}${record("Biggest letdown",r.below,seasonSigned(r.below?.delta)+" FP",`${fmt(r.below?.fp)} actual vs ${fmt(r.below?.baseline_fp)} prior baseline`)}</div>
+    <div class="review-section-heading"><h3>The category leaders</h3><span>Totals in this selection · ties noted</span></div><div class="season-category-leaders">${categories.map(([key,title])=>{
+      const eligible=x.players.filter(p=>p.games && p.stats[key]!=null).sort((a,b)=>b.stats[key]-a.stats[key]);
+      const p=eligible[0], tied=p?eligible.filter(q=>q.stats[key]===p.stats[key]):[];
+      return `<article><span class="review-kicker">${title} · ${key==="FG3M"?"3PM":key}</span>${p?`${comparisonPerson(p,t.id)}<strong>${seasonNumber(p.stats[key],0)} <small>${fmt(p.stats[key]/p.games)} / game</small></strong><p>${p.games} games${tied.length>1?` · tied with ${tied.slice(1).map(q=>esc(q.player)).join(", ")}`:""}</p>`:'<p class="season-help">No complete stat coverage.</p>'}</article>`;
+    }).join("")}</div>`;
+}
+function seasonGamesHtml(t,x=LockInInsights.seasonExplorer(t,seasonContext(t))) {
+  const c=seasonContext(t), rows=LockInInsights.seasonLogRows(x,{search:c.logSearch,kind:c.logKind,metric:c.logMetric});
+  const visible=rows.slice(0,c.logLimit);
+  return `<p class="compare-result-count">Showing ${visible.length} of ${rows.length} matching appearances · CSV includes every match</p>${seasonTable("Full season game archive",["Date","Player","Matchup","NBA","FP","Prior avg","Δ FP",...["MIN","PTS","REB","AST","STL","BLK","3PM","TOV"],"FG","3P","FT","Milestones"],visible.map(g=>`<tr><td>${esc(g.date)}</td><th>${comparisonPerson(g,t.id)}</th><td>${g.venue==="home"?"vs":g.venue==="away"?"@":"—"} ${esc(g.opponent || "Unknown")}</td><td>${esc(g.result || "—")}</td><td><b>${fmt(g.fp)}</b></td><td title="${g.baseline_games} earlier appearances">${fmt(g.baseline_fp)}</td><td class="${seasonTone(g.delta)}">${seasonSigned(g.delta)}</td>${["MIN","PTS","REB","AST","STL","BLK","FG3M","TOV"].map(k=>`<td>${fmt(g.stats?.[k],k==="MIN"?1:0)}</td>`).join("")}${[["FGM","FGA"],["FG3M","FG3A"],["FTM","FTA"]].map(([m,a])=>`<td>${g.stats?.[m]!=null&&g.stats?.[a]!=null?`${fmt(g.stats[m],0)}/${fmt(g.stats[a],0)}`:"—"}</td>`).join("")}<td>${g.triple_double?"TD · DD":g.double_double?"DD":"—"}</td></tr>`).join(""))}${rows.length>c.logLimit?`<button class="season-load-more" data-season-more>Show 40 more appearances (${rows.length-c.logLimit} remaining)</button>`:""}`;
+}
+
 const REVIEW_TABS = [
   ["review", "Season review"],
   ["compare", "Compare teams"],
@@ -486,44 +639,61 @@ function renderReviewHub(t) {
 }
 function teamComparisonHtml() {
   const comparison = state.data?.comparison || { teams: [] };
-  const number = (n, digits = 1) =>
-    Number.isFinite(n)
-      ? n.toLocaleString(undefined, { maximumFractionDigits: digits })
-      : "—";
-  const teams = [...(comparison.teams || [])].sort(
-    (a, b) => (b.total_fp || 0) - (a.total_fp || 0),
-  );
-  const rows = teams
-    .map((tm, i) => {
-      const top = (tm.leaders || [])[0];
-      return `<tr>
-        <td class="compare-rank">${i + 1}</td>
-        <th scope="row"><strong>${esc(tm.team_name)}</strong><small>${esc(tm.league_name || "")}</small></th>
-        <td><b>${number(tm.total_fp)}</b></td>
-        <td>${number(tm.fp_per_game)}</td>
-        <td>${tm.appearances ?? "—"}</td>
-        <td>${tm.covered_players ?? "—"}/${tm.roster_count ?? "—"}</td>
-        <td>${top ? `${esc(top.player)} <small>${number(top.total_fp)} FP</small>` : "—"}</td>
-      </tr>`;
-    })
-    .join("");
-  const leaders = teams
-    .filter((tm) => (tm.leaders || []).length)
-    .map(
-      (tm) => `<article class="review-highlight"><span class="review-kicker">${esc(tm.team_name)}</span>
-        ${tm.leaders
-          .map(
-            (p) => `<div class="compare-leader"><span>${esc(p.player)}</span><b>${number(p.total_fp)} <small>FP</small></b><small>${number(p.average_fp)} / game · ${p.games} ${p.games === 1 ? "game" : "games"}</small></div>`,
-          )
-          .join("")}</article>`,
-    )
-    .join("");
+  const teams = LockInInsights.comparisonTeams(comparison, state.compareMetric);
+  const metrics = {roster_average:"Roster average", fp_per_game:"FP / appearance", top_five:"Top-five average", depth:"Depth average", total_fp:"Total FP"};
+  const control = (key, label, values, value) => `<label>${label}<select data-compare="${key}">${Object.entries(values).map(([v,l]) => `<option value="${esc(v)}" ${String(value) === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>`;
+  const maximum = Math.max(1,...teams.map(t => t[state.compareMetric] || 0));
+  const insight = (label, key, description) => {
+    const leader = [...teams].filter(t=>Number.isFinite(t[key])).sort((a,b)=>b[key]-a[key])[0];
+    if (!leader) return "";
+    const tied = teams.filter(t=>t[key] === leader[key]);
+    return `<article class="compare-insight"><span class="review-kicker">${label}</span><strong>${fmt(leader[key])}<small> ${key === "total_fp" ? "FP" : "FP/G"}</small></strong><b>${tied.map(t=>esc(t.team_name)).join(" · ")}</b><p>${description}</p></article>`;
+  };
+  const rows = teams.map(tm => {
+    const value = tm[state.compareMetric];
+    const rank = value == null ? "—" : teams.findIndex(t => t[state.compareMetric] === value)+1;
+    return `<tr><td class="compare-rank">${rank}</td><th scope="row"><strong>${esc(tm.team_name)}</strong><small>${esc(tm.league_name || "")}</small></th>
+      <td class="compare-score"><b>${fmt(value)}</b><span class="compare-meter"><i style="width:${Math.max(0,(value || 0)/maximum*100)}%"></i></span></td>
+      ${["roster_average","fp_per_game","top_five","depth","total_fp"].map(k=>`<td>${fmt(tm[k])}</td>`).join("")}
+      <td>${tm.appearances ?? "—"}</td><td>${tm.covered_players ?? "—"}/${tm.roster_count ?? "—"}</td></tr>`;
+  }).join("");
+  const leaders = teams.filter(t => (t.players || t.leaders || []).length).map(tm =>
+    `<article class="review-highlight compare-team-card"><span class="review-kicker">${esc(tm.team_name)}</span>
+      <div class="compare-card-score">${fmt(tm.roster_average)} <small>roster average FP</small></div>
+      ${(tm.ranked_players.length ? tm.ranked_players : tm.leaders || []).slice(0,3).map(p =>
+        `<div class="compare-leader">${comparisonPerson(p,tm.team_id)}<div><b>${fmt(p.average_fp)} <small>FP/G</small></b><small>${p.games} games · ${fmt(p.total_fp)} FP</small></div></div>`).join("")}
+      <p class="compare-card-note">Top 3 by total supply ${fmt(tm.top_three_share)}% of positive season FP · ${tm.covered_players}/${tm.roster_count} players observed</p></article>`).join("");
   return `<div class="season-review compare-view">
-    <div class="review-section-heading"><h3>Every team, equal footing</h3><span>${esc(comparison.teams?.length || 0)} teams · ${esc(comparison.weights_label || "default scoring")}</span></div>
-    <p class="review-scope">All of your teams scored with the same default fantasy formula, so totals compare fairly across leagues with different custom rules. Counts observed season games for each team's current roster — not standings or locked scores.</p>
-    ${teams.length ? `<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>#</th><th>Team</th><th>Total FP</th><th>FP / app</th><th>Apps</th><th>Players</th><th>Top scorer</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="review-empty">No teams with season data in this report.</div>'}
-    ${leaders ? `<div class="review-section-heading"><h3>Normalized leaders</h3><span>Top 3 scorers per team under default scoring</span></div><div class="review-highlights">${leaders}</div>` : ""}
+    <div class="review-section-heading"><div><span class="review-kicker">Your roster laboratory</span><h3>More players ≠ a better team.</h3></div><span>${teams.length} teams · ${esc(comparison.weights_label || "default scoring")}</span></div>
+    <p class="review-scope">Every player gets equal weight in the roster average, regardless of games played. Same scoring across your current rosters. Small samples and missing histories can move the order.</p>
+    <div class="compare-insights">${insight("Best roster average","roster_average","Equal weight per observed player. No bonus for simply carrying more players.")}${insight("Strength beyond the stars","depth","Average after the top five scorers. A look at the rest of your roster.")}${insight("Volume leader","total_fp","Most accumulated FP. Roster size and extra appearances help this number.")}</div>
+    <div class="compare-controls">${control("ranking","Rank teams by",metrics,state.compareMetric)}<span>Separate quality from volume.</span></div>
+    <div class="compare-table-wrap" tabindex="0" role="region" aria-label="Team rankings, scroll for more stats"><table class="compare-table"><thead><tr><th>#</th><th>Team</th><th>${metrics[state.compareMetric]}</th><th>Roster avg</th><th>FP / app</th><th>Top 5 avg</th><th>Depth avg</th><th>Total FP</th><th>Apps</th><th>Coverage</th></tr></thead><tbody>${rows || '<tr><td colspan="10">No teams to compare yet.</td></tr>'}</tbody></table></div>
+    <details class="compare-method"><summary>What makes this comparison fair?</summary><p>Roster average is the mean of covered players' individual FP averages. FP / appearance weights every played game equally. Top-five average compares five best per-game scorers (needs five covered players); depth averages everyone after those five. Reserve players count. Missing histories are excluded; zero-point games count. Total FP still rewards larger rosters and busier schedules. This is observed production, not standings or a forecast.</p><p>${teams.map(t=>`${esc(t.team_name)}: ${esc(t.season || "season unavailable")} · through ${esc(t.as_of || state.data.date)}`).join(" · ")}</p></details>
+    ${leaders ? `<div class="review-section-heading"><h3>The engines of each team</h3><span>Leaders by FP per game · same scoring</span></div><div class="review-highlights">${leaders}</div>` : ""}
+    <div class="review-section-heading"><h3>Beyond the fantasy score</h3><span>Per appearance · attempt-weighted shooting</span></div>
+    <div class="compare-table-wrap" tabindex="0" role="region" aria-label="Team advanced statistics"><table class="compare-table"><thead><tr><th>Team</th>${["PTS","REB","AST","STL","BLK","3PM","TOV","eFG%","TS%","AST/TO","FP/min"].map(k=>`<th>${k}</th>`).join("")}</tr></thead><tbody>${teams.map(t=>`<tr><th>${esc(t.team_name)}</th>${["PTS","REB","AST","STL","BLK","FG3M","TOV"].map(k=>`<td>${fmt(t.appearances && t.stats?.[k] != null ? t.stats[k]/t.appearances : null)}</td>`).join("")}${["EFG_PCT","TS_PCT","AST_TOV","FP_PER_MIN"].map(k=>`<td>${fmt(t.stats?.[k],2)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <div class="review-section-heading"><h3>Every player. Every roster.</h3><span>Shared players counted once per season</span></div>
+    <div class="compare-controls">
+      <label>Find a player<input data-compare="search" type="search" placeholder="Search players" value="${esc(state.compareFilters.search)}"></label>
+      ${control("team","Fantasy team",{"":"All teams",...Object.fromEntries(teams.map(t=>[t.team_id,t.team_name]))},state.compareFilters.team)}
+      ${control("position","Position",{"":"All positions",PG:"PG",SG:"SG",SF:"SF",PF:"PF",C:"C"},state.compareFilters.position)}
+      ${control("minimum","Minimum games",{"1":"1+ games","5":"5+ games","10":"10+ games","20":"20+ games"},state.compareFilters.minimum)}
+      ${control("metric","Sort players by",{average_fp:"FP / game",total_fp:"Total FP",recent_fp:"Last five FP",change:"Form change",floor_fp:"Floor (25th %ile)",ceiling_fp:"Ceiling (75th %ile)",spread:"Consistency (lowest SD)","stat:TS_PCT":"True shooting %","stat:EFG_PCT":"Effective FG %","stat:AST_TOV":"Assist / turnover","stat:FP_PER_MIN":"FP / minute",...Object.fromEntries(["PTS","REB","AST","STL","BLK","FG3M","TOV","MIN"].map(k=>[`pergame:${k}`,`${k === "FG3M" ? "3PM" : k} / game`]))},state.compareFilters.metric)}
+    </div>
+    <div id="comparison-player-results">${comparisonPlayersHtml()}</div>
+    <p class="review-scope">Floor / ceiling are observed quartiles; spread is standard deviation (5+ games). Form compares the latest five with the preceding five (10+ games). eFG% = (FGM + 0.5 × 3PM) / FGA; TS% = PTS / (2 × (FGA + 0.44 × FTA)). Missing inputs stay blank.</p>
   </div>`;
+}
+function comparisonPerson(p, teamId) {
+  const target = state.data.teams.find(t=>t.id === teamId);
+  const index = target?.results?.findIndex(r=>String(r.player_id) === String(p.player_id)) ?? -1;
+  const content = `${portrait(p)}<span><strong>${esc(p.player)}</strong><small>${esc((p.positions || []).join(" / "))}${p.nba_team ? ` · ${esc(p.nba_team)}` : ""}</small></span>`;
+  return index >= 0 ? `<button class="compare-person" data-watch="${esc(teamId)}:${index}">${content}</button>` : `<div class="compare-person">${content}</div>`;
+}
+function comparisonPlayersHtml() {
+  const players = LockInInsights.comparisonPlayers(state.data?.comparison, state.compareFilters);
+  return `<p class="compare-result-count">${players.length} players · all values use default scoring</p><div class="compare-table-wrap" tabindex="0" role="region" aria-label="Player rankings, scroll for advanced statistics"><table class="compare-table compare-player-table"><thead><tr>${["#","Player / fantasy teams","GP","FP/G","Total","Last 5","Δ form","Floor","Ceiling","Spread","MIN","PTS","REB","AST","STL","BLK","3PM","TOV","eFG%","TS%","AST/TO","FP/min"].map(k=>`<th>${k}</th>`).join("")}</tr></thead><tbody>${players.map(p=>`<tr><td class="compare-rank">${p.rank ?? "—"}</td><th>${comparisonPerson(p,p.team_id)}<small>${p.teams.map(esc).join(" · ")}</small></th><td>${p.games}</td>${["average_fp","total_fp","recent_fp","change","floor_fp","ceiling_fp","spread"].map(k=>`<td ${k === "change" ? `class="${p[k] > 0 ? "stat-positive" : p[k] < 0 ? "stat-negative" : ""}"` : ""}>${fmt(p[k])}</td>`).join("")}${["MIN","PTS","REB","AST","STL","BLK","FG3M","TOV"].map(k=>`<td>${fmt(p.stats?.[k] != null && p.games ? p.stats[k]/p.games : null)}</td>`).join("")}${["EFG_PCT","TS_PCT","AST_TOV","FP_PER_MIN"].map(k=>`<td>${fmt(p.stats?.[k],2)}</td>`).join("")}</tr>`).join("") || '<tr><td colspan="22">No players match these filters. Older reports need a data refresh to include full comparison stats.</td></tr>'}</tbody></table></div>`;
 }
 function filmReviewHtml(t) {
   const f = t.film_review || {};
@@ -561,16 +731,61 @@ function filmReviewHtml(t) {
     const body = timing
       ? `Locked ${m.locked_fp} FP into ${m.slot} on ${date(m.locked_date)}; ${m.better_player || m.player}'s ${number(m.better_fp)} FP on ${date(m.better_date)} was the play.`
       : `Locked ${m.player}'s ${m.locked_fp} FP into ${m.slot} on ${date(m.locked_date)}; ${m.better_player || "a teammate"}'s ${number(m.better_fp)} FP on ${date(m.better_date)} was open.`;
-    return `<article class="film-mistake"><span class="review-kicker">${title}</span><p>${esc(body)}</p><b class="film-cost">−${number(m.cost_fp)} FP</b></article>`;
+    const maximum = Math.max(1,Math.abs(m.locked_fp),Math.abs(m.better_fp || 0));
+    return `<article class="film-mistake"><div class="film-card-heading"><span class="review-kicker">${title}</span><b class="film-cost">−${number(m.cost_fp)} FP</b></div>
+      <div class="film-versus">${comparisonPerson(m,t.id)}<span aria-hidden="true">→</span>${comparisonPerson({player:m.better_player,player_id:m.better_player_id},t.id)}</div>
+      <div class="film-score-line"><span>Locked</span><i style="width:${Math.max(0,m.locked_fp/maximum*100)}%"></i><b>${number(m.locked_fp)}</b></div>
+      <div class="film-score-line is-better"><span>Best option</span><i style="width:${Math.max(0,(m.better_fp || 0)/maximum*100)}%"></i><b>${number(m.better_fp)}</b></div><p>${esc(body)}</p></article>`;
   };
   return `<div class="season-review film-view">
     <div class="review-section-heading"><h3>Shaqtin' a fool</h3><span>${esc(t.team_name)} · ${weekLabel}</span></div>
     <p class="review-scope">What actually got locked plus the best legal fill of the open slots, versus the perfect hindsight lineup from everyone's best game this week. Heuristic replay — not a judgment of the calls available at the time.</p>
     <div class="review-metrics">${metric("Retained FP", number(f.retained_fp), "Locked scores + optimal fill")}${metric("Perfect week", number(f.oracle_fp), "Hindsight-optimal lineup")}${metric("Left on table", number(f.regret_fp), "Points the locks gave up")}${metric("Efficiency", f.efficiency == null ? "—" : number(f.efficiency) + "%", "Retained vs perfect")}</div>
+    ${!(f.locked || []).length ? '<p class="review-pending">No recorded locks: retained and perfect use the same hindsight fill. This is not a measured perfect decision record.</p>' : ""}
+    <section class="film-choke"><div><span class="review-kicker">The what-if desk</span><h3>Choke artist</h3><p>Which banked game fell furthest below that player's preceding-game average?</p></div>
+      <label>Final loss margin (optional)<input id="film-margin" type="number" min="0" step="0.1" placeholder="e.g. 8.5 FP" value="${esc(state.filmMargins[filmMarginKey(t)] ?? "")}"></label>
+      <div id="film-spotlight">${filmSpotlightHtml(t)}</div>
+    </section>
     <div class="review-section-heading"><h3>Mistakes <small>${(f.mistakes || []).length}</small></h3><span>${f.clean_count || 0} of ${f.locked_count || 0} locks were clean</span></div>
+    <p class="review-scope">Each cost tests one lock independently; costs can overlap and should not be added together.</p>
     ${(f.mistakes || []).length ? `<div class="film-mistakes">${f.mistakes.map(mistakeCard).join("")}</div>` : `<p class="review-pending">Every recorded lock held up against the week’s hindsight best. Nothing to roast.</p>`}
+    ${filmWeekHtml(t)}
     ${(f.locked || []).length ? `<details class="film-tape"><summary>The tape · ${f.locked.length} recorded locks</summary><div class="film-tape-list">${f.locked.map((l) => `<div><span>${esc(l.slot)}</span><strong>${esc(l.player)}</strong><b>${number(l.fp)} <small>FP</small></b><small>${esc(date(l.date))}</small></div>`).join("")}</div></details>` : ""}
   </div>`;
+}
+function filmMarginKey(t) { return `${t.id}:${t.film_review?.week?.start || ""}`; }
+function filmSpotlightHtml(t) {
+  const f = t.film_review || {};
+  const raw = state.filmMargins[filmMarginKey(t)];
+  const margin = raw !== "" && raw != null && Number(raw) >= 0 ? Number(raw) : null;
+  const {player:p, flips} = LockInInsights.filmSpotlight(f,margin);
+  if (!p) return `<p class="review-pending">No banked game with a verified below-baseline result yet. Needs a matching recorded lock and at least three earlier games. A rough bench night does not cost your banked total.</p>`;
+  return `<div class="film-spotlight-player">${comparisonPerson(p,t.id)}<strong class="stat-negative">${fmt(p.delta)} <small>FP vs baseline</small></strong></div>
+    <p>${esc(p.date)} · ${fmt(p.fp)} FP banked vs ${fmt(p.baseline_fp)} FP across ${p.baseline_games} preceding games.</p>
+    <p>${margin == null ? "Enter a final loss margin to explore whether a return to baseline could have changed the result." : flips.length ? `At the entered ${fmt(margin)} FP loss margin, ${flips.map(x=>esc(x.player)+" ("+esc(x.date)+")").join(", ")} could each hypothetically flip the result by reaching their baseline.` : `No qualifying banked shortfall exceeds the entered ${fmt(margin)} FP margin. Matching the margin would only tie.`}</p>
+    <small>What-if only: holds every other locked score fixed. Opponent totals and matchup completion are not verified here. A historical average is not a pregame forecast.</small>`;
+}
+function filmWeekHtml(t) {
+  const f = t.film_review || {}, games = f.performances || [];
+  if (!games.length) return '<p class="review-pending">Game-by-game tape is not included in this saved report. Refresh the data to add the weekly breakdown.</p>';
+  const start = f.week?.start;
+  const days = start ? Array.from({length:7},(_,i)=>{const d=new Date(start+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+i);return d.toISOString().slice(0,10);}) : [...new Set(games.map(g=>g.date))];
+  const signed = value => value == null ? "—" : `${value > 0 ? "+" : ""}${fmt(value)}`;
+  const tone = value => value > 0 ? "stat-positive" : value < 0 ? "stat-negative" : "";
+  const daily = days.map(date => {
+    const entries = games.filter(g=>g.date === date), matched = entries.filter(g=>Number.isFinite(g.delta));
+    const delta = matched.length ? matched.reduce((sum,g)=>sum+g.delta,0)/matched.length : null;
+    return {date,entries,matched,delta};
+  });
+  const max = Math.max(1,...daily.map(d=>Math.abs(d.delta || 0)));
+  const locked = p => (f.locked || []).some(l=>String(l.player_id) === String(p.player_id) && l.date === p.date);
+  const filtered = games.filter(p=>state.filmFilter === "below" ? p.delta < 0 : state.filmFilter === "locked" ? locked(p) : true)
+    .sort((a,b)=>(a.delta ?? Infinity)-(b.delta ?? Infinity) || a.date.localeCompare(b.date));
+  return `<div class="review-section-heading"><h3>A week on the rollercoaster</h3><span>Average FP above / below prior baseline</span></div>
+    <div class="film-week">${daily.map(d=>`<article><small>${new Date(d.date+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}</small><strong class="${tone(d.delta)}">${signed(d.delta)}</strong><div class="film-day-bar ${tone(d.delta)}"><i style="height:${Math.abs(d.delta || 0)/max*100}%"></i></div><span>${d.entries.length ? `${d.entries.length} appearances` : "No observed games"}</span><small>${d.matched.length}/${d.entries.length} with baseline</small></article>`).join("")}</div>
+    <div class="review-section-heading"><h3>The lowlights ledger</h3><label class="film-filter">Show <select id="film-filter">${Object.entries({all:"All performances",below:"Below baseline",locked:"Banked games"}).map(([v,l])=>`<option value="${v}" ${state.filmFilter===v?"selected":""}>${l}</option>`).join("")}</select></label></div>
+    <div class="compare-table-wrap" tabindex="0" role="region" aria-label="Weekly player performance ledger"><table class="compare-table"><thead><tr><th>Player</th><th>Night</th><th>FP</th><th>Prior avg</th><th>Δ FP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>Context</th></tr></thead><tbody>${filtered.map(p=>`<tr><th>${comparisonPerson(p,t.id)}</th><td>${esc(p.date.slice(5))}</td><td>${fmt(p.fp)}</td><td>${fmt(p.baseline_fp)}<small> · ${p.baseline_games} GP</small></td><td class="${tone(p.delta)}">${signed(p.delta)}</td>${["pts","reb","ast","tov"].map(k=>`<td>${fmt(p[k],0)}</td>`).join("")}<td><span class="film-context ${locked(p) ? "is-banked" : ""}">${locked(p) ? "Banked" : "Observed"}</span></td></tr>`).join("") || '<tr><td colspan="10">No performances match this filter.</td></tr>'}</tbody></table></div>
+    <p class="review-scope">Bench and reserve games are included as observed performances. Baselines use 3–10 strictly earlier stored games; missing baselines remain blank. The day bars average only games with a baseline. Underperformance is not automatically a lock mistake.</p>`;
 }
 
 function sheetView() {
@@ -882,8 +1097,7 @@ function renderContent() {
         .map((p, i) => ({ p, i }))
         .filter(({ p }) => p.player.toLowerCase().includes(search))
         .map(
-          ({ p, i }) =>
-            `<article class="pickup-item"><div class="pickup-heading"><button class="player-ident" data-pickup="${i}">${portrait(p)}<span><span class="player-name">${esc(p.player)}</span><span class="player-meta">${esc(p.nba_team)} · ${esc((p.positions || []).join(" / "))}</span></span></button><span class="lift">+${fmt(p.lift)} <small style="font-size:12px">FP</small></span></div><div class="pickup-metrics"><span>Last ${p.games_recent} games<b>${fmt(p.recent_fp)} FP</b></span><span>Earlier ${p.games_baseline} games<b>${fmt(p.baseline_fp)} FP</b></span><span>Minutes / game<b>${fmt(p.baseline_minutes)} → ${fmt(p.minutes)}</b></span></div><p class="pickup-context">${Math.round(p.consistency * 100)}% of recent games above baseline. ${esc(p.availability)}.${p.replacement ? ` Estimated fit: ${fmt(p.team_gain)} FP versus ${esc(p.replacement)}.` : " Position-compatible replacement not established."}</p>${p.risks.length ? `<p class="pickup-risks">${esc(p.risks.join(" "))}</p>` : ""}</article>`,
+          ({ p, i }) => pickupCard(p, i, t),
         )
         .join("") ||
       '<div class="empty">No qualifying candidates in this view.<br>Completed and undrafted leagues have no live pickup analysis.' +
@@ -1011,6 +1225,22 @@ function rosterRow(p, i, week) {
       `<span class="game-matchup"><small>${weekday}</small><b>${known ? "—" : "?"}</b></span>`}</span>`;
   }).join("");
   return `<div class="player-row" data-status="${esc(rowStatus(p))}" role="button" tabindex="0" data-player="${i}" aria-label="View ${esc(p.player)} details"><span class="roster-slot" data-slot="${esc(slot)}" title="Lineup slot">${esc(slot)}</span>${portrait(p)}<div class="player-ident"><div class="player-name-line"><div class="player-name" title="${esc(p.player)}">${esc(p.player)}</div>${dailyBadgeStrip(p)}</div><div class="player-meta">${nbaTeamLabel(p.nba_team)}<span>${esc((p.positions || []).join("/") || "Position unknown")}</span>${injury}</div><div class="form-line">${p.projection ? `Proj ${fmt(p.lineup_fp ?? p.projection.projected_fp)} FP · ${esc(projectionSource(p.projection))}` : p.fp_mean_recent != null ? `Avg ${fmt(p.fp_mean_recent)} FP` : p.projection_note ? "Projection unavailable · open details" : p.status === "UPCOMING" ? "Awaiting season results" : "Open for details"}${p.remaining_games_est != null ? ` · ${p.remaining_games_est} left` : ""}</div>${p.projection ? `<div class="roster-projected-stats">${esc(projectedBox(p.projection))}</div>` : ""}${p.lineup_reason ? `<div class="roster-bench-reason">${esc(p.lineup_reason)}</div>` : ""}</div><div class="player-call">${lockButton(p, i)}${badge(p)}${p.last_game_fp != null ? `<strong>${performanceNumber(p, p.last_game_fp, " <small>FP</small>")}</strong>` : ""}${p.banked ? `<span class="banked-score">${fmt(p.banked.fp)} kept</span>` : ""}${p.can_bank ? `<button class="bank-button" data-bank="${i}">Bank score</button>` : ""}</div><div class="player-week" aria-label="Weekly games and fantasy points">${games}</div></div>`;
+}
+function pickupCard(p, i, t) {
+  const index = (t.results || []).findIndex(r=>r.player === p.replacement);
+  const drop = index >= 0 ? t.results[index] : {player:p.replacement};
+  const positive = Number.isFinite(p.team_gain) && p.team_gain > 0;
+  const replacement = p.replacement ? `<div class="pickup-replacement">
+      <span class="swap-sign ${positive ? "stat-negative" : ""}" aria-hidden="true">${positive ? "−" : "↔"}</span>
+      ${index >= 0 ? `<button class="compare-person" data-player="${index}">` : '<div class="compare-person">'}${portrait(drop)}<span><small>${positive ? "Drop candidate" : "Roster comparison"}</small><strong>${esc(p.replacement)}</strong></span>${index >= 0 ? "</button>" : "</div>"}
+      <b class="${positive ? "stat-positive" : "stat-negative"}">${p.team_gain > 0 ? "+" : ""}${fmt(p.team_gain)}<small>estimated fit FP</small></b></div>` : '<div class="pickup-replacement"><small>No position-compatible replacement established.</small></div>';
+  return `<article class="pickup-item compact-pickup">
+    <div class="pickup-heading"><span class="swap-sign stat-positive" aria-hidden="true">+</span><button class="player-ident" data-pickup="${i}">${portrait(p)}<span><small class="pickup-action">Add candidate</small><span class="player-name">${esc(p.player)}</span><span class="player-meta">${esc(p.nba_team)} · ${esc((p.positions || []).join(" / "))}</span></span></button><span class="lift">${p.lift > 0 ? "+" : ""}${fmt(p.lift)}<small>FP trend</small></span></div>
+    <div class="pickup-metrics"><span>Last ${p.games_recent} games<b>${fmt(p.recent_fp)} <small>FP</small></b></span><span>Earlier ${p.games_baseline}<b>${fmt(p.baseline_fp)} <small>FP</small></b></span><span>Minutes / game<b>${fmt(p.baseline_minutes)} → ${fmt(p.minutes)}</b></span></div>
+    ${replacement}
+    <div class="pickup-footnote"><span>${Number.isFinite(p.consistency) ? `${Math.round(p.consistency*100)}% above baseline · ` : ""}${esc(p.availability || "Availability unknown")}</span>
+      ${p.risks?.length ? `<details><summary>${p.risks.length} sample / scoring notes</summary><p class="pickup-risks">${esc(p.risks.join(" "))}</p></details>` : ""}</div>
+  </article>`;
 }
 function swapCard(t) {
   const swap = t?.swap_suggestion;
@@ -1177,6 +1407,29 @@ document.addEventListener("pointerdown", (e) => {
   }
 }, true);
 document.addEventListener("click", (e) => {
+  if(e.target.closest("[data-season-reset]")) {
+    delete state.seasonContexts[team().id]; renderContent();
+    $("[data-season-context='range']")?.focus({preventScroll:true});
+    return;
+  }
+  const seasonFocus=e.target.closest("[data-season-focus]");
+  if(seasonFocus) {
+    seasonContext().player=seasonFocus.dataset.seasonFocus;seasonContext().logLimit=40;
+    renderContent();$(".season-explorer").scrollIntoView({block:"start"});
+    $("[data-season-context='player']")?.focus({preventScroll:true});
+    return;
+  }
+  if(e.target.closest("[data-season-more]")) {
+    seasonContext().logLimit+=40;$("#season-game-table").innerHTML=seasonGamesHtml(team());
+    attachImageFallback();return;
+  }
+  if(e.target.closest("[data-season-csv]")) {
+    const c=seasonContext(), x=LockInInsights.seasonExplorer(team(),c);
+    const rows=LockInInsights.seasonLogRows(x,{search:c.logSearch,kind:c.logKind,metric:c.logMetric});
+    const url=URL.createObjectURL(new Blob([LockInInsights.seasonCsv(rows)],{type:"text/csv;charset=utf-8;"}));
+    const a=document.createElement("a");a.href=url;a.download="lockin-season-games.csv";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);return;
+  }
   let b = e.target.closest("[data-test-action]");
   if (b) {
     testAction(b.dataset.testAction);
@@ -1448,6 +1701,28 @@ $("#badge-guide-open").addEventListener("click", () => {
 });
 
 document.addEventListener("change", e => {
+  if(e.target.matches("[data-season-context]")) {
+    const key=e.target.dataset.seasonContext, c=seasonContext();
+    c[key]=e.target.value;c.logLimit=40;
+    renderContent();
+    $(`[data-season-context="${key}"]`)?.focus({preventScroll:true});
+    return;
+  }
+  if(e.target.matches("[data-season-roster], [data-season-log]")) {
+    updateSeasonLocal(e.target);return;
+  }
+  if (e.target.matches("[data-compare]")) {
+    const key = e.target.dataset.compare;
+    if (key === "ranking") { state.compareMetric=e.target.value; renderContent(); $(`[data-compare="${key}"]`)?.focus({preventScroll:true}); }
+    else { state.compareFilters[key]=e.target.value; $("#comparison-player-results").innerHTML=comparisonPlayersHtml(); attachImageFallback(); }
+    return;
+  }
+  if (e.target.id === "film-filter") {
+    state.filmFilter=e.target.value;
+    renderContent();
+    $("#film-filter")?.focus({preventScroll:true});
+    return;
+  }
   if (!["badge-race-scope", "badge-race-metric"].includes(e.target.id)) return;
   const id = e.target.id;
   if (id === "badge-race-scope") state.badgeScope = e.target.value === "nba" ? "nba" : "roster";
@@ -1456,3 +1731,25 @@ document.addEventListener("change", e => {
   attachImageFallback();
   $("#" + id)?.focus({preventScroll:true});
 });
+document.addEventListener("input", e => {
+  if(e.target.matches("input[data-season-roster], input[data-season-log]")) {
+    updateSeasonLocal(e.target);return;
+  }
+  if (e.target.dataset.compare === "search") {
+    state.compareFilters.search=e.target.value;
+    $("#comparison-player-results").innerHTML=comparisonPlayersHtml();
+    attachImageFallback();
+  }
+  if (e.target.id === "film-margin") {
+    state.filmMargins[filmMarginKey(team())]=e.target.value;
+    $("#film-spotlight").innerHTML=filmSpotlightHtml(team());
+    attachImageFallback();
+  }
+});
+function updateSeasonLocal(input) {
+  const c=seasonContext(), roster=!!input.dataset.seasonRoster;
+  c[input.dataset.seasonRoster || input.dataset.seasonLog]=input.value;
+  if(roster) $("#season-roster-table").innerHTML=seasonRosterHtml(team());
+  else {c.logLimit=40;$("#season-game-table").innerHTML=seasonGamesHtml(team());}
+  attachImageFallback();
+}
