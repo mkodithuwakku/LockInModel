@@ -208,6 +208,10 @@ def find_pickups(games, team, cfg, reference, positions=None, prior=None):
 
 NEXT_WEEK_GAMES = 3.5  # Roughly one more NBA week for the long-run term.
 
+# Games still producing fantasy value: upcoming or underway (in_game is
+# Sleeper's live status; in_progress covers other schedule payloads).
+UPCOMING_STATUSES = {"pre_game", "scheduled", "in_game", "in_progress"}
+
 
 def _remaining_games(calendar, nba_team, week, reference):
     try:
@@ -216,7 +220,7 @@ def _remaining_games(calendar, nba_team, week, reference):
         return None
     today = str(reference)
     playable = [
-        g for g in games if g["date"] >= today and g.get("status") == "pre_game"
+        g for g in games if g["date"] >= today and g.get("status") in UPCOMING_STATUSES
     ]
     return {
         "count": len(playable),
@@ -246,7 +250,7 @@ def suggest_swap(rows, candidates, calendar, reference, week):
         remaining = row.get("remaining_games_est")
         if not isinstance(remaining, int):
             remaining = sum(
-                g["date"] >= today and g.get("status") == "pre_game"
+                g["date"] >= today and g.get("status") in UPCOMING_STATUSES
                 for g in row.get("week_games", [])
             )
         drops.append(
@@ -256,7 +260,7 @@ def suggest_swap(rows, candidates, calendar, reference, week):
                 "value": float(value),
                 "remaining": int(remaining),
                 "plays_today": any(
-                    g["date"] == today and g.get("status") == "pre_game"
+                    g["date"] == today and g.get("status") in UPCOMING_STATUSES
                     for g in row.get("week_games", [])
                 ),
             }

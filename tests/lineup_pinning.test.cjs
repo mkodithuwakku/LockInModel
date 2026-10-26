@@ -96,6 +96,13 @@ test("repinLineup fills open slots with played or unscheduled players too", () =
   assert.deepEqual(daily.bench.map((p) => p.player).sort(), ["Out", "Reserve"]);
 });
 
+test("repinLineup treats Sleeper in_game status as already started, not unconfirmed", () => {
+  const live = row("Live", ["PG"], { week_games: [game({ status: "in_game" })] });
+  const daily = repinLineup(team([live], {}, ["PG"])).recommended_lineup;
+  assert.match(daily.slots[0].lineup_reason, /^Game already started or finished/);
+  assert.ok(daily.slots[0].off_day);
+});
+
 test("repinLineup re-derives the lineup even without locks", () => {
   const results = [row("A", ["PG"], { roster_slot: "PG", lineup_order: 0, projection: { projected_fp: 40 } })];
   const t = team(results, {});

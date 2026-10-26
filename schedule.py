@@ -81,10 +81,18 @@ class SeasonSchedule:
                 "Reference date is beyond the published season schedule."
             )
         games = self.for_team(team, week)
-        # Postponed/cancelled entries cannot establish a confident count or zero.
+        # Sleeper emits pre_game / in_game / complete; postponed or cancelled
+        # entries cannot establish a confident count or zero.
         if any(
             g["status"]
-            not in ("pre_game", "in_progress", "complete", "final", "post_game")
+            not in (
+                "pre_game",
+                "in_game",
+                "in_progress",
+                "complete",
+                "final",
+                "post_game",
+            )
             for g in games
         ):
             raise DataUnavailable(

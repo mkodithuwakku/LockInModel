@@ -193,7 +193,7 @@ def _contender_future_mus(row: dict) -> list:
         (
             g
             for g in (row.get("week_games") or [])
-            if g.get("status") in ("pre_game", "scheduled")
+            if g.get("status") in ("pre_game", "scheduled", "in_game", "in_progress")
             and (not last_date or str(g.get("date") or "") > last_date)
         ),
         key=lambda g: str(g.get("date") or ""),

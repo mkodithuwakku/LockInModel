@@ -275,9 +275,12 @@ def apply_opponent_model(
         if not pid or not team:
             continue
         for game in row.get("week_games") or []:
-            if game.get("status") not in ("pre_game", "scheduled") or not game.get(
-                "opponent"
-            ):
+            if game.get("status") not in (
+                "pre_game",
+                "scheduled",
+                "in_game",
+                "in_progress",
+            ) or not game.get("opponent"):
                 continue
             targets.append(
                 {
@@ -525,12 +528,21 @@ def recommend_lineup(
             reason = "No game today"
         elif any(
             g.get("status")
-            not in {"pre_game", "in_progress", "complete", "final", "post_game"}
+            not in {
+                "pre_game",
+                "in_game",
+                "in_progress",
+                "complete",
+                "final",
+                "post_game",
+            }
             for g in today_games
         ):
             reason = "Game postponed or unconfirmed"
             missing += 1
-        elif mode == "live" and any(g.get("status") != "pre_game" for g in today_games):
+        elif mode == "live" and any(
+            g.get("status") not in ("pre_game", "scheduled") for g in today_games
+        ):
             reason = "Game already started or finished"
             started += 1
         else:

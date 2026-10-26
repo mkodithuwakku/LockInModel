@@ -196,6 +196,17 @@ def test_verified_schedule_counts_today_and_distinguishes_unknown_team():
         c.remaining("PHI", dt.date(2026, 10, 23))
 
 
+def test_in_progress_game_counts_as_remaining_not_unconfirmed():
+    """Sleeper emits ``in_game`` while a matchup is live; it is a remaining
+    opportunity, not an unconfirmed/postponed game."""
+    c = calendar()
+    c.games[1]["status"] = "in_game"
+    assert c.remaining("PHI", dt.date(2026, 10, 23)) == 1
+    # Once it finishes, it no longer counts.
+    c.games[1]["status"] = "complete"
+    assert c.remaining("PHI", dt.date(2026, 10, 23)) == 0
+
+
 @pytest.mark.parametrize(
     "payload",
     [
