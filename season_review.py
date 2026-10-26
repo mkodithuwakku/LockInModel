@@ -275,15 +275,12 @@ def weekly_film(games, rows, slots, locks, week, weights):
             continue
         pid_i = str(p["row"].get("player_id"))
         kept = {alt_pool[j]["player_id"] for j in alt_fill if j is not None}
+        # Right player, wrong night: the locked player still makes the alt
+        # lineup but his better game beats the recorded lock — a different
+        # game of his was the play, whichever slot the cascade seats him in.
         own_best = best.get(pid_i)
         timing = (
-            pid_i in kept
-            and own_best is not None
-            and own_best["fp"] > p["fp"] + 0.5
-            and (
-                not p["record"].get("game_date")
-                or own_best["date"] > p["record"]["game_date"]
-            )
+            pid_i in kept and own_best is not None and own_best["fp"] > p["fp"] + 0.5
         )
         j = alt_fill[0]
         better = alt_pool[j] if j is not None else None
