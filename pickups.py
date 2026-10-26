@@ -256,6 +256,7 @@ def suggest_swap(rows, candidates, calendar, reference, week):
         drops.append(
             {
                 "player": row["player"],
+                "player_id": row.get("player_id"),
                 "positions": row.get("positions", []),
                 "value": float(value),
                 "remaining": int(remaining),
@@ -313,6 +314,7 @@ def suggest_swap(rows, candidates, calendar, reference, week):
         },
         "drop": {
             "player": drop["player"],
+            "player_id": drop.get("player_id"),
             "positions": drop["positions"],
             "value": round(drop["value"], 2),
             "remaining_games": drop["remaining"],

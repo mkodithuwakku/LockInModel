@@ -1027,13 +1027,15 @@ function swapCard(t) {
     const dropName = dropIndex >= 0
       ? `<button class="swap-name" data-player="${dropIndex}">${esc(swap.drop.player)}</button>`
       : `<strong>${esc(swap.drop.player)}</strong>`;
-    const move = (kind, sign, label, name, meta, sub) => `<div class="swap-move swap-${kind}">
+    const dropRow = dropIndex >= 0 ? t.results[dropIndex] : null;
+    const move = (kind, sign, label, who, name, meta, sub) => `<div class="swap-move swap-${kind}">
       <span class="swap-sign" aria-hidden="true">${sign}</span>
+      ${portrait({player: who.player, player_id: who.player_id})}
       <div class="swap-side"><small>${esc(label)}</small>${name}<span>${meta}</span><small>${sub}</small></div>
     </div>`;
     return `${heading}<article class="swap-card" data-status="suggest">
-      ${move("add", "+", "ADD · On the Rise", addName, `${nbaTeamLabel(swap.add.nba_team)} ${esc((swap.add.positions || []).join("/"))} · ~${fmt(swap.add.projected_fp)} FP/g`, `${swap.add.remaining_games} left this week${swap.add.plays_today ? " · plays tonight" : ""}`)}
-      ${move("drop", "−", "DROP", dropName, `~${fmt(swap.drop.value)} FP/g · ${esc((swap.drop.positions || []).join("/"))}`, `${swap.drop.remaining_games} left this week${swap.drop.plays_today ? " · plays tonight" : ""}`)}
+      ${move("add", "+", "ADD · On the Rise", swap.add, addName, `${nbaTeamLabel(swap.add.nba_team)} ${esc((swap.add.positions || []).join("/"))} · ~${fmt(swap.add.projected_fp)} FP/g`, `${swap.add.remaining_games} left this week${swap.add.plays_today ? " · plays tonight" : ""}`)}
+      ${move("drop", "−", "DROP", {player: swap.drop.player, player_id: swap.drop.player_id || dropRow?.player_id}, dropName, `~${fmt(swap.drop.value)} FP/g · ${esc((swap.drop.positions || []).join("/"))}`, `${swap.drop.remaining_games} left this week${swap.drop.plays_today ? " · plays tonight" : ""}`)}
       <p class="swap-note"><b class="swap-net">Net ${swap.net_fp > 0 ? "+" : ""}${fmt(swap.net_fp)} FP</b> · ${esc(swap.explanation)}${swap.add.availability ? ` ${esc(swap.add.availability)}.` : ""}</p>
     </article></section>`;
   }

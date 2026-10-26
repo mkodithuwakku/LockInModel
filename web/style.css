@@ -2954,7 +2954,8 @@ button.lineup-name:hover strong { color: #c6b3d6; }
 .swap-card { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 9px; background: #242228; }
 .swap-card[data-status="suggest"] { border-color: #5e5145; }
 .swap-card[data-status="hold"] { display: block; }
-.swap-move { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 7px; background: #2a2730; }
+.swap-move { display: grid; grid-template-columns: 30px auto 1fr; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 7px; background: #2a2730; }
+.swap-move .portrait { border-radius: 6px; }
 .swap-sign { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 700 16px/1 var(--display); }
 .swap-add .swap-sign { color: #a9c39f; border: 1px solid #5a7050; background: #2d3227; }
 .swap-drop .swap-sign { color: #cf9d92; border: 1px solid #71504a; background: #322a2a; }
