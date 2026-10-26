@@ -6,7 +6,7 @@
     G: ["PG", "SG"], F: ["SF", "PF"], UTIL: ["PG", "SG", "SF", "PF", "C"],
   };
   const OUT_STATUSES = new Set(["OUT", "O", "IR", "INJURED_RESERVE", "SUSPENDED", "SUSP", "INACTIVE"]);
-  const PLAYABLE = new Set(["pre_game", "in_progress", "complete", "final", "post_game"]);
+  const PLAYABLE = new Set(["pre_game", "in_game", "in_progress", "complete", "final", "post_game"]);
   const PLACEHOLDER_REASONS = new Set(["No game today", "Game already started or finished", "Game postponed or unconfirmed", "Schedule unavailable", "Projection unavailable"]);
   // Python's round() is banker's rounding; cents keep parity with lineup.py.
   const cents = (v) => {
@@ -239,7 +239,7 @@
     const projection = player.projection;
     const validDay = /^\d{4}-\d{2}-\d{2}$/.test(game.date || "") &&
       /^\d{4}-\d{2}-\d{2}$/.test(projection?.as_of || "") && game.date >= projection.as_of;
-    if (player.schedule_state === "verified" && ["pre_game", "in_progress"].includes(game.status) &&
+    if (player.schedule_state === "verified" && ["pre_game", "in_game", "in_progress"].includes(game.status) &&
         validDay && (Number.isFinite(game.proj_fp) || Number.isFinite(projection?.projected_fp))) {
       const value = Number.isFinite(game.proj_fp) ? game.proj_fp : projection.projected_fp;
       const description = Number.isFinite(game.proj_fp)
@@ -415,7 +415,7 @@
             matchups.set(key, {key, away, home, status: g.status, players: new Map(), spots: 0});
           const m = matchups.get(key);
           m.spots += 1;
-          const rank = {in_progress: 2, pre_game: 0};
+          const rank = {in_game: 2, in_progress: 2, pre_game: 0};
           if ((rank[g.status] ?? 1) > (rank[m.status] ?? 1)) m.status = g.status;
           const pid = String(row.player_id ?? row.player);
           if (!m.players.has(pid))
