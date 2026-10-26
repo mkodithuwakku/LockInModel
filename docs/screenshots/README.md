@@ -1,5 +1,24 @@
 # README screenshots
 
+## Expanded team comparison, weekly film, and compact waivers
+
+- `team-comparison-desktop.png` / `team-comparison-mobile.png`: roster-size-aware
+  rankings, quality/depth/volume summaries, portrait leaders, pooled box-score
+  rates, and the full filterable player leaderboard.
+- `weekly-film-desktop.png` / `weekly-film-mobile.png`: a banked-game shortfall,
+  an entered 8.5 FP loss-margin what-if, visual lock regret, daily deviation bars,
+  and the player performance ledger.
+- `compact-waivers-desktop.png` / `compact-waivers-mobile.png`: compact add
+  candidates with roster-player portraits, positive/negative fit values,
+  add/drop symbols, and expandable sample/scoring notes.
+
+These six captures use **illustrative statistics and generic teams**, explicitly
+labeled in the UI. Names/headshots identify real NBA players, but fixture
+performances, roster membership, and lock decisions are invented for layout and
+interaction checks. They are not observed NBA results, actual matchup losses,
+or live waiver advice. Phone captures use 390px; layout checks additionally cover
+320px, 1024px, and 1440px. Missing headshots use initials.
+
 ## Current restrained plum accents and weekly projections
 
 - `roster-first-desktop.png`: illustrative five-player league with three active
@@ -110,13 +129,24 @@ These use an isolated in-memory configuration, not personal team names or accoun
 
 ## Season review captures
 
-- `season-review-desktop.png`: 1280px dashboard with all-team summaries, selected-team season stats, and key-player cards.
-- `season-review-mobile.png`: 390px selected-team totals and key players.
+- `season-review-desktop.png`: 1440px season explorer with shared filters,
+  section navigation, six production metrics and evidence-based story cards.
+- `season-review-mobile.png`: 390px production metrics and player stories.
+- `season-scoring-desktop.png` / `season-scoring-mobile.png`: signed league
+  scoring contributions, per-appearance box production and efficiency.
+- `season-roster-lab-desktop.png`: roster statistics, portrait rows with recent
+  sparklines, focus controls and the player-by-week map.
+- `season-records-desktop.png`: record performances and category leaders.
 
-Both use generic team and league labels, no team photos/account details, and real
-stored October 20, 2026 results. Small samples and missing form windows are
-intentional. Totals describe current-roster production, not Sleeper locked points.
+These replace the earlier summary-only captures. They use generic teams and
+**illustrative statistics**, with real NBA identities/headshots. Performances,
+ownership and league settings are fixture inputs, not actual NBA results or live
+advice. No personal account details are included. Totals describe current-roster
+production, not Sleeper locked points.
 The roster remains the first/default view; Season review is a separate tab.
+Browser checks cover all eight sections at 320px, 390px, 1024px and 1440px,
+including shared filters, invalid/empty ranges, table views, single-player focus,
+archive search/sorting/pagination/CSV, player dialogs and switching teams.
 
 
 ## Season badge cards

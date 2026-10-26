@@ -42,6 +42,15 @@ PROJECTION_FIELDS = "projected_fp projection_source sample_size last_played as_o
 PROJECTION_STATS = (
     "PTS REB AST STL BLK TOV FG3M MIN FGM FGA FTM FTA OREB DREB PF".split()
 )
+REVIEW_STATS = "PTS REB AST STL BLK FG3M TOV MIN FGM FGA FTM FTA FG3A OREB DREB PF FG_PCT FT_PCT FG3_PCT EFG_PCT TS_PCT AST_TOV FP_PER_MIN".split()
+REVIEW_PLAYER_FIELDS = "player_id player nba_team positions games total_fp average_fp recent_fp recent_games change spread best_fp best_date last_played share floor_fp ceiling_fp".split()
+
+
+def public_review_player(player):
+    return dict(
+        select(player, REVIEW_PLAYER_FIELDS),
+        stats=select(player.get("stats", {}), REVIEW_STATS),
+    )
 
 
 def public_projection(value):
@@ -78,18 +87,39 @@ def public_report(report):
             )
             item["season_review"]["stats"] = select(
                 review.get("stats", {}),
-                "PTS REB AST STL BLK FG3M TOV MIN FGM FGA FTM FTA FG_PCT FT_PCT".split(),
+                REVIEW_STATS,
             )
             item["season_review"]["weeks"] = [
                 select(w, "date total_fp average_fp games".split())
                 for w in review.get("weeks", [])
             ]
             item["season_review"]["players"] = [
-                select(
-                    p,
-                    "player_id player games total_fp average_fp recent_fp recent_games change spread best_fp best_date last_played share".split(),
+                public_review_player(p) for p in review.get("players", [])
+            ]
+            from scoring import supported_stat
+
+            item["season_review"]["scoring_rules"] = [
+                select(rule, ["stat", "weight"])
+                for rule in review.get("scoring_rules", [])
+                if supported_stat(rule.get("stat"))
+            ]
+            item["season_review"]["scoring_notes"] = list(
+                review.get("scoring_notes", [])
+            )
+            item["season_review"]["game_log"] = [
+                dict(
+                    select(
+                        g,
+                        "player_id player game_id date fp opponent venue result days_since_previous baseline_fp baseline_games delta double_double triple_double".split(),
+                    ),
+                    stats=select(g.get("stats", {}), REVIEW_STATS),
+                    scoring={
+                        k: v
+                        for k, v in g.get("scoring", {}).items()
+                        if supported_stat(k)
+                    },
                 )
-                for p in review.get("players", [])
+                for g in review.get("game_log", [])
             ]
         if team.get("film_review"):
             film = team["film_review"]
@@ -113,6 +143,13 @@ def public_report(report):
             item["film_review"]["locked"] = [
                 select(l, "player player_id slot fp date".split())
                 for l in film.get("locked", [])
+            ]
+            item["film_review"]["performances"] = [
+                select(
+                    p,
+                    "player_id player date fp baseline_fp baseline_games delta pts reb ast tov".split(),
+                )
+                for p in film.get("performances", [])
             ]
         if team.get("season_badges"):
             from badge_store import BADGE_KEYS, NEGATIVE_KEYS, MILESTONE_KEYS
@@ -210,8 +247,10 @@ def public_report(report):
                         t,
                         "team_id team_name league_name status total_fp "
                         "fp_per_game appearances covered_players "
-                        "roster_count".split(),
+                        "roster_count season as_of top_three_share".split(),
                     ),
+                    stats=select(t.get("stats", {}), REVIEW_STATS),
+                    players=[public_review_player(p) for p in t.get("players", [])],
                     leaders=[
                         select(
                             p,
@@ -225,6 +264,7 @@ def public_report(report):
                     ],
                 )
                 for t in comparison.get("teams", [])
+                if t.get("team_id") in {team["id"] for team in out["teams"]}
             ],
         }
     # Fail before deployment on NaN/Infinity or unexpected non-JSON values.

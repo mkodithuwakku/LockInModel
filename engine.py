@@ -833,6 +833,7 @@ def build_dashboard(
             cutoff.date(),
             unavailable=bool(getattr(provider, "stats_error", None)),
             season=item.get("season"),
+            include_games=False,
         )
         comparison["teams"].append(
             {
@@ -845,6 +846,11 @@ def build_dashboard(
                 "appearances": review["appearances"],
                 "covered_players": review["covered_players"],
                 "roster_count": review["roster_count"],
+                "season": review["season"],
+                "as_of": review["as_of"],
+                "players": review["players"],
+                "stats": review["stats"],
+                "top_three_share": review["top_three_share"],
                 "leaders": [
                     {
                         "player": p["player"],

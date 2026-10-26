@@ -3,7 +3,7 @@
 import math
 import pandas as pd
 from fetch_data import normalize_stats_for_scoring
-from scoring import add_fantasy_points
+from scoring import add_fantasy_points, effective_weights
 from transport import DataUnavailable
 
 STATS = (
@@ -19,10 +19,142 @@ STATS = (
     "FGA",
     "FTM",
     "FTA",
+    "FG3A",
+    "OREB",
+    "DREB",
+    "PF",
 )
 
 
-def season_review(games, roster, weights, reference, unavailable=False, season=None):
+def production_stats(frame):
+    """Observed totals and attempt-weighted rates; never use imputed box stats."""
+    stats = {
+        k: round(float(frame[k].sum()), 2)
+        for k in STATS
+        if k in frame
+        and k not in frame.attrs.get("imputed_stats", [])
+        and frame[k].notna().all()
+    }
+
+    def ratio(numerator, denominator, scale=1):
+        return (
+            round(numerator / denominator * scale, 2)
+            if numerator is not None and denominator is not None and denominator > 0
+            else None
+        )
+
+    stats["FG_PCT"] = ratio(stats.get("FGM"), stats.get("FGA"), 100)
+    stats["FT_PCT"] = ratio(stats.get("FTM"), stats.get("FTA"), 100)
+    stats["FG3_PCT"] = ratio(stats.get("FG3M"), stats.get("FG3A"), 100)
+    stats["EFG_PCT"] = ratio(
+        (
+            stats["FGM"] + 0.5 * stats["FG3M"]
+            if "FGM" in stats and "FG3M" in stats
+            else None
+        ),
+        stats.get("FGA"),
+        100,
+    )
+    stats["TS_PCT"] = ratio(
+        stats.get("PTS"),
+        (
+            2 * (stats["FGA"] + 0.44 * stats["FTA"])
+            if "FGA" in stats and "FTA" in stats
+            else None
+        ),
+        100,
+    )
+    stats["AST_TOV"] = ratio(stats.get("AST"), stats.get("TOV"))
+    stats["FP_PER_MIN"] = ratio(float(frame.FP.sum()), stats.get("MIN"))
+    return stats
+
+
+def season_game_log(scored, roster, weights):
+    """Full observed season tape with league-scored components and prior-only context."""
+    import re
+
+    identities = {str(r.get("player_id")): r for r in roster}
+    effective, notes = effective_weights(scored, weights)
+    components = {
+        stat: add_fantasy_points(scored, {stat: weight}).FP
+        for stat, weight in effective.items()
+        if weight
+    }
+    missing = set(scored.attrs.get("imputed_stats", []))
+    history = {}
+    tape = []
+    for index, game in scored.iterrows():
+        pid = str(game.PLAYER_ID)
+        prior = history.setdefault(pid, [])
+        earlier = [p for p in prior if p["date"] < game.GAME_DATE]
+        baseline = (
+            sum(p["fp"] for p in earlier[-10:]) / min(10, len(earlier))
+            if len(earlier) >= 3
+            else None
+        )
+        matchup = str(game.get("MATCHUP", ""))
+        match = re.fullmatch(r"[A-Z]{2,4}\s+(vs\.?|@)\s+([A-Z]{2,4})", matchup)
+        categories = ["PTS", "REB", "AST", "STL", "BLK"]
+        doubles = (
+            sum(game.get(k, 0) >= 10 for k in categories)
+            if not missing.intersection(categories)
+            else None
+        )
+        tape.append(
+            dict(
+                player_id=pid,
+                player=identities[pid]["player"],
+                game_id=str(game.get("GAME_ID", game.GAME_DATE.date())),
+                date=str(game.GAME_DATE.date()),
+                fp=round(float(game.FP), 4),
+                stats={
+                    k: (
+                        float(game[k])
+                        if k in game and k not in missing and pd.notna(game[k])
+                        else None
+                    )
+                    for k in STATS
+                },
+                scoring={
+                    k: round(float(values.loc[index]), 4)
+                    for k, values in components.items()
+                },
+                opponent=match[2] if match else None,
+                venue=("away" if match[1] == "@" else "home") if match else None,
+                result=(
+                    str(game.get("WL")) if str(game.get("WL")) in ("W", "L") else None
+                ),
+                days_since_previous=(
+                    (game.GAME_DATE - prior[-1]["date"]).days if prior else None
+                ),
+                baseline_fp=round(baseline, 4) if baseline is not None else None,
+                baseline_games=min(10, len(earlier)),
+                delta=(
+                    round(float(game.FP) - baseline, 4)
+                    if baseline is not None
+                    else None
+                ),
+                double_double=doubles >= 2 if doubles is not None else None,
+                triple_double=doubles >= 3 if doubles is not None else None,
+            )
+        )
+        prior.append({"fp": float(game.FP), "date": game.GAME_DATE})
+    return (
+        tape,
+        [{"stat": k, "weight": float(v)} for k, v in effective.items() if v],
+        notes,
+    )
+
+
+def season_review(
+    games,
+    roster,
+    weights,
+    reference,
+    unavailable=False,
+    season=None,
+    include_games=True,
+):
     ref = pd.Timestamp(reference)
     year = (
         int(str(season)[:4])
@@ -45,6 +177,9 @@ def season_review(games, roster, weights, reference, unavailable=False, season=N
         stats={},
         weeks=[],
         players=[],
+        game_log=[],
+        scoring_rules=[],
+        scoring_notes=[],
     )
     if unavailable or games is None or games.empty:
         return base
@@ -83,6 +218,9 @@ def season_review(games, roster, weights, reference, unavailable=False, season=N
             dict(
                 player_id=pid,
                 player=row["player"],
+                nba_team=row.get("nba_team"),
+                positions=row.get("positions") or [],
+                stats=production_stats(h),
                 games=len(h),
                 total_fp=round(float(h.FP.sum()), 2),
                 average_fp=round(float(h.FP.mean()), 2),
@@ -95,6 +233,10 @@ def season_review(games, roster, weights, reference, unavailable=False, season=N
                 ),
                 spread=round(float(h.FP.std(ddof=0)), 2) if len(h) >= 5 else None,
                 best_fp=round(float(h.FP.max()), 2),
+                floor_fp=round(float(h.FP.quantile(0.25)), 2) if len(h) >= 5 else None,
+                ceiling_fp=(
+                    round(float(h.FP.quantile(0.75)), 2) if len(h) >= 5 else None
+                ),
                 best_date=str(h.loc[h.FP.idxmax(), "GAME_DATE"].date()),
                 last_played=str(h.GAME_DATE.max().date()),
             )
@@ -105,23 +247,7 @@ def season_review(games, roster, weights, reference, unavailable=False, season=N
         p["share"] = (
             round(max(0, p["total_fp"]) / positive * 100, 1) if positive else None
         )
-    stats = {
-        k: round(float(scored[k].sum()), 2)
-        for k in STATS
-        if k in scored
-        and k not in scored.attrs.get("imputed_stats", [])
-        and scored[k].notna().all()
-    }
-    stats["FG_PCT"] = (
-        round(stats["FGM"] / stats["FGA"] * 100, 1)
-        if stats.get("FGA", 0) > 0 and "FGM" in stats
-        else None
-    )
-    stats["FT_PCT"] = (
-        round(stats["FTM"] / stats["FTA"] * 100, 1)
-        if stats.get("FTA", 0) > 0 and "FTM" in stats
-        else None
-    )
+    stats = production_stats(scored)
     weeks = []
     week = scored.GAME_DATE - pd.to_timedelta(scored.GAME_DATE.dt.weekday, unit="D")
     for day, h in scored.groupby(week):
@@ -133,6 +259,9 @@ def season_review(games, roster, weights, reference, unavailable=False, season=N
                 games=len(h),
             )
         )
+    tape, rules, notes = (
+        season_game_log(scored, roster, weights) if include_games else ([], [], [])
+    )
     return dict(
         base,
         status="ready",
@@ -148,6 +277,9 @@ def season_review(games, roster, weights, reference, unavailable=False, season=N
         stats=stats,
         weeks=weeks,
         players=players,
+        game_log=tape,
+        scoring_rules=rules,
+        scoring_notes=notes,
     )
 
 
@@ -174,6 +306,7 @@ def weekly_film(games, rows, slots, locks, week, weights):
         efficiency=None,
         mistakes=[],
         locked=[],
+        performances=[],
         note=None,
     )
     if not slots:
@@ -183,6 +316,16 @@ def weekly_film(games, rows, slots, locks, week, weights):
     if games is None or games.empty:
         return base
     ids = {str(r.get("player_id")) for r in rows if r.get("player_id")}
+    games = games.copy()
+    games["PLAYER_ID"] = games.PLAYER_ID.astype(str)
+    games = (
+        games.drop_duplicates(
+            ["PLAYER_ID"] + (["GAME_ID"] if "GAME_ID" in games else ["GAME_DATE"]),
+            keep="last",
+        )
+        .sort_values("GAME_DATE")
+        .reset_index(drop=True)
+    )
     frame = games[
         games.PLAYER_ID.astype(str).isin(ids)
         & games.GAME_DATE.between(pd.Timestamp(week[0]), pd.Timestamp(week[1]))
@@ -193,6 +336,49 @@ def weekly_film(games, rows, slots, locks, week, weights):
         scored = add_fantasy_points(normalize_stats_for_scoring(frame), weights)
     except (DataUnavailable, ValueError, KeyError, TypeError):
         return dict(base, status="unavailable", note="Scoring inputs unavailable.")
+    # Only preceding observations enter a game's benchmark, never its result.
+    performances = []
+    identities = {str(r.get("player_id")): r for r in rows}
+    for game in scored.itertuples():
+        pid = str(game.PLAYER_ID)
+        prior = games[
+            (games.PLAYER_ID == pid) & (games.GAME_DATE < game.GAME_DATE)
+        ].tail(10)
+        baseline = None
+        if len(prior) >= 3:
+            try:
+                baseline = float(
+                    add_fantasy_points(
+                        normalize_stats_for_scoring(prior), weights
+                    ).FP.mean()
+                )
+            except (DataUnavailable, ValueError, KeyError, TypeError):
+                pass
+        performances.append(
+            dict(
+                player_id=pid,
+                player=identities[pid]["player"],
+                date=str(game.GAME_DATE.date()),
+                fp=round(float(game.FP), 2),
+                baseline_fp=round(baseline, 2) if baseline is not None else None,
+                baseline_games=len(prior),
+                delta=(
+                    round(float(game.FP) - baseline, 2)
+                    if baseline is not None
+                    else None
+                ),
+                **{
+                    k.lower(): (
+                        float(getattr(game, k))
+                        if k not in scored.attrs.get("imputed_stats", [])
+                        and pd.notna(getattr(game, k, None))
+                        else None
+                    )
+                    for k in ("PTS", "REB", "AST", "TOV")
+                },
+            )
+        )
+    base["performances"] = performances
     best = {}
     for pid, h in scored.groupby("PLAYER_ID"):
         top = h.loc[h.FP.idxmax()]
