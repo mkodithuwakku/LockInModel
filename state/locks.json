@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-28T16:09:19.763Z",
+  "updated_at": "2026-10-28T16:09:24.606Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -432,6 +432,16 @@
     "1419800258463969280": {
       "schedule_week": 2,
       "locks": {
+        "1845": {
+          "player_id": "1845",
+          "player_name": "Donovan Mitchell",
+          "canonical_name": "donovan mitchell",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 30.5,
+          "game_date": "2026-10-26",
+          "locked_at": "2026-10-28T16:09:24.606Z"
+        },
         "1945": {
           "player_id": "1945",
           "player_name": "Trae Young",
