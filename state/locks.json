@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-28T16:09:16.620Z",
+  "updated_at": "2026-10-28T16:09:19.763Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -432,6 +432,16 @@
     "1419800258463969280": {
       "schedule_week": 2,
       "locks": {
+        "1945": {
+          "player_id": "1945",
+          "player_name": "Trae Young",
+          "canonical_name": "trae young",
+          "roster_slot": "G",
+          "slot_index": 2,
+          "locked_fp": 26.5,
+          "game_date": "2026-10-26",
+          "locked_at": "2026-10-28T16:09:19.763Z"
+        },
         "2029": {
           "player_id": "2029",
           "player_name": "P.J. Washington",
