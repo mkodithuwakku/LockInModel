@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T15:54:06.829Z",
+  "updated_at": "2026-10-29T15:54:53.667Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -91,6 +91,16 @@
           "locked_fp": 35.5,
           "game_date": "2026-10-28",
           "locked_at": "2026-10-29T15:53:05.554Z"
+        },
+        "1961": {
+          "player_id": "1961",
+          "player_name": "Duncan Robinson",
+          "canonical_name": "duncan robinson",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 22,
+          "game_date": "2026-10-28",
+          "locked_at": "2026-10-29T15:54:53.667Z"
         },
         "1997": {
           "player_id": "1997",
