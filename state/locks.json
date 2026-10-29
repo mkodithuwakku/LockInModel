@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T15:53:05.554Z",
+  "updated_at": "2026-10-29T15:53:39.607Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -72,6 +72,16 @@
     "1415801499308580864": {
       "schedule_week": 2,
       "locks": {
+        "1717": {
+          "player_id": "1717",
+          "player_name": "Fred VanVleet",
+          "canonical_name": "fred vanvleet",
+          "roster_slot": "G",
+          "slot_index": 2,
+          "locked_fp": 32,
+          "game_date": "2026-10-28",
+          "locked_at": "2026-10-29T15:53:39.607Z"
+        },
         "1846": {
           "player_id": "1846",
           "player_name": "Bam Adebayo",
