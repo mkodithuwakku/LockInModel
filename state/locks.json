@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T16:01:25.630Z",
+  "updated_at": "2026-10-29T16:01:43.966Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -449,6 +449,16 @@
           "locked_fp": 25.5,
           "game_date": "2026-10-28",
           "locked_at": "2026-10-29T16:01:08.078Z"
+        },
+        "2577": {
+          "player_id": "2577",
+          "player_name": "Victor Wembanyama",
+          "canonical_name": "victor wembanyama",
+          "roster_slot": "C",
+          "slot_index": 6,
+          "locked_fp": 50,
+          "game_date": "2026-10-28",
+          "locked_at": "2026-10-29T16:01:43.966Z"
         }
       },
       "history": {
