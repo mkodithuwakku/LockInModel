@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T15:52:34.967Z",
+  "updated_at": "2026-10-29T15:53:05.554Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -72,6 +72,16 @@
     "1415801499308580864": {
       "schedule_week": 2,
       "locks": {
+        "1846": {
+          "player_id": "1846",
+          "player_name": "Bam Adebayo",
+          "canonical_name": "bam adebayo",
+          "roster_slot": "PF",
+          "slot_index": 4,
+          "locked_fp": 35.5,
+          "game_date": "2026-10-28",
+          "locked_at": "2026-10-29T15:53:05.554Z"
+        },
         "2289": {
           "player_id": "2289",
           "player_name": "Scottie Barnes",
