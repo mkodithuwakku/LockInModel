@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T16:04:24.437Z",
+  "updated_at": "2026-10-29T16:04:36.257Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -582,6 +582,16 @@
           "locked_fp": 32,
           "game_date": "2026-10-28",
           "locked_at": "2026-10-29T16:04:24.437Z"
+        },
+        "2772": {
+          "player_id": "2772",
+          "player_name": "Ajay Mitchell",
+          "canonical_name": "ajay mitchell",
+          "roster_slot": "UTIL",
+          "slot_index": 8,
+          "locked_fp": 26.5,
+          "game_date": "2026-10-28",
+          "locked_at": "2026-10-29T16:04:36.257Z"
         }
       },
       "history": {}
