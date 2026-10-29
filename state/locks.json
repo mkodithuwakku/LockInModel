@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T16:01:08.078Z",
+  "updated_at": "2026-10-29T16:01:25.630Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -420,6 +420,16 @@
     "1417213338928078848": {
       "schedule_week": 2,
       "locks": {
+        "1717": {
+          "player_id": "1717",
+          "player_name": "Fred VanVleet",
+          "canonical_name": "fred vanvleet",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 26,
+          "game_date": "2026-10-28",
+          "locked_at": "2026-10-29T16:01:25.630Z"
+        },
         "2029": {
           "player_id": "2029",
           "player_name": "P.J. Washington",
