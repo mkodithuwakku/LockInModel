@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T16:01:43.966Z",
+  "updated_at": "2026-10-29T16:03:58.660Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -533,6 +533,16 @@
     "1419800258463969280": {
       "schedule_week": 2,
       "locks": {
+        "1787": {
+          "player_id": "1787",
+          "player_name": "Jarrett Allen",
+          "canonical_name": "jarrett allen",
+          "roster_slot": "C",
+          "slot_index": 6,
+          "locked_fp": 26,
+          "game_date": "2026-10-28",
+          "locked_at": "2026-10-29T16:03:58.660Z"
+        },
         "1845": {
           "player_id": "1845",
           "player_name": "Donovan Mitchell",
