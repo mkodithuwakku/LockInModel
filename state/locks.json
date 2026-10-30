@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-29T16:04:36.257Z",
+  "updated_at": "2026-10-30T15:14:50.134Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -111,6 +111,16 @@
           "locked_fp": 24.5,
           "game_date": "2026-10-28",
           "locked_at": "2026-10-29T15:54:06.829Z"
+        },
+        "2055": {
+          "player_id": "2055",
+          "player_name": "Nickeil Alexander-Walker",
+          "canonical_name": "nickeil alexander-walker",
+          "roster_slot": "G",
+          "slot_index": 2,
+          "locked_fp": 24.5,
+          "game_date": "2026-10-29",
+          "locked_at": "2026-10-30T15:14:50.134Z"
         },
         "2289": {
           "player_id": "2289",
