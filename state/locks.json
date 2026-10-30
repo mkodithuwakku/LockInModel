@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-30T15:14:50.134Z",
+  "updated_at": "2026-10-30T15:16:39.603Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -306,6 +306,16 @@
           "locked_fp": 48.31999999999999,
           "game_date": "2026-10-28",
           "locked_at": "2026-10-29T15:58:06.114Z"
+        },
+        "2299": {
+          "player_id": "2299",
+          "player_name": "Aaron Wiggins",
+          "canonical_name": "aaron wiggins",
+          "roster_slot": "SF",
+          "slot_index": 5,
+          "locked_fp": 39.64,
+          "game_date": "2026-10-29",
+          "locked_at": "2026-10-30T15:16:39.603Z"
         },
         "2577": {
           "player_id": "2577",
