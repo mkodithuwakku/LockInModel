@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-31T16:43:14.504Z",
+  "updated_at": "2026-10-31T16:44:29.555Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -642,6 +642,16 @@
           "locked_fp": 26,
           "game_date": "2026-10-26",
           "locked_at": "2026-10-28T16:09:16.620Z"
+        },
+        "2179": {
+          "player_id": "2179",
+          "player_name": "LaMelo Ball",
+          "canonical_name": "lamelo ball",
+          "roster_slot": "UTIL",
+          "slot_index": 7,
+          "locked_fp": 28,
+          "game_date": "2026-10-30",
+          "locked_at": "2026-10-31T16:44:29.555Z"
         },
         "2289": {
           "player_id": "2289",
