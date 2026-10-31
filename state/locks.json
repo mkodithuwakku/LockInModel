@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-31T16:39:55.264Z",
+  "updated_at": "2026-10-31T16:39:59.062Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -38,6 +38,16 @@
           "locked_fp": 34.5,
           "game_date": "2026-10-29",
           "locked_at": "2026-10-31T16:39:55.264Z"
+        },
+        "2490": {
+          "player_id": "2490",
+          "player_name": "Karlo Matković",
+          "canonical_name": "karlo matkovic",
+          "roster_slot": "UTIL",
+          "slot_index": 5,
+          "locked_fp": 17.5,
+          "game_date": "2026-10-29",
+          "locked_at": "2026-10-31T16:39:59.062Z"
         }
       },
       "history": {
