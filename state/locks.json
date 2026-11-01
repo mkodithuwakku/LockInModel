@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-01T16:34:41.870Z",
+  "updated_at": "2026-11-01T16:34:52.711Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -141,6 +141,16 @@
           "locked_fp": 35.5,
           "game_date": "2026-10-28",
           "locked_at": "2026-10-29T15:53:05.554Z"
+        },
+        "1883": {
+          "player_id": "1883",
+          "player_name": "Wendell Carter Jr.",
+          "canonical_name": "wendell carter",
+          "roster_slot": "UTIL",
+          "slot_index": 7,
+          "locked_fp": 27.5,
+          "game_date": "2026-10-30",
+          "locked_at": "2026-11-01T16:34:52.711Z"
         },
         "1913": {
           "player_id": "1913",
