@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-01T16:35:38.226Z",
+  "updated_at": "2026-11-01T16:36:22.244Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -569,6 +569,16 @@
           "locked_fp": 26,
           "game_date": "2026-10-28",
           "locked_at": "2026-10-29T16:01:25.630Z"
+        },
+        "1752": {
+          "player_id": "1752",
+          "player_name": "Lauri Markkanen",
+          "canonical_name": "lauri markkanen",
+          "roster_slot": "SF",
+          "slot_index": 3,
+          "locked_fp": 20.5,
+          "game_date": "2026-10-31",
+          "locked_at": "2026-11-01T16:36:22.244Z"
         },
         "2029": {
           "player_id": "2029",
