@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-31T16:44:29.555Z",
+  "updated_at": "2026-11-01T16:34:14.459Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -38,6 +38,16 @@
           "locked_fp": 34.5,
           "game_date": "2026-10-29",
           "locked_at": "2026-10-31T16:39:55.264Z"
+        },
+        "2449": {
+          "player_id": "2449",
+          "player_name": "Dyson Daniels",
+          "canonical_name": "dyson daniels",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 15,
+          "game_date": "2026-10-31",
+          "locked_at": "2026-11-01T16:34:14.459Z"
         },
         "2490": {
           "player_id": "2490",
