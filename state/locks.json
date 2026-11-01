@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-01T16:35:29.710Z",
+  "updated_at": "2026-11-01T16:35:38.226Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -376,6 +376,16 @@
           "locked_fp": 36.730000000000004,
           "game_date": "2026-10-30",
           "locked_at": "2026-10-31T16:41:42.674Z"
+        },
+        "1739": {
+          "player_id": "1739",
+          "player_name": "Domantas Sabonis",
+          "canonical_name": "domantas sabonis",
+          "roster_slot": "PF",
+          "slot_index": 7,
+          "locked_fp": 46.56,
+          "game_date": "2026-10-31",
+          "locked_at": "2026-11-01T16:35:38.226Z"
         },
         "1913": {
           "player_id": "1913",
