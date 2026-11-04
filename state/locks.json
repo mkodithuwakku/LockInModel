@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-04T14:35:58.357Z",
+  "updated_at": "2026-11-04T14:36:04.267Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -638,6 +638,16 @@
     "1417213338928078848": {
       "schedule_week": 3,
       "locks": {
+        "1752": {
+          "player_id": "1752",
+          "player_name": "Lauri Markkanen",
+          "canonical_name": "lauri markkanen",
+          "roster_slot": "SF",
+          "slot_index": 3,
+          "locked_fp": 26,
+          "game_date": "2026-11-02",
+          "locked_at": "2026-11-04T14:36:04.267Z"
+        },
         "2255": {
           "player_id": "2255",
           "player_name": "Ayo Dosunmu",
