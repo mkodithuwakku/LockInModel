@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-04T14:35:49.618Z",
+  "updated_at": "2026-11-04T14:35:58.357Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -647,6 +647,16 @@
           "locked_fp": 33,
           "game_date": "2026-11-02",
           "locked_at": "2026-11-04T14:35:49.618Z"
+        },
+        "2313": {
+          "player_id": "2313",
+          "player_name": "Josh Giddey",
+          "canonical_name": "josh giddey",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 25.5,
+          "game_date": "2026-11-02",
+          "locked_at": "2026-11-04T14:35:58.357Z"
         }
       },
       "history": {
