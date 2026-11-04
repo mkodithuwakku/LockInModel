@@ -777,15 +777,25 @@ function filmWeekHtml(t) {
     const delta = matched.length ? matched.reduce((sum,g)=>sum+g.delta,0)/matched.length : null;
     return {date,entries,matched,delta};
   });
-  const max = Math.max(1,...daily.map(d=>Math.abs(d.delta || 0)));
+  const hasBenchmarks = daily.some(d=>d.matched.length);
+  for (const day of daily) {
+    day.value = hasBenchmarks ? day.delta : day.entries.length ? day.entries.reduce((sum,g)=>sum+g.fp,0)/day.entries.length : null;
+  }
+  const max = Math.max(1,...daily.map(d=>Math.abs(d.value || 0)));
+  const baselineLabel = p => p.baseline_fp == null
+    ? (p.baseline_games >= 3 ? "Benchmark unavailable" : `Insufficient history · ${p.baseline_games || 0}/3 games`)
+    : p.baseline_prior_season_games
+      ? `${p.baseline_current_season_games} current + ${p.baseline_prior_season_games} prior-season`
+      : `${p.baseline_games} earlier games`;
   const locked = p => (f.locked || []).some(l=>String(l.player_id) === String(p.player_id) && l.date === p.date);
   const filtered = games.filter(p=>state.filmFilter === "below" ? p.delta < 0 : state.filmFilter === "locked" ? locked(p) : true)
     .sort((a,b)=>(a.delta ?? Infinity)-(b.delta ?? Infinity) || a.date.localeCompare(b.date));
-  return `<div class="review-section-heading"><h3>A week on the rollercoaster</h3><span>Average FP above / below prior baseline</span></div>
-    <div class="film-week">${daily.map(d=>`<article><small>${new Date(d.date+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}</small><strong class="${tone(d.delta)}">${signed(d.delta)}</strong><div class="film-day-bar ${tone(d.delta)}"><i style="height:${Math.abs(d.delta || 0)/max*100}%"></i></div><span>${d.entries.length ? `${d.entries.length} appearances` : "No observed games"}</span><small>${d.matched.length}/${d.entries.length} with baseline</small></article>`).join("")}</div>
+  return `<div class="review-section-heading"><h3>A week on the rollercoaster</h3><span>${hasBenchmarks ? "Average FP above / below prior baseline" : "Average observed FP · benchmarks unavailable"}</span></div>
+    ${hasBenchmarks ? "" : '<p class="review-pending">There is not enough earlier history for comparisons this week. Bars show actual average FP instead; they do not indicate over- or underperformance.</p>'}
+    <div class="film-week">${daily.map(d=>`<article><small>${new Date(d.date+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}</small><strong class="${hasBenchmarks ? tone(d.value) : ""}">${hasBenchmarks ? signed(d.value) : fmt(d.value)}</strong><div class="film-day-bar ${hasBenchmarks ? tone(d.value) : ""}"><i style="height:${Math.abs(d.value || 0)/max*100}%"></i></div><span>${d.entries.length ? `${d.entries.length} appearances` : "No observed games"}</span><small>${d.entries.length && !d.matched.length ? "Insufficient earlier history" : `${d.matched.length}/${d.entries.length} with baseline`}</small></article>`).join("")}</div>
     <div class="review-section-heading"><h3>The lowlights ledger</h3><label class="film-filter">Show <select id="film-filter">${Object.entries({all:"All performances",below:"Below baseline",locked:"Banked games"}).map(([v,l])=>`<option value="${v}" ${state.filmFilter===v?"selected":""}>${l}</option>`).join("")}</select></label></div>
-    <div class="compare-table-wrap" tabindex="0" role="region" aria-label="Weekly player performance ledger"><table class="compare-table"><thead><tr><th>Player</th><th>Night</th><th>FP</th><th>Prior avg</th><th>Δ FP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>Context</th></tr></thead><tbody>${filtered.map(p=>`<tr><th>${comparisonPerson(p,t.id)}</th><td>${esc(p.date.slice(5))}</td><td>${fmt(p.fp)}</td><td>${fmt(p.baseline_fp)}<small> · ${p.baseline_games} GP</small></td><td class="${tone(p.delta)}">${signed(p.delta)}</td>${["pts","reb","ast","tov"].map(k=>`<td>${fmt(p[k],0)}</td>`).join("")}<td><span class="film-context ${locked(p) ? "is-banked" : ""}">${locked(p) ? "Banked" : "Observed"}</span></td></tr>`).join("") || '<tr><td colspan="10">No performances match this filter.</td></tr>'}</tbody></table></div>
-    <p class="review-scope">Bench and reserve games are included as observed performances. Baselines use 3–10 strictly earlier stored games; missing baselines remain blank. The day bars average only games with a baseline. Underperformance is not automatically a lock mistake.</p>`;
+    <div class="compare-table-wrap" tabindex="0" role="region" aria-label="Weekly player performance ledger"><table class="compare-table"><thead><tr><th>Player</th><th>Night</th><th>FP</th><th>Prior avg</th><th>Δ FP</th><th>PTS</th><th>REB</th><th>AST</th><th>TOV</th><th>Context</th></tr></thead><tbody>${filtered.map(p=>`<tr><th>${comparisonPerson(p,t.id)}</th><td>${esc(p.date.slice(5))}</td><td>${fmt(p.fp)}</td><td>${fmt(p.baseline_fp)}<small class="film-baseline-source">${baselineLabel(p)}</small></td><td class="${tone(p.delta)}">${signed(p.delta)}</td>${["pts","reb","ast","tov"].map(k=>`<td>${fmt(p[k],0)}</td>`).join("")}<td><span class="film-context ${locked(p) ? "is-banked" : ""}">${locked(p) ? "Banked" : "Observed"}</span></td></tr>`).join("") || '<tr><td colspan="10">No performances match this filter.</td></tr>'}</tbody></table></div>
+    <p class="review-scope">Bench and reserve games are included as observed performances. Baselines use 3–10 strictly earlier stored games; saved prior-season history fills short early-season samples, as labeled. No later results enter a benchmark. Deviation bars average only games with a baseline. Underperformance is not automatically a lock mistake.</p>`;
 }
 
 function sheetView() {
@@ -1187,7 +1197,24 @@ function gameStatus(value) {
   );
 }
 function projectionSource(p) {
-  return {current_season: "Recent games", blended_seasons: "Current + prior season", prior_season: "Prior season", sleeper_rotowire: "Sleeper / RotoWire"}[p?.projection_source] || "Saved estimate";
+  return {opponent_ridge: "Opponent-adjusted projection", current_season: "Recent games", blended_seasons: "Current + prior season", prior_season: "Prior season", sleeper_rotowire: "Sleeper / RotoWire"}[p?.projection_source] || "Saved estimate";
+}
+function decisionExplanation(p) {
+  if (!["LOCK", "WAIT"].includes(p.decision) || p.note || p.banked) return "";
+  const games = p.decision_games;
+  const known = Array.isArray(games);
+  const adjusted = known ? games.filter(g=>g.source === "opponent_ridge").length : null;
+  const label = known
+    ? !games.length ? "No remaining games" : adjusted === games.length ? "Opponent-adjusted model" : adjusted ? "Opponent-adjusted + baseline fallback" : "Historical baseline fallback"
+    : p.decision_model === "opponent_ridge" ? "Opponent-adjusted model · saved report" : "Model inputs unavailable";
+  return `<section class="decision-explanation" aria-label="Lock or wait model inputs">
+    <span class="decision-model">${esc(label)}</span>
+    <p>Latest score <b>${fmt(p.last_game_fp)} FP</b> · Historical baseline <b>${fmt(p.fp_mean_recent)} FP</b></p>
+    <p class="decision-help">The historical baseline summarizes past production. It is separate from the matchup projections below.</p>
+    ${known && games.length ? `<h3>Remaining games used for this decision</h3><div class="decision-games">${games.map(g=>`<article><span>${esc(g.date || "Date unavailable")} · ${g.home == null ? "" : g.home ? "vs " : "@ "}${esc(g.opponent || "Opponent unavailable")}</span><strong>${fmt(g.projected_fp)} <small>FP</small></strong><small>${g.source === "opponent_ridge" ? "Opponent-adjusted" : "Historical baseline fallback"}</small></article>`).join("")}</div><p class="decision-help">Compares your latest score with the chance of beating it in at least one remaining game, using historical variability. Lineup competition can also affect the call. Confidence scores are heuristics, not validated probabilities.</p>`
+      : `<p>${known ? "There are no remaining opportunities for this player. Available lineup slots and teammates can still affect the recommendation." : "Refresh the report to see the exact per-game inputs and any baseline fallbacks. The headline projection alone does not identify the Lock/Wait inputs."}</p>`}
+    ${p.reason ? `<details><summary>Lineup and decision context</summary><p>${esc(p.reason)}</p></details>` : ""}
+  </section>`;
 }
 function projectedBox(p) {
   const s = p?.projected_stats || {};
@@ -1200,7 +1227,7 @@ function projectionDetail(p) {
   const stats = ["MIN", "PTS", "REB", "AST", "STL", "BLK", "TOV", "FG3M", "FGM", "FGA", "FTM", "FTA"];
   return `<section class="projection-detail"><header><h3>Projected per game</h3><strong>${fmt(q.projected_fp)} <small>FP</small></strong></header><p>${esc(projectionSource(q))} · as of ${esc(q.as_of)}${saved ? " · saved snapshot" : ""}</p>
     <div class="projected-stat-grid">${stats.map(k => `<div><small>${k === "FG3M" ? "3PM" : k}</small><strong>${fmt(q.projected_stats?.[k])}</strong></div>`).join("")}</div>
-    <p>Per-game estimate when active; availability is shown separately. Weekly game tiles repeat this baseline for each matchup, without opponent adjustments.</p>
+    <p>Per-game estimate when active; availability is shown separately. ${q.projection_source === "opponent_ridge" ? "This headline estimate is for the report date’s matchup, not an average of the remaining week." : "This is the profile’s baseline or external forecast, not necessarily the historical baseline used by Lock/Wait."} Upcoming tiles use matchup-specific estimates when available. The decision panel lists the actual Lock/Wait inputs and any fallbacks.</p>
     ${q.projection_source === "blended_seasons" ? `<p>${q.current_season_games} current-season + ${q.prior_season_games} prior-season games. Prior games fill the ${q.projection_window_games}-game window until enough current-season games are available; newer games carry more weight.</p>` : ""}
     ${q.last_played ? `<p>${q.sample_size} games in the recent window · last played ${esc(q.last_played)}.</p>` : `<p>Current-season forecast updated ${esc(q.source_updated_at?.slice(0,10) || q.as_of)}.</p>`}
     ${(team()?.scoring_notes || []).length ? `<details><summary>Scoring method</summary><p>${team().scoring_notes.map(esc).join(" ")}</p></details>` : ""}</section>`;
@@ -1324,6 +1351,13 @@ function showPlayer(p) {
           ? "<p>Rise scores compare five recent games with a separate earlier baseline. They are screening signals, not probabilities of future success.</p>"
           : p.badge_profile ? "<p class=\"performance-note\">Game-by-game performance is not included for this player in this report.</p>" : "<p>No observed performances available for this player in this report.</p>"
     }`;
+  const explanation = decisionExplanation(p);
+  if (explanation && $("#player-detail .detail-reason")) {
+    $("#player-detail .detail-reason").innerHTML = explanation;
+  }
+  if (p.projection?.projection_source === "opponent_ridge") {
+    $("#player-detail .detail-stat small").textContent = "Report-day matchup projection";
+  }
   attachImageFallback();
   $("#player-dialog").showModal();
   $("#player-dialog").scrollTop = 0;

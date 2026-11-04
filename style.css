@@ -3140,6 +3140,16 @@ button.compare-person:hover strong { color:var(--purple); text-decoration:underl
 .film-week strong { font:600 23px var(--display); }
 .film-day-bar { height:42px; width:18px; background:#ffffff04; display:flex; align-items:end; border-radius:3px; overflow:hidden; }
 .film-day-bar i { width:100%; background:currentColor; opacity:.6; border-radius:3px; }
+.film-baseline-source { display:block; color:var(--muted); font-size:10px; margin-top:4px; white-space:normal; min-width:105px; }
+.decision-model { display:inline-block; border:1px solid var(--line); border-radius:5px; padding:6px 9px; color:var(--accent); font-size:12px; font-weight:700; }
+.decision-explanation p { margin:12px 0; }
+.decision-explanation .decision-help { color:var(--muted); font-size:12px; line-height:1.6; }
+.decision-explanation h3 { font-size:16px; margin:20px 0 10px; }
+.decision-games { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:8px; }
+.decision-games article { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:7px; }
+.decision-games span, .decision-games small { color:var(--muted); font-size:11px; }
+.decision-games strong { font:600 27px var(--display); }
+.decision-explanation details { font-size:12px; color:var(--muted); }
 .film-filter { font:11px var(--font); color:var(--muted); }
 .film-context { font-size:10px; color:var(--muted); }
 .film-context.is-banked { color:var(--purple); border:1px solid #b19ac440; padding:4px 7px; border-radius:4px; }
