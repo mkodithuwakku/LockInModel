@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-04T14:34:38.819Z",
+  "updated_at": "2026-11-04T14:34:42.242Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -418,6 +418,16 @@
           "locked_fp": 47.01,
           "game_date": "2026-11-02",
           "locked_at": "2026-11-04T14:34:38.819Z"
+        },
+        "1913": {
+          "player_id": "1913",
+          "player_name": "Miles Bridges",
+          "canonical_name": "miles bridges",
+          "roster_slot": "SF",
+          "slot_index": 5,
+          "locked_fp": 50.24,
+          "game_date": "2026-11-02",
+          "locked_at": "2026-11-04T14:34:42.242Z"
         }
       },
       "history": {
