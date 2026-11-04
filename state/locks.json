@@ -1,73 +1,23 @@
 {
   "version": 1,
-  "updated_at": "2026-11-01T16:36:55.860Z",
+  "updated_at": "2026-11-04T14:31:59.687Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
       "locks": {}
     },
     "1415115155703926784": {
-      "schedule_week": 2,
+      "schedule_week": 3,
       "locks": {
-        "2029": {
-          "player_id": "2029",
-          "player_name": "P.J. Washington",
-          "canonical_name": "p.j. washington",
-          "roster_slot": "PF",
-          "slot_index": 3,
-          "locked_fp": 26,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:02:59.660Z"
-        },
-        "2095": {
-          "player_id": "2095",
-          "player_name": "Luguentz Dort",
-          "canonical_name": "luguentz dort",
-          "roster_slot": "SF",
-          "slot_index": 2,
-          "locked_fp": 13,
-          "game_date": "2026-10-31",
-          "locked_at": "2026-11-01T16:34:16.008Z"
-        },
-        "2133": {
-          "player_id": "2133",
-          "player_name": "Anthony Edwards",
-          "canonical_name": "anthony edwards",
-          "roster_slot": "PG",
-          "slot_index": 0,
-          "locked_fp": 40,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:02:57.530Z"
-        },
-        "2136": {
-          "player_id": "2136",
-          "player_name": "Onyeka Okongwu",
-          "canonical_name": "onyeka okongwu",
-          "roster_slot": "C",
-          "slot_index": 4,
-          "locked_fp": 34.5,
-          "game_date": "2026-10-29",
-          "locked_at": "2026-10-31T16:39:55.264Z"
-        },
-        "2449": {
-          "player_id": "2449",
-          "player_name": "Dyson Daniels",
-          "canonical_name": "dyson daniels",
-          "roster_slot": "SG",
-          "slot_index": 1,
-          "locked_fp": 15,
-          "game_date": "2026-10-31",
-          "locked_at": "2026-11-01T16:34:14.459Z"
-        },
         "2490": {
           "player_id": "2490",
           "player_name": "Karlo Matković",
           "canonical_name": "karlo matkovic",
-          "roster_slot": "UTIL",
-          "slot_index": 5,
-          "locked_fp": 17.5,
-          "game_date": "2026-10-29",
-          "locked_at": "2026-10-31T16:39:59.062Z"
+          "roster_slot": "PF",
+          "slot_index": 3,
+          "locked_fp": 27,
+          "game_date": "2026-11-02",
+          "locked_at": "2026-11-04T14:31:59.687Z"
         }
       },
       "history": {
@@ -106,103 +56,78 @@
             }
           },
           "archived_at": "2026-10-28T16:02:07.981Z"
+        },
+        "2": {
+          "schedule_week": 2,
+          "locks": {
+            "2029": {
+              "player_id": "2029",
+              "player_name": "P.J. Washington",
+              "canonical_name": "p.j. washington",
+              "roster_slot": "PF",
+              "slot_index": 3,
+              "locked_fp": 26,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:02:59.660Z"
+            },
+            "2095": {
+              "player_id": "2095",
+              "player_name": "Luguentz Dort",
+              "canonical_name": "luguentz dort",
+              "roster_slot": "SF",
+              "slot_index": 2,
+              "locked_fp": 13,
+              "game_date": "2026-10-31",
+              "locked_at": "2026-11-01T16:34:16.008Z"
+            },
+            "2133": {
+              "player_id": "2133",
+              "player_name": "Anthony Edwards",
+              "canonical_name": "anthony edwards",
+              "roster_slot": "PG",
+              "slot_index": 0,
+              "locked_fp": 40,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:02:57.530Z"
+            },
+            "2136": {
+              "player_id": "2136",
+              "player_name": "Onyeka Okongwu",
+              "canonical_name": "onyeka okongwu",
+              "roster_slot": "C",
+              "slot_index": 4,
+              "locked_fp": 34.5,
+              "game_date": "2026-10-29",
+              "locked_at": "2026-10-31T16:39:55.264Z"
+            },
+            "2449": {
+              "player_id": "2449",
+              "player_name": "Dyson Daniels",
+              "canonical_name": "dyson daniels",
+              "roster_slot": "SG",
+              "slot_index": 1,
+              "locked_fp": 15,
+              "game_date": "2026-10-31",
+              "locked_at": "2026-11-01T16:34:14.459Z"
+            },
+            "2490": {
+              "player_id": "2490",
+              "player_name": "Karlo Matković",
+              "canonical_name": "karlo matkovic",
+              "roster_slot": "UTIL",
+              "slot_index": 5,
+              "locked_fp": 17.5,
+              "game_date": "2026-10-29",
+              "locked_at": "2026-10-31T16:39:59.062Z"
+            }
+          },
+          "archived_at": "2026-11-04T14:31:59.687Z"
         }
       }
     },
     "1415801499308580864": {
       "schedule_week": 2,
-      "locks": {
-        "1717": {
-          "player_id": "1717",
-          "player_name": "Fred VanVleet",
-          "canonical_name": "fred vanvleet",
-          "roster_slot": "G",
-          "slot_index": 2,
-          "locked_fp": 32,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T15:53:39.607Z"
-        },
-        "1752": {
-          "player_id": "1752",
-          "player_name": "Lauri Markkanen",
-          "canonical_name": "lauri markkanen",
-          "roster_slot": "UTIL",
-          "slot_index": 8,
-          "locked_fp": 26,
-          "game_date": "2026-10-31",
-          "locked_at": "2026-11-01T16:34:41.870Z"
-        },
-        "1846": {
-          "player_id": "1846",
-          "player_name": "Bam Adebayo",
-          "canonical_name": "bam adebayo",
-          "roster_slot": "PF",
-          "slot_index": 4,
-          "locked_fp": 35.5,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T15:53:05.554Z"
-        },
-        "1883": {
-          "player_id": "1883",
-          "player_name": "Wendell Carter Jr.",
-          "canonical_name": "wendell carter",
-          "roster_slot": "UTIL",
-          "slot_index": 7,
-          "locked_fp": 27.5,
-          "game_date": "2026-10-30",
-          "locked_at": "2026-11-01T16:34:52.711Z"
-        },
-        "1913": {
-          "player_id": "1913",
-          "player_name": "Miles Bridges",
-          "canonical_name": "miles bridges",
-          "roster_slot": "F",
-          "slot_index": 5,
-          "locked_fp": 40,
-          "game_date": "2026-10-30",
-          "locked_at": "2026-11-01T16:34:38.116Z"
-        },
-        "1961": {
-          "player_id": "1961",
-          "player_name": "Duncan Robinson",
-          "canonical_name": "duncan robinson",
-          "roster_slot": "SG",
-          "slot_index": 1,
-          "locked_fp": 22,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T15:54:53.667Z"
-        },
-        "1997": {
-          "player_id": "1997",
-          "player_name": "Daniel Gafford",
-          "canonical_name": "daniel gafford",
-          "roster_slot": "UTIL",
-          "slot_index": 9,
-          "locked_fp": 24.5,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T15:54:06.829Z"
-        },
-        "2055": {
-          "player_id": "2055",
-          "player_name": "Nickeil Alexander-Walker",
-          "canonical_name": "nickeil alexander-walker",
-          "roster_slot": "G",
-          "slot_index": 2,
-          "locked_fp": 24.5,
-          "game_date": "2026-10-29",
-          "locked_at": "2026-10-30T15:14:50.134Z"
-        },
-        "2289": {
-          "player_id": "2289",
-          "player_name": "Scottie Barnes",
-          "canonical_name": "scottie barnes",
-          "roster_slot": "SF",
-          "slot_index": 3,
-          "locked_fp": 38,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T15:52:34.967Z"
-        }
-      },
+      "locks": {},
       "history": {
         "1": {
           "schedule_week": 1,
@@ -299,6 +224,102 @@
             }
           },
           "archived_at": "2026-10-28T16:02:07.981Z"
+        },
+        "2": {
+          "schedule_week": 2,
+          "locks": {
+            "1717": {
+              "player_id": "1717",
+              "player_name": "Fred VanVleet",
+              "canonical_name": "fred vanvleet",
+              "roster_slot": "G",
+              "slot_index": 2,
+              "locked_fp": 32,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T15:53:39.607Z"
+            },
+            "1752": {
+              "player_id": "1752",
+              "player_name": "Lauri Markkanen",
+              "canonical_name": "lauri markkanen",
+              "roster_slot": "UTIL",
+              "slot_index": 8,
+              "locked_fp": 26,
+              "game_date": "2026-10-31",
+              "locked_at": "2026-11-01T16:34:41.870Z"
+            },
+            "1846": {
+              "player_id": "1846",
+              "player_name": "Bam Adebayo",
+              "canonical_name": "bam adebayo",
+              "roster_slot": "PF",
+              "slot_index": 4,
+              "locked_fp": 35.5,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T15:53:05.554Z"
+            },
+            "1883": {
+              "player_id": "1883",
+              "player_name": "Wendell Carter Jr.",
+              "canonical_name": "wendell carter",
+              "roster_slot": "UTIL",
+              "slot_index": 7,
+              "locked_fp": 27.5,
+              "game_date": "2026-10-30",
+              "locked_at": "2026-11-01T16:34:52.711Z"
+            },
+            "1913": {
+              "player_id": "1913",
+              "player_name": "Miles Bridges",
+              "canonical_name": "miles bridges",
+              "roster_slot": "F",
+              "slot_index": 5,
+              "locked_fp": 40,
+              "game_date": "2026-10-30",
+              "locked_at": "2026-11-01T16:34:38.116Z"
+            },
+            "1961": {
+              "player_id": "1961",
+              "player_name": "Duncan Robinson",
+              "canonical_name": "duncan robinson",
+              "roster_slot": "SG",
+              "slot_index": 1,
+              "locked_fp": 22,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T15:54:53.667Z"
+            },
+            "1997": {
+              "player_id": "1997",
+              "player_name": "Daniel Gafford",
+              "canonical_name": "daniel gafford",
+              "roster_slot": "UTIL",
+              "slot_index": 9,
+              "locked_fp": 24.5,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T15:54:06.829Z"
+            },
+            "2055": {
+              "player_id": "2055",
+              "player_name": "Nickeil Alexander-Walker",
+              "canonical_name": "nickeil alexander-walker",
+              "roster_slot": "G",
+              "slot_index": 2,
+              "locked_fp": 24.5,
+              "game_date": "2026-10-29",
+              "locked_at": "2026-10-30T15:14:50.134Z"
+            },
+            "2289": {
+              "player_id": "2289",
+              "player_name": "Scottie Barnes",
+              "canonical_name": "scottie barnes",
+              "roster_slot": "SF",
+              "slot_index": 3,
+              "locked_fp": 38,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T15:52:34.967Z"
+            }
+          },
+          "archived_at": "2026-11-04T14:31:59.687Z"
         }
       }
     },
@@ -356,108 +377,7 @@
     },
     "1417002266736513024": {
       "schedule_week": 2,
-      "locks": {
-        "1350": {
-          "player_id": "1350",
-          "player_name": "Rudy Gobert",
-          "canonical_name": "rudy gobert",
-          "roster_slot": "C",
-          "slot_index": 8,
-          "locked_fp": 46.97,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:02:07.981Z"
-        },
-        "1648": {
-          "player_id": "1648",
-          "player_name": "Devin Booker",
-          "canonical_name": "devin booker",
-          "roster_slot": "PG",
-          "slot_index": 0,
-          "locked_fp": 36.730000000000004,
-          "game_date": "2026-10-30",
-          "locked_at": "2026-10-31T16:41:42.674Z"
-        },
-        "1739": {
-          "player_id": "1739",
-          "player_name": "Domantas Sabonis",
-          "canonical_name": "domantas sabonis",
-          "roster_slot": "PF",
-          "slot_index": 7,
-          "locked_fp": 46.56,
-          "game_date": "2026-10-31",
-          "locked_at": "2026-11-01T16:35:38.226Z"
-        },
-        "1913": {
-          "player_id": "1913",
-          "player_name": "Miles Bridges",
-          "canonical_name": "miles bridges",
-          "roster_slot": "SF",
-          "slot_index": 4,
-          "locked_fp": 56.61,
-          "game_date": "2026-10-30",
-          "locked_at": "2026-11-01T16:35:29.710Z"
-        },
-        "1945": {
-          "player_id": "1945",
-          "player_name": "Trae Young",
-          "canonical_name": "trae young",
-          "roster_slot": "PG",
-          "slot_index": 1,
-          "locked_fp": 58.28,
-          "game_date": "2026-10-30",
-          "locked_at": "2026-11-01T16:35:18.308Z"
-        },
-        "2136": {
-          "player_id": "2136",
-          "player_name": "Onyeka Okongwu",
-          "canonical_name": "onyeka okongwu",
-          "roster_slot": "UTIL",
-          "slot_index": 10,
-          "locked_fp": 62.66,
-          "game_date": "2026-10-29",
-          "locked_at": "2026-10-31T16:42:04.179Z"
-        },
-        "2156": {
-          "player_id": "2156",
-          "player_name": "Jalen Smith",
-          "canonical_name": "jalen smith",
-          "roster_slot": "PF",
-          "slot_index": 6,
-          "locked_fp": 48.31999999999999,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T15:58:06.114Z"
-        },
-        "2299": {
-          "player_id": "2299",
-          "player_name": "Aaron Wiggins",
-          "canonical_name": "aaron wiggins",
-          "roster_slot": "SF",
-          "slot_index": 5,
-          "locked_fp": 39.64,
-          "game_date": "2026-10-29",
-          "locked_at": "2026-10-30T15:16:39.603Z"
-        },
-        "2577": {
-          "player_id": "2577",
-          "player_name": "Victor Wembanyama",
-          "canonical_name": "victor wembanyama",
-          "roster_slot": "UTIL",
-          "slot_index": 9,
-          "locked_fp": 83.49,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T15:57:39.740Z"
-        },
-        "2772": {
-          "player_id": "2772",
-          "player_name": "Ajay Mitchell",
-          "canonical_name": "ajay mitchell",
-          "roster_slot": "SG",
-          "slot_index": 2,
-          "locked_fp": 52.959999999999994,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:02:11.003Z"
-        }
-      },
+      "locks": {},
       "history": {
         "1": {
           "schedule_week": 1,
@@ -554,83 +474,118 @@
             }
           },
           "archived_at": "2026-10-28T16:02:07.981Z"
+        },
+        "2": {
+          "schedule_week": 2,
+          "locks": {
+            "1350": {
+              "player_id": "1350",
+              "player_name": "Rudy Gobert",
+              "canonical_name": "rudy gobert",
+              "roster_slot": "C",
+              "slot_index": 8,
+              "locked_fp": 46.97,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:02:07.981Z"
+            },
+            "1648": {
+              "player_id": "1648",
+              "player_name": "Devin Booker",
+              "canonical_name": "devin booker",
+              "roster_slot": "PG",
+              "slot_index": 0,
+              "locked_fp": 36.730000000000004,
+              "game_date": "2026-10-30",
+              "locked_at": "2026-10-31T16:41:42.674Z"
+            },
+            "1739": {
+              "player_id": "1739",
+              "player_name": "Domantas Sabonis",
+              "canonical_name": "domantas sabonis",
+              "roster_slot": "PF",
+              "slot_index": 7,
+              "locked_fp": 46.56,
+              "game_date": "2026-10-31",
+              "locked_at": "2026-11-01T16:35:38.226Z"
+            },
+            "1913": {
+              "player_id": "1913",
+              "player_name": "Miles Bridges",
+              "canonical_name": "miles bridges",
+              "roster_slot": "SF",
+              "slot_index": 4,
+              "locked_fp": 56.61,
+              "game_date": "2026-10-30",
+              "locked_at": "2026-11-01T16:35:29.710Z"
+            },
+            "1945": {
+              "player_id": "1945",
+              "player_name": "Trae Young",
+              "canonical_name": "trae young",
+              "roster_slot": "PG",
+              "slot_index": 1,
+              "locked_fp": 58.28,
+              "game_date": "2026-10-30",
+              "locked_at": "2026-11-01T16:35:18.308Z"
+            },
+            "2136": {
+              "player_id": "2136",
+              "player_name": "Onyeka Okongwu",
+              "canonical_name": "onyeka okongwu",
+              "roster_slot": "UTIL",
+              "slot_index": 10,
+              "locked_fp": 62.66,
+              "game_date": "2026-10-29",
+              "locked_at": "2026-10-31T16:42:04.179Z"
+            },
+            "2156": {
+              "player_id": "2156",
+              "player_name": "Jalen Smith",
+              "canonical_name": "jalen smith",
+              "roster_slot": "PF",
+              "slot_index": 6,
+              "locked_fp": 48.31999999999999,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T15:58:06.114Z"
+            },
+            "2299": {
+              "player_id": "2299",
+              "player_name": "Aaron Wiggins",
+              "canonical_name": "aaron wiggins",
+              "roster_slot": "SF",
+              "slot_index": 5,
+              "locked_fp": 39.64,
+              "game_date": "2026-10-29",
+              "locked_at": "2026-10-30T15:16:39.603Z"
+            },
+            "2577": {
+              "player_id": "2577",
+              "player_name": "Victor Wembanyama",
+              "canonical_name": "victor wembanyama",
+              "roster_slot": "UTIL",
+              "slot_index": 9,
+              "locked_fp": 83.49,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T15:57:39.740Z"
+            },
+            "2772": {
+              "player_id": "2772",
+              "player_name": "Ajay Mitchell",
+              "canonical_name": "ajay mitchell",
+              "roster_slot": "SG",
+              "slot_index": 2,
+              "locked_fp": 52.959999999999994,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:02:11.003Z"
+            }
+          },
+          "archived_at": "2026-11-04T14:31:59.687Z"
         }
       }
     },
     "1417213338928078848": {
       "schedule_week": 2,
-      "locks": {
-        "1717": {
-          "player_id": "1717",
-          "player_name": "Fred VanVleet",
-          "canonical_name": "fred vanvleet",
-          "roster_slot": "PG",
-          "slot_index": 0,
-          "locked_fp": 26,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T16:01:25.630Z"
-        },
-        "1739": {
-          "player_id": "1739",
-          "player_name": "Domantas Sabonis",
-          "canonical_name": "domantas sabonis",
-          "roster_slot": "F",
-          "slot_index": 5,
-          "locked_fp": 28.5,
-          "game_date": "2026-10-31",
-          "locked_at": "2026-11-01T16:36:25.977Z"
-        },
-        "1752": {
-          "player_id": "1752",
-          "player_name": "Lauri Markkanen",
-          "canonical_name": "lauri markkanen",
-          "roster_slot": "SF",
-          "slot_index": 3,
-          "locked_fp": 20.5,
-          "game_date": "2026-10-31",
-          "locked_at": "2026-11-01T16:36:22.244Z"
-        },
-        "2029": {
-          "player_id": "2029",
-          "player_name": "P.J. Washington",
-          "canonical_name": "p.j. washington",
-          "roster_slot": "PF",
-          "slot_index": 4,
-          "locked_fp": 26,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:07:59.023Z"
-        },
-        "2136": {
-          "player_id": "2136",
-          "player_name": "Onyeka Okongwu",
-          "canonical_name": "onyeka okongwu",
-          "roster_slot": "UTIL",
-          "slot_index": 7,
-          "locked_fp": 34.5,
-          "game_date": "2026-10-29",
-          "locked_at": "2026-10-31T16:43:14.504Z"
-        },
-        "2313": {
-          "player_id": "2313",
-          "player_name": "Josh Giddey",
-          "canonical_name": "josh giddey",
-          "roster_slot": "UTIL",
-          "slot_index": 8,
-          "locked_fp": 25.5,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T16:01:08.078Z"
-        },
-        "2577": {
-          "player_id": "2577",
-          "player_name": "Victor Wembanyama",
-          "canonical_name": "victor wembanyama",
-          "roster_slot": "C",
-          "slot_index": 6,
-          "locked_fp": 50,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T16:01:43.966Z"
-        }
-      },
+      "locks": {},
       "history": {
         "1": {
           "schedule_week": 1,
@@ -697,94 +652,176 @@
             }
           },
           "archived_at": "2026-10-28T16:02:07.981Z"
+        },
+        "2": {
+          "schedule_week": 2,
+          "locks": {
+            "1717": {
+              "player_id": "1717",
+              "player_name": "Fred VanVleet",
+              "canonical_name": "fred vanvleet",
+              "roster_slot": "PG",
+              "slot_index": 0,
+              "locked_fp": 26,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T16:01:25.630Z"
+            },
+            "1739": {
+              "player_id": "1739",
+              "player_name": "Domantas Sabonis",
+              "canonical_name": "domantas sabonis",
+              "roster_slot": "F",
+              "slot_index": 5,
+              "locked_fp": 28.5,
+              "game_date": "2026-10-31",
+              "locked_at": "2026-11-01T16:36:25.977Z"
+            },
+            "1752": {
+              "player_id": "1752",
+              "player_name": "Lauri Markkanen",
+              "canonical_name": "lauri markkanen",
+              "roster_slot": "SF",
+              "slot_index": 3,
+              "locked_fp": 20.5,
+              "game_date": "2026-10-31",
+              "locked_at": "2026-11-01T16:36:22.244Z"
+            },
+            "2029": {
+              "player_id": "2029",
+              "player_name": "P.J. Washington",
+              "canonical_name": "p.j. washington",
+              "roster_slot": "PF",
+              "slot_index": 4,
+              "locked_fp": 26,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:07:59.023Z"
+            },
+            "2136": {
+              "player_id": "2136",
+              "player_name": "Onyeka Okongwu",
+              "canonical_name": "onyeka okongwu",
+              "roster_slot": "UTIL",
+              "slot_index": 7,
+              "locked_fp": 34.5,
+              "game_date": "2026-10-29",
+              "locked_at": "2026-10-31T16:43:14.504Z"
+            },
+            "2313": {
+              "player_id": "2313",
+              "player_name": "Josh Giddey",
+              "canonical_name": "josh giddey",
+              "roster_slot": "UTIL",
+              "slot_index": 8,
+              "locked_fp": 25.5,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T16:01:08.078Z"
+            },
+            "2577": {
+              "player_id": "2577",
+              "player_name": "Victor Wembanyama",
+              "canonical_name": "victor wembanyama",
+              "roster_slot": "C",
+              "slot_index": 6,
+              "locked_fp": 50,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T16:01:43.966Z"
+            }
+          },
+          "archived_at": "2026-11-04T14:31:59.687Z"
         }
       }
     },
     "1419800258463969280": {
       "schedule_week": 2,
-      "locks": {
-        "1787": {
-          "player_id": "1787",
-          "player_name": "Jarrett Allen",
-          "canonical_name": "jarrett allen",
-          "roster_slot": "C",
-          "slot_index": 6,
-          "locked_fp": 26,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T16:03:58.660Z"
-        },
-        "1845": {
-          "player_id": "1845",
-          "player_name": "Donovan Mitchell",
-          "canonical_name": "donovan mitchell",
-          "roster_slot": "PG",
-          "slot_index": 0,
-          "locked_fp": 30.5,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:09:24.606Z"
-        },
-        "1913": {
-          "player_id": "1913",
-          "player_name": "Miles Bridges",
-          "canonical_name": "miles bridges",
-          "roster_slot": "F",
-          "slot_index": 5,
-          "locked_fp": 34,
-          "game_date": "2026-10-30",
-          "locked_at": "2026-11-01T16:36:55.860Z"
-        },
-        "1945": {
-          "player_id": "1945",
-          "player_name": "Trae Young",
-          "canonical_name": "trae young",
-          "roster_slot": "G",
-          "slot_index": 2,
-          "locked_fp": 26.5,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:09:19.763Z"
-        },
-        "2029": {
-          "player_id": "2029",
-          "player_name": "P.J. Washington",
-          "canonical_name": "p.j. washington",
-          "roster_slot": "SF",
-          "slot_index": 3,
-          "locked_fp": 26,
-          "game_date": "2026-10-26",
-          "locked_at": "2026-10-28T16:09:16.620Z"
-        },
-        "2179": {
-          "player_id": "2179",
-          "player_name": "LaMelo Ball",
-          "canonical_name": "lamelo ball",
-          "roster_slot": "UTIL",
-          "slot_index": 7,
-          "locked_fp": 28,
-          "game_date": "2026-10-30",
-          "locked_at": "2026-10-31T16:44:29.555Z"
-        },
-        "2289": {
-          "player_id": "2289",
-          "player_name": "Scottie Barnes",
-          "canonical_name": "scottie barnes",
-          "roster_slot": "F",
-          "slot_index": 5,
-          "locked_fp": 32,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T16:04:24.437Z"
-        },
-        "2772": {
-          "player_id": "2772",
-          "player_name": "Ajay Mitchell",
-          "canonical_name": "ajay mitchell",
-          "roster_slot": "UTIL",
-          "slot_index": 8,
-          "locked_fp": 26.5,
-          "game_date": "2026-10-28",
-          "locked_at": "2026-10-29T16:04:36.257Z"
+      "locks": {},
+      "history": {
+        "2": {
+          "schedule_week": 2,
+          "locks": {
+            "1787": {
+              "player_id": "1787",
+              "player_name": "Jarrett Allen",
+              "canonical_name": "jarrett allen",
+              "roster_slot": "C",
+              "slot_index": 6,
+              "locked_fp": 26,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T16:03:58.660Z"
+            },
+            "1845": {
+              "player_id": "1845",
+              "player_name": "Donovan Mitchell",
+              "canonical_name": "donovan mitchell",
+              "roster_slot": "PG",
+              "slot_index": 0,
+              "locked_fp": 30.5,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:09:24.606Z"
+            },
+            "1913": {
+              "player_id": "1913",
+              "player_name": "Miles Bridges",
+              "canonical_name": "miles bridges",
+              "roster_slot": "F",
+              "slot_index": 5,
+              "locked_fp": 34,
+              "game_date": "2026-10-30",
+              "locked_at": "2026-11-01T16:36:55.860Z"
+            },
+            "1945": {
+              "player_id": "1945",
+              "player_name": "Trae Young",
+              "canonical_name": "trae young",
+              "roster_slot": "G",
+              "slot_index": 2,
+              "locked_fp": 26.5,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:09:19.763Z"
+            },
+            "2029": {
+              "player_id": "2029",
+              "player_name": "P.J. Washington",
+              "canonical_name": "p.j. washington",
+              "roster_slot": "SF",
+              "slot_index": 3,
+              "locked_fp": 26,
+              "game_date": "2026-10-26",
+              "locked_at": "2026-10-28T16:09:16.620Z"
+            },
+            "2179": {
+              "player_id": "2179",
+              "player_name": "LaMelo Ball",
+              "canonical_name": "lamelo ball",
+              "roster_slot": "UTIL",
+              "slot_index": 7,
+              "locked_fp": 28,
+              "game_date": "2026-10-30",
+              "locked_at": "2026-10-31T16:44:29.555Z"
+            },
+            "2289": {
+              "player_id": "2289",
+              "player_name": "Scottie Barnes",
+              "canonical_name": "scottie barnes",
+              "roster_slot": "F",
+              "slot_index": 5,
+              "locked_fp": 32,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T16:04:24.437Z"
+            },
+            "2772": {
+              "player_id": "2772",
+              "player_name": "Ajay Mitchell",
+              "canonical_name": "ajay mitchell",
+              "roster_slot": "UTIL",
+              "slot_index": 8,
+              "locked_fp": 26.5,
+              "game_date": "2026-10-28",
+              "locked_at": "2026-10-29T16:04:36.257Z"
+            }
+          },
+          "archived_at": "2026-11-04T14:31:59.687Z"
         }
-      },
-      "history": {}
+      }
     }
   }
 }
