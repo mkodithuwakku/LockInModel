@@ -125,7 +125,7 @@ def public_report(report):
             film = team["film_review"]
             item["film_review"] = select(
                 film,
-                "status locked_count clean_count retained_fp oracle_fp "
+                "status audit_version audit_status recorded_count locked_count clean_count retained_fp oracle_fp "
                 "regret_fp efficiency note".split(),
             )
             item["film_review"]["week"] = select(
@@ -136,9 +136,21 @@ def public_report(report):
                     m,
                     "player player_id slot locked_fp locked_date kind "
                     "better_player better_player_id better_fp better_date "
-                    "cost_fp".split(),
+                    "cost_fp retained_fp alternative_fp".split(),
                 )
                 for m in film.get("mistakes", [])
+            ]
+            for exported, mistake in zip(
+                item["film_review"]["mistakes"], film.get("mistakes", [])
+            ):
+                for key in ("before_lineup", "after_lineup"):
+                    exported[key] = [
+                        select(p, "slot slot_index player player_id fp date".split())
+                        for p in mistake.get(key, [])
+                    ]
+            item["film_review"]["unverified_locks"] = [
+                select(p, "player date reason".split())
+                for p in film.get("unverified_locks", [])
             ]
             item["film_review"]["locked"] = [
                 select(l, "player player_id slot fp date".split())

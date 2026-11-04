@@ -289,16 +289,18 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
     Retained total = recorded locked scores + the best legal end-of-week fill
     of the remaining slots using each unlocked roster player's best game.
     Oracle = the best legal assignment of everyone's best game over every slot.
-    A lock is flagged when unpinning it and re-filling would have scored more:
-    the same player refilling means a timing mistake, someone else means the
-    wrong player was locked. Scores are heuristics over completed games, not
-    predictive claims.
+    Each alternative releases one verified lock and reoptimizes the open slots.
+    Direct score/player changes and multi-slot reshuffles are distinguished.
+    This is a hindsight scenario, not a reconstructed fantasy matchup result.
     """
-    from lineup import lock_match, optimal_assignment, _pin_index
+    from lineup import lock_match, optimal_assignment, _pin_index, eligible
     from season_history import blend_seasons
 
     base = dict(
         status="empty",
+        audit_version=2,
+        audit_status="no_locks",
+        recorded_count=len(locks or {}),
         locked_count=0,
         clean_count=0,
         retained_fp=None,
@@ -307,6 +309,7 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
         efficiency=None,
         mistakes=[],
         locked=[],
+        unverified_locks=[],
         performances=[],
         note=None,
     )
@@ -411,7 +414,11 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
     for row in rows:
         pid = str(row.get("player_id") or "")
         b = best.get(pid)
-        if not b or row.get("roster_slot") in {"IR", "TAXI"}:
+        was_locked = any(
+            isinstance(record, dict) and lock_match(row, record)
+            for record in (locks or {}).values()
+        )
+        if not b or (row.get("roster_slot") in {"IR", "TAXI"} and not was_locked):
             continue
         candidates.append(
             {
@@ -426,23 +433,84 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
 
     pinned = {}
     locked = []
+    unverified = []
+    locked_ids = set()
     for record in (locks or {}).values():
         if not isinstance(record, dict):
+            unverified.append(
+                dict(player="Unknown player", reason="Invalid lock record.")
+            )
             continue
         row = next((r for r in rows if lock_match(r, record)), None)
+        issue = dict(
+            player=record.get("player_name")
+            or (row or {}).get("player")
+            or "Unknown player",
+            date=record.get("game_date"),
+        )
         if row is None:
+            unverified.append(
+                dict(
+                    issue,
+                    reason="Player is absent from the current roster; historical eligibility is unavailable.",
+                )
+            )
             continue
-        index = _pin_index(row, record, slots, set(pinned))
+        # Historical slot evidence must win over today's synced roster slot.
+        historic_row = dict(
+            row, roster_slot=record.get("roster_slot"), lineup_order=None
+        )
+        recorded_index = record.get("slot_index")
+        if recorded_index is not None and (
+            type(recorded_index) is not int
+            or not 0 <= recorded_index < len(slots)
+            or slots[recorded_index] != record.get("roster_slot")
+            or recorded_index in pinned
+        ):
+            unverified.append(
+                dict(
+                    issue,
+                    reason="Recorded slot index conflicts with the lineup or another lock.",
+                )
+            )
+            continue
+        index = _pin_index(historic_row, record, slots, set(pinned))
         if index is None:
+            unverified.append(
+                dict(
+                    issue, reason="Recorded lineup slot is missing or already occupied."
+                )
+            )
             continue
         pid = str(row.get("player_id") or "")
+        if pid in locked_ids or not eligible(row.get("positions"), slots[index]):
+            unverified.append(
+                dict(issue, reason="Duplicate player or unverified slot eligibility.")
+            )
+            continue
+        day = best.get(pid, {}).get("by_date", {}).get(record.get("game_date"))
+        if day is None:
+            unverified.append(
+                dict(issue, reason="No matching observed game in the review week.")
+            )
+            continue
         fp = record.get("locked_fp")
-        if not isinstance(fp, (int, float)) or not math.isfinite(fp):
-            day = best.get(pid, {}).get("by_date", {}).get(record.get("game_date"))
-            fp = day if day is not None else best.get(pid, {}).get("fp")
-        if not isinstance(fp, (int, float)) or not math.isfinite(fp):
+        if fp is None:
+            fp = day
+        if (
+            type(fp) not in (int, float)
+            or not math.isfinite(fp)
+            or abs(fp - day) > 0.011
+        ):
+            unverified.append(
+                dict(
+                    issue,
+                    reason="Recorded score does not match the observed league-scored game.",
+                )
+            )
             continue
         pinned[index] = {"row": row, "record": record, "fp": float(fp)}
+        locked_ids.add(pid)
         locked.append(
             {
                 "player": row.get("player"),
@@ -451,6 +519,18 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
                 "fp": round(float(fp), 2),
                 "date": record.get("game_date"),
             }
+        )
+    base.update(
+        status="ready",
+        locked_count=len(locked),
+        locked=sorted(locked, key=lambda l: (l["date"] or "", l["slot"])),
+        unverified_locks=unverified,
+    )
+    if unverified:
+        return dict(
+            base,
+            audit_status="incomplete",
+            note="Some archived locks cannot be verified. Lineup totals and mistake claims are withheld; observed weekly performances remain available.",
         )
     open_index = [i for i in range(len(slots)) if i not in pinned]
     pinned_ids = {str(p["row"].get("player_id")) for p in pinned.values()}
@@ -461,6 +541,41 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
     )
     oracle_fill = optimal_assignment(slots, candidates)
     oracle = sum(candidates[j]["projected_fp"] for j in oracle_fill if j is not None)
+    if not locked:
+        return dict(
+            base,
+            oracle_fp=round(oracle, 2),
+            note="No locks were recorded for this week. Only the observed performances and hindsight-best lineup are available.",
+        )
+
+    def snapshot(assignments, fixed):
+        result = []
+        for i, slot in enumerate(slots):
+            c, pin = assignments.get(i), fixed.get(i)
+            result.append(
+                dict(
+                    slot=slot,
+                    slot_index=i,
+                    player=pin["row"]["player"] if pin else c["player"] if c else None,
+                    player_id=(
+                        str(pin["row"]["player_id"])
+                        if pin
+                        else c["player_id"] if c else None
+                    ),
+                    fp=round(pin["fp"] if pin else c["projected_fp"] if c else 0, 2),
+                    date=(
+                        pin["record"]["game_date"]
+                        if pin
+                        else c["best_date"] if c else None
+                    ),
+                )
+            )
+        return result
+
+    before = snapshot(
+        {i: free[j] for i, j in zip(open_index, fill) if j is not None}, pinned
+    )
+    before_ids = {p["player_id"] for p in before if p["player_id"]}
     mistakes = []
     clean = 0
     for index, p in pinned.items():
@@ -481,15 +596,36 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
             continue
         pid_i = str(p["row"].get("player_id"))
         kept = {alt_pool[j]["player_id"] for j in alt_fill if j is not None}
-        # Right player, wrong night: the locked player still makes the alt
-        # lineup but his better game beats the recorded lock — a different
-        # game of his was the play, whichever slot the cascade seats him in.
+        after = snapshot(
+            {
+                i: alt_pool[j]
+                for i, j in zip([index] + alt_index, alt_fill)
+                if j is not None
+            },
+            {i: v for i, v in pinned.items() if i != index},
+        )
+        after_ids = {p["player_id"] for p in after if p["player_id"]}
+        added, removed = after_ids - before_ids, before_ids - after_ids
         own_best = best.get(pid_i)
         timing = (
-            pid_i in kept and own_best is not None and own_best["fp"] > p["fp"] + 0.5
+            pid_i in kept
+            and own_best is not None
+            and own_best["fp"] > p["fp"] + 0.5
+            and not added
+            and not removed
+            and abs(cost - (own_best["fp"] - p["fp"])) < 0.011
         )
-        j = alt_fill[0]
-        better = alt_pool[j] if j is not None else None
+        better = next((c for c in alt_pool if c["player_id"] in added), None)
+        direct = (
+            removed == {pid_i}
+            and len(added) == 1
+            and better is not None
+            and eligible(better["positions"], slots[index])
+            and abs(cost - (better["projected_fp"] - p["fp"])) < 0.011
+        )
+        kind = "timing" if timing else "player" if direct else "lineup"
+        if kind == "lineup":
+            better = None
         mistakes.append(
             {
                 "player": p["row"].get("player"),
@@ -497,7 +633,7 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
                 "slot": slots[index],
                 "locked_fp": round(p["fp"], 2),
                 "locked_date": p["record"].get("game_date"),
-                "kind": "timing" if timing else "player",
+                "kind": kind,
                 "better_player": (
                     p["row"].get("player")
                     if timing
@@ -516,18 +652,23 @@ def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
                     if timing
                     else better["best_date"] if better else None
                 ),
-                "cost_fp": round(float(cost), 1),
+                "cost_fp": round(float(cost), 2),
+                "retained_fp": round(retained, 2),
+                "alternative_fp": round(alt_total, 2),
+                "before_lineup": before,
+                "after_lineup": after,
             }
         )
     mistakes.sort(key=lambda m: -m["cost_fp"])
     return dict(
         base,
         status="ready",
+        audit_status="verified",
         locked_count=len(locked),
         clean_count=clean,
-        retained_fp=round(retained, 1),
-        oracle_fp=round(oracle, 1),
-        regret_fp=round(oracle - retained, 1),
+        retained_fp=round(retained, 2),
+        oracle_fp=round(oracle, 2),
+        regret_fp=round(oracle - retained, 2),
         efficiency=round(retained / oracle * 100, 1) if oracle else None,
         mistakes=mistakes,
         locked=sorted(locked, key=lambda l: (l["date"] or "", l["slot"])),

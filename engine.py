@@ -78,14 +78,12 @@ def _film_review(
     week_key,
     team,
     locks_doc,
-    team_locks,
     rows,
     weights,
     observed,
     previous_games=None,
 ):
-    """Pick the most recent matchup week with recorded locks (current first)
-    and audit it; falls back to the current week when nothing is locked yet."""
+    """Audit the preceding completed matchup week, never a lock-selected week."""
     if team.get("source") != "sleeper":
         return None
     calendar = getattr(provider, "calendar", None)
@@ -94,24 +92,25 @@ def _film_review(
         if calendar
         else [str(d.date()) for d in get_week_bounds(reference)]
     )
+    if isinstance(week_key, int) and not isinstance(week_key, bool):
+        key = week_key - 1
+        week = _week_bounds_for_key(key, calendar)
+    else:
+        end = dt.date.fromisoformat(bounds[0]) - dt.timedelta(days=1)
+        key = str(end - dt.timedelta(days=6))
+        week = [key, str(end)]
+    if not week or week[1] >= bounds[0] or (calendar and week[1] < str(calendar.start)):
+        return dict(
+            status="unavailable",
+            audit_version=2,
+            note="No previous completed matchup week is available in the season schedule.",
+        )
     history = lock_history_for_league(locks_doc, team.get("league_id"))
-    history = sorted(
-        history.values(),
-        key=lambda r: (
-            (0, r["schedule_week"])
-            if isinstance(r.get("schedule_week"), int)
-            else (1, str(r.get("schedule_week") or ""))
-        ),
-        reverse=True,
-    )
-    candidates = [(week_key, bounds, team_locks)]
-    for record in history:
-        hb = _week_bounds_for_key(record.get("schedule_week"), calendar)
-        if hb:
-            candidates.append(
-                (record.get("schedule_week"), hb, record.get("locks") or {})
-            )
-    key, week, locks = next((c for c in candidates if c[2]), candidates[0])
+    locks = locks_for_league(locks_doc, team.get("league_id"), key)
+    for record in history.values():
+        if record.get("schedule_week") == key:
+            locks = record.get("locks") or {}
+            break
     film = weekly_film(
         observed,
         rows,
@@ -794,7 +793,6 @@ def build_dashboard(
                 week_key,
                 team,
                 locks_doc,
-                team_locks,
                 rows,
                 weights,
                 observed,

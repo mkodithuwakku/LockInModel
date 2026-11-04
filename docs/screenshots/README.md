@@ -6,15 +6,20 @@
   November 4, 2026 saved report separates his 50.4 FP historical baseline from
   the 47.7 / 48.5 / 47.8 FP opponent-adjusted remaining-game inputs. The headline
   is labeled as the report-day matchup projection.
-- `weekly-film-desktop.png` / `weekly-film-mobile.png`: observed November 2
-  performances, with populated deviations and labeled current/prior-season
-  benchmark counts. Later nights have no observed games yet.
+- `weekly-film-desktop.png` / `weekly-film-mobile.png`: the previous completed
+  matchup week, October 26–November 1, with verified player/game comparisons.
+  Current-week locks do not change the review interval.
+- `weekly-film-lineup-desktop.png`: a separate lineup reshuffle with the full
+  before/after slot assignments, highlighted changes, and reconciled totals.
+- `weekly-film-ledger-desktop.png`: all seven completed-week dates, populated
+  daily deviations, and the ledger's current/prior-season benchmark counts.
 
-These four captures use observed NBA data with generic team/league names and no
+These six captures use observed NBA data with generic team/league names and no
 account photos. They are saved report examples, not current advice. Missing
 cached headshots use initials. Desktop width is 1440px; phone width is 390px.
 Browser checks also cover 320px and 1024px, mixed/baseline decision inputs,
-older reports, zero remaining games, and the no-benchmark chart fallback.
+older reports, zero remaining games, the no-benchmark chart fallback, and
+completed-week audits with missing or unverified archived locks.
 Earlier player-detail captures below predate the explicit decision-input panel.
 
 ## Expanded team comparison, weekly film, and compact waivers

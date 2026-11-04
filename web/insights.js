@@ -521,14 +521,6 @@
       return {...p, rank:Number.isFinite(v) ? rank : null};
     });
   }
-  function filmSpotlight(film, margin = null) {
-    // A baseline shortfall affects the banked total only for that exact locked game.
-    const candidates = (film?.performances || []).filter(p => Number.isFinite(p.delta) && p.delta < 0 &&
-      (film.locked || []).some(l => String(l.player_id) === String(p.player_id) && l.date === p.date && Math.abs(l.fp-p.fp) < 0.01))
-      .sort((a,b) => a.delta-b.delta || a.player.localeCompare(b.player));
-    return {player:candidates[0], flips: Number.isFinite(margin) && margin >= 0
-      ? candidates.filter(p => -p.delta > margin) : []};
-  }
   const SEASON_STATS = ["MIN","PTS","REB","AST","STL","BLK","FG3M","TOV","FGM","FGA","FTM","FTA","FG3A","OREB","DREB","PF"];
   const average = values => values.length ? values.reduce((a,b)=>a+b,0)/values.length : null;
   function quantile(values, q) {
@@ -686,7 +678,7 @@
       ...rows.map(g=>[...keys.map(k=>g[k]),...SEASON_STATS.map(k=>g.stats?.[k]),...scoring.map(k=>g.scoring?.[k])])]
       .map(row=>row.map(cell).join(",")).join("\r\n");
   }
-  const helpers = { seasonExplorer, seasonAggregate, seasonPlayerRows, seasonLogRows, seasonPeriod, seasonCsv, comparisonTeams, comparisonPlayers, filmSpotlight, badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, repinLineup, teamForm, sparkline, dailyBadges, previousDate, badgeGuide, varietyCap, lockMatches, gamesToWatch };
+  const helpers = { seasonExplorer, seasonAggregate, seasonPlayerRows, seasonLogRows, seasonPeriod, seasonCsv, comparisonTeams, comparisonPlayers, badgePlayer, playerSeasonBadges, seasonBadgeLeaders, performanceBaseline, performanceScore, seasonContributors, seasonHighlights, gameFantasy, rosterSheet, repinLineup, teamForm, sparkline, dailyBadges, previousDate, badgeGuide, varietyCap, lockMatches, gamesToWatch };
   helpers._test = {optimalAssignment, eligibleSlot, lockMatches};
   if (typeof module !== "undefined" && module.exports) module.exports = helpers;
   else root.LockInInsights = helpers;

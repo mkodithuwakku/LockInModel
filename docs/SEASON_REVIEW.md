@@ -10,7 +10,7 @@ The tab holds three switchable views:
   formula, described below.
 - **Compare teams** — every loaded team scored with the same default fantasy
   formula, so leagues with different custom rules compare fairly.
-- **Shaqtin' a fool** — a hindsight audit of the most recent matchup week's
+- **Shaqtin' a fool** — a hindsight audit of the previous completed matchup week's
   recorded lock calls.
 
 ## What the numbers mean
@@ -206,31 +206,50 @@ remain blank; imputed box stats do not enter these rates.
 
 ## Shaqtin' a fool
 
-**Shaqtin' a fool** is a hindsight audit of the most recent matchup week with
-recorded locks: the current week when locks exist, otherwise the newest archived
-week. Expired matchup weeks are archived per league in `state/locks.json`
-(bounded at 30 weeks), so completed weeks remain reviewable after rollover.
+**Shaqtin' a fool** always reviews the previous completed matchup week. Sleeper
+week IDs map through the verified season calendar; date-keyed schedules use the
+preceding Monday–Sunday span. Current locks and older archives never change the
+selected week. Every card, timeline date, performance and lock belongs to that
+same interval. Opening week has no completed review yet. Archived weeks are
+stored per league in `state/locks.json` (bounded at 30 weeks).
 
-- **Retained FP:** every recorded locked score plus the best legal fill of the
+- **With recorded locks:** every verified recorded score plus the best legal fill of the
   remaining lineup slots using each unlocked roster player's best game that week.
-- **Perfect week:** the hindsight-optimal assignment of everyone's best game
+- **Hindsight best:** the hindsight-optimal assignment of everyone's best game
   across every slot.
-- **Left on table / efficiency:** the gap between the two, and retained as a
+- **Lineup gap / score retained:** the gap between the two, and retained as a
   share of perfect.
 
-A lock is flagged only when unpinning it and re-filling its slot would have
-scored more. If the same player refills the slot with a better later game it is
-a *timing* mistake ("right player, wrong night"); if a teammate takes the slot it
-is a *wrong-player* mistake. The audit uses each roster player's best observed
-game of that week — a replay heuristic over completed games, not a judgment of
-the information available when the locks were made. Weeks without recorded locks
-or completed roster games do not invent mistakes. When games exist but no locks
-are recorded, the retained and perfect totals use the same hindsight fill; the
-UI explicitly says this is not a measured perfect decision record.
+A recorded lock is verified against a matching player, game date, league-scored
+result and eligible archived slot. Today's synced slot cannot overwrite the
+archived slot. A missing score can use the observed result for that exact date;
+it cannot use an arbitrary best game. Unknown roster identities, duplicate locks,
+slot conflicts, missing games and conflicting scores withhold the lineup audit
+and list why, while preserving the observed timeline and ledger. Without any
+archived locks, only the theoretical best lineup and observed tape are available;
+retained score, gap and efficiency remain unavailable.
 
-Mistake cards show both player portraits, locked-versus-better score bars, and
-dates. Costs test one lock independently and may overlap; they must not be summed.
-The seven-day timeline shows mean FP above/below each game's prior benchmark,
+Each alternative releases one verified lock, keeps all others fixed, and
+reoptimizes the remaining slots. Only gains above 0.5 FP are flagged. A pure score improvement for the same player is
+shown as **Same player, better game**. A direct replacement is shown as
+**Higher-scoring player** only when the departing player is replaced by one
+eligible incoming player and that score difference explains the whole gain.
+Everything else is a **Lineup reshuffle**, separate from player/game mistakes.
+An SF-to-PF move can retain a 50.24-FP player while adding a 29.77-FP SF in place
+of a 25.26-FP PF, gaining 4.51 FP. Showing only 50.24 versus 29.77 is incorrect;
+reshuffle cards describe the retained player, additions, exclusions, full slot
+assignments and both lineup totals. The gain reconciles to those totals.
+
+These are current-roster hindsight scenarios, not actual fantasy matchup scores.
+Historical ownership/eligibility, real lock deadlines and opponent totals are
+not reconstructed. A better game can precede or follow the recorded game; this
+does not prove it was still available at the time of the decision.
+
+Direct comparison cards show player portraits, score bars and dates. Reshuffle
+cards compare whole-lineup totals and expose the full changes by slot. Gains test
+one lock independently and may overlap; they must not be summed.
+The timeline spans the selected matchup interval, including shortened or
+extended weeks, and shows mean FP above/below each game's prior benchmark,
 along with appearance and benchmark-coverage counts. The performance ledger
 includes all observed current-roster games and can filter to below-baseline or
 banked games. Missing or unplayed nights are not zero-point results.
@@ -251,14 +270,10 @@ the daily chart switches to clearly labeled observed FP averages rather than
 empty deviation bars. It never substitutes future results or a current forecast
 for a historical benchmark.
 
-**Choke artist** selects the largest negative deviation among games whose date,
-player, and observed score match a recorded lock. Bench performances cannot
-create a banked-score shortfall. The optional **Final loss margin** input is
-scoped to the team and review week for the current browser session. A hypothetical
-return to baseline can flip that entered margin only if its gain strictly exceeds
-the margin (equality merely ties). Every other locked score stays fixed.
-Opponent totals, final matchup status, and a real counterfactual win are not
-verified. Missing prior samples or recorded locks produce an explicit empty state.
+There is no opponent-based what-if or choke-artist section. Without opponent
+totals the app does not attribute matchup wins or losses to individual players.
+Public reports carry `audit_version: 2`; older cached audits request a refresh
+rather than displaying the old current-week selection or ambiguous swap cards.
 
 ## Data and boundaries
 

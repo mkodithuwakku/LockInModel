@@ -29,7 +29,6 @@ let state = {
   reviewTab: "review",
   compareMetric: "roster_average",
   compareFilters: {team:"", position:"", minimum:1, metric:"average_fp", search:""},
-  filmMargins: {},
   filmFilter: "all",
   seasonContexts: {},
 };
@@ -697,6 +696,7 @@ function comparisonPlayersHtml() {
 }
 function filmReviewHtml(t) {
   const f = t.film_review || {};
+  if (f.audit_version !== 2) return '<div class="season-review film-view"><h3>Shaqtin’ a fool</h3><p class="review-pending">Refresh this saved report to load the previous completed week and verified lineup comparisons.</p></div>';
   const number = (n, digits = 1) =>
     Number.isFinite(n)
       ? n.toLocaleString(undefined, { maximumFractionDigits: digits })
@@ -713,63 +713,66 @@ function filmReviewHtml(t) {
   const weekLabel =
     f.week?.start && f.week?.end
       ? `${date(f.week.start)} – ${date(f.week.end)}${f.week.key != null ? ` · week ${esc(f.week.key)}` : ""}`
-      : "This week";
+      : "Previous completed week";
   if (f.status !== "ready") {
     const note =
       f.status === "unavailable"
         ? f.note || "Lock review is unavailable in this report."
-        : "No recorded locks or completed roster games to review for this week yet.";
+        : "No observed roster games are available for the previous completed week.";
     return `<div class="season-review film-view">
       <div class="review-section-heading"><h3>Shaqtin' a fool</h3><span>${esc(t.team_name)} · ${weekLabel}</span></div>
-      <p class="review-scope">A hindsight audit of this week's lock calls against each roster player's best game.</p>
+      <p class="review-scope">Previous completed matchup week · current-roster observed history.</p>
       <div class="review-empty">${esc(note)}</div>
     </div>`;
   }
   const mistakeCard = (m) => {
     const timing = m.kind === "timing";
-    const title = timing ? "Right player, wrong night" : "Wrong call";
+    const reshuffle = m.kind === "lineup";
+    const title = reshuffle ? "Lineup reshuffle" : timing ? "Same player, better game" : "Higher-scoring player";
+    const before = m.before_lineup || [], after = m.after_lineup || [];
+    const own = after.find(p=>p.player_id === m.player_id);
+    const added = after.filter(p=>p.player_id && !before.some(b=>b.player_id === p.player_id));
+    const removed = before.filter(p=>p.player_id && !after.some(a=>a.player_id === p.player_id));
+    const describe = p => `${p.player} (${number(p.fp,2)} FP)`;
+    const reshuffleBody = `${own ? `${own.fp === m.locked_fp ? "Keeps" : "Uses"} ${m.player}'s ${number(own.fp,2)} FP in ${own.slot}${own.slot !== m.slot ? ` instead of ${m.slot}` : ""}.` : "Reassigns multiple lineup slots when this lock is released."}${added.length ? ` Adds ${added.map(describe).join(", ")}.` : ""}${removed.length ? ` Leaves ${removed.map(describe).join(", ")} out.` : ""} This is a whole-lineup change, not a direct player-for-player score comparison.`;
     const body = timing
-      ? `Locked ${m.locked_fp} FP into ${m.slot} on ${date(m.locked_date)}; ${m.better_player || m.player}'s ${number(m.better_fp)} FP on ${date(m.better_date)} was the play.`
-      : `Locked ${m.player}'s ${m.locked_fp} FP into ${m.slot} on ${date(m.locked_date)}; ${m.better_player || "a teammate"}'s ${number(m.better_fp)} FP on ${date(m.better_date)} was open.`;
+      ? `Recorded ${number(m.locked_fp,2)} FP in ${m.slot} on ${date(m.locked_date)}; the same player scored ${number(m.better_fp,2)} FP on ${date(m.better_date)}.`
+      : reshuffle ? reshuffleBody : `Recorded ${m.player}'s ${number(m.locked_fp,2)} FP in ${m.slot} on ${date(m.locked_date)}; ${m.better_player}'s ${number(m.better_fp,2)} FP on ${date(m.better_date)} raises the alternative lineup total.`;
     const maximum = Math.max(1,Math.abs(m.locked_fp),Math.abs(m.better_fp || 0));
-    return `<article class="film-mistake"><div class="film-card-heading"><span class="review-kicker">${title}</span><b class="film-cost">−${number(m.cost_fp)} FP</b></div>
-      <div class="film-versus">${comparisonPerson(m,t.id)}<span aria-hidden="true">→</span>${comparisonPerson({player:m.better_player,player_id:m.better_player_id},t.id)}</div>
+    return `<article class="film-mistake"><div class="film-card-heading"><span class="review-kicker">${title}</span><b class="film-cost">+${number(m.cost_fp,2)} FP possible</b></div>
+      ${reshuffle ? comparisonPerson(m,t.id) : `<div class="film-versus">${comparisonPerson(m,t.id)}<span aria-hidden="true">→</span>${comparisonPerson({player:m.better_player,player_id:m.better_player_id},t.id)}</div>
       <div class="film-score-line"><span>Locked</span><i style="width:${Math.max(0,m.locked_fp/maximum*100)}%"></i><b>${number(m.locked_fp)}</b></div>
-      <div class="film-score-line is-better"><span>Best option</span><i style="width:${Math.max(0,(m.better_fp || 0)/maximum*100)}%"></i><b>${number(m.better_fp)}</b></div><p>${esc(body)}</p></article>`;
+      <div class="film-score-line is-better"><span>Alternative</span><i style="width:${Math.max(0,(m.better_fp || 0)/maximum*100)}%"></i><b>${number(m.better_fp)}</b></div>`}
+      <p>${esc(body)}</p><div class="film-lineup-totals"><span>With recorded lock <b>${number(m.retained_fp,2)} FP</b></span><span>Alternative lineup <b>${number(m.alternative_fp,2)} FP</b></span></div>
+      ${filmLineupEvidence(m)}</article>`;
   };
+  const direct = (f.mistakes || []).filter(m=>m.kind !== "lineup");
+  const reshuffles = (f.mistakes || []).filter(m=>m.kind === "lineup");
   return `<div class="season-review film-view">
     <div class="review-section-heading"><h3>Shaqtin' a fool</h3><span>${esc(t.team_name)} · ${weekLabel}</span></div>
-    <p class="review-scope">What actually got locked plus the best legal fill of the open slots, versus the perfect hindsight lineup from everyone's best game this week. Heuristic replay — not a judgment of the calls available at the time.</p>
-    <div class="review-metrics">${metric("Retained FP", number(f.retained_fp), "Locked scores + optimal fill")}${metric("Perfect week", number(f.oracle_fp), "Hindsight-optimal lineup")}${metric("Left on table", number(f.regret_fp), "Points the locks gave up")}${metric("Efficiency", f.efficiency == null ? "—" : number(f.efficiency) + "%", "Retained vs perfect")}</div>
-    ${!(f.locked || []).length ? '<p class="review-pending">No recorded locks: retained and perfect use the same hindsight fill. This is not a measured perfect decision record.</p>' : ""}
-    <section class="film-choke"><div><span class="review-kicker">The what-if desk</span><h3>Choke artist</h3><p>Which banked game fell furthest below that player's preceding-game average?</p></div>
-      <label>Final loss margin (optional)<input id="film-margin" type="number" min="0" step="0.1" placeholder="e.g. 8.5 FP" value="${esc(state.filmMargins[filmMarginKey(t)] ?? "")}"></label>
-      <div id="film-spotlight">${filmSpotlightHtml(t)}</div>
-    </section>
-    <div class="review-section-heading"><h3>Mistakes <small>${(f.mistakes || []).length}</small></h3><span>${f.clean_count || 0} of ${f.locked_count || 0} locks were clean</span></div>
-    <p class="review-scope">Each cost tests one lock independently; costs can overlap and should not be added together.</p>
-    ${(f.mistakes || []).length ? `<div class="film-mistakes">${f.mistakes.map(mistakeCard).join("")}</div>` : `<p class="review-pending">Every recorded lock held up against the week’s hindsight best. Nothing to roast.</p>`}
+    <p class="review-scope">Previous completed matchup week. All sections use ${weekLabel}. Recorded locks plus a hindsight-best fill of open slots are compared with the best legal lineup without fixed locks. These are scenarios, not your actual matchup score or evidence that an alternative was available when you locked. Current-roster eligibility is used; historical ownership and opponent totals are unavailable.</p>
+    <div class="review-metrics">${metric("With recorded locks", number(f.retained_fp), "Locked scores + hindsight fill")}${metric("Hindsight best", number(f.oracle_fp), "Best observed games, legal slots")}${metric("Lineup gap", number(f.regret_fp), "Includes slot reshuffles")}${metric("Score retained", f.efficiency == null ? "—" : number(f.efficiency) + "%", "Scenario comparison")}</div>
+    ${f.note ? `<p class="review-pending">${esc(f.note)}</p>` : ""}
+    ${(f.unverified_locks || []).length ? `<details class="film-tape"><summary>${f.unverified_locks.length} unverified archived locks · why the audit is withheld</summary><ul>${f.unverified_locks.map(l=>`<li><b>${esc(l.player)}</b>: ${esc(l.reason)}</li>`).join("")}</ul></details>` : ""}
+    ${f.audit_status === "verified" ? `<div class="review-section-heading"><h3>Player and game mistakes <small>${direct.length}</small></h3><span>${f.locked_count} verified locks · ${f.clean_count} with no individual hindsight gain</span></div>
+    <p class="review-scope">Each card releases one lock, keeping every other recorded lock fixed. Gains can overlap; do not add them together. “Better game” can be earlier or later and is hindsight only.</p>
+    ${direct.length ? `<div class="film-mistakes">${direct.map(mistakeCard).join("")}</div>` : '<p class="review-pending">No direct player or game improvements found among the verified locks.</p>'}
+    ${reshuffles.length ? `<div class="review-section-heading"><h3>Lineup reshuffles <small>${reshuffles.length}</small></h3><span>Whole-lineup opportunities</span></div><p class="review-scope">A lower-scoring player can enter when another player moves slots. These cards show the complete change; they are not claims that the lower score beats the locked score.</p><div class="film-mistakes">${reshuffles.map(mistakeCard).join("")}</div>` : ""}` : ""}
     ${filmWeekHtml(t)}
     ${(f.locked || []).length ? `<details class="film-tape"><summary>The tape · ${f.locked.length} recorded locks</summary><div class="film-tape-list">${f.locked.map((l) => `<div><span>${esc(l.slot)}</span><strong>${esc(l.player)}</strong><b>${number(l.fp)} <small>FP</small></b><small>${esc(date(l.date))}</small></div>`).join("")}</div></details>` : ""}
   </div>`;
 }
-function filmMarginKey(t) { return `${t.id}:${t.film_review?.week?.start || ""}`; }
-function filmSpotlightHtml(t) {
-  const f = t.film_review || {};
-  const raw = state.filmMargins[filmMarginKey(t)];
-  const margin = raw !== "" && raw != null && Number(raw) >= 0 ? Number(raw) : null;
-  const {player:p, flips} = LockInInsights.filmSpotlight(f,margin);
-  if (!p) return `<p class="review-pending">No banked game with a verified below-baseline result yet. Needs a matching recorded lock and at least three earlier games. A rough bench night does not cost your banked total.</p>`;
-  return `<div class="film-spotlight-player">${comparisonPerson(p,t.id)}<strong class="stat-negative">${fmt(p.delta)} <small>FP vs baseline</small></strong></div>
-    <p>${esc(p.date)} · ${fmt(p.fp)} FP banked vs ${fmt(p.baseline_fp)} FP across ${p.baseline_games} preceding games.</p>
-    <p>${margin == null ? "Enter a final loss margin to explore whether a return to baseline could have changed the result." : flips.length ? `At the entered ${fmt(margin)} FP loss margin, ${flips.map(x=>esc(x.player)+" ("+esc(x.date)+")").join(", ")} could each hypothetically flip the result by reaching their baseline.` : `No qualifying banked shortfall exceeds the entered ${fmt(margin)} FP margin. Matching the margin would only tie.`}</p>
-    <small>What-if only: holds every other locked score fixed. Opponent totals and matchup completion are not verified here. A historical average is not a pregame forecast.</small>`;
+function filmLineupEvidence(m) {
+  const before = m.before_lineup || [], after = m.after_lineup || [];
+  const cell = p => p?.player ? `<b>${esc(p.player)}</b><small>${esc(p.date)} · ${fmt(p.fp,2)} FP</small>` : "Empty · 0 FP";
+  return `<details class="film-lineup-evidence"><summary>Show the full lineup change</summary><div class="compare-table-wrap" tabindex="0" role="region" aria-label="Recorded and alternative lineup"><table class="compare-table"><thead><tr><th>Slot</th><th>With recorded lock</th><th>Alternative</th></tr></thead><tbody>${before.map((p,i)=>`<tr class="${p.player_id !== after[i]?.player_id || p.fp !== after[i]?.fp || p.date !== after[i]?.date ? "film-slot-changed" : ""}"><th>${esc(p.slot)}${before.filter(x=>x.slot===p.slot).length > 1 ? ` ${before.slice(0,i+1).filter(x=>x.slot===p.slot).length}` : ""}</th><td>${cell(p)}</td><td>${cell(after[i])}</td></tr>`).join("")}</tbody></table></div></details>`;
 }
 function filmWeekHtml(t) {
   const f = t.film_review || {}, games = f.performances || [];
   if (!games.length) return '<p class="review-pending">Game-by-game tape is not included in this saved report. Refresh the data to add the weekly breakdown.</p>';
   const start = f.week?.start;
-  const days = start ? Array.from({length:7},(_,i)=>{const d=new Date(start+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+i);return d.toISOString().slice(0,10);}) : [...new Set(games.map(g=>g.date))];
+  const length = start && f.week?.end ? Math.round((new Date(f.week.end+"T12:00:00Z")-new Date(start+"T12:00:00Z"))/86400000)+1 : 7;
+  const days = start ? Array.from({length},(_,i)=>{const d=new Date(start+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+i);return d.toISOString().slice(0,10);}) : [...new Set(games.map(g=>g.date))];
   const signed = value => value == null ? "—" : `${value > 0 ? "+" : ""}${fmt(value)}`;
   const tone = value => value > 0 ? "stat-positive" : value < 0 ? "stat-negative" : "";
   const daily = days.map(date => {
@@ -1772,11 +1775,6 @@ document.addEventListener("input", e => {
   if (e.target.dataset.compare === "search") {
     state.compareFilters.search=e.target.value;
     $("#comparison-player-results").innerHTML=comparisonPlayersHtml();
-    attachImageFallback();
-  }
-  if (e.target.id === "film-margin") {
-    state.filmMargins[filmMarginKey(team())]=e.target.value;
-    $("#film-spotlight").innerHTML=filmSpotlightHtml(team());
     attachImageFallback();
   }
 });

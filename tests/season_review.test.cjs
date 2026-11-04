@@ -89,18 +89,6 @@ test('player rankings deduplicate shared players, filter samples and positions, 
   assert.equal(comparisonPlayers(comparison,{metric:'pergame:PTS'})[0].player,'B');
   assert.equal(comparisonPlayers(comparison,{search:'b'})[0].player,'B');
 });
-test('choke what-if only uses the exact banked result and requires a strict winning margin', () => {
-  const {filmSpotlight} = require('../web/insights.js');
-  const film={locked:[{player_id:1,date:'2026-10-21',fp:10}],performances:[
-    {player:'Banked',player_id:'1',date:'2026-10-21',fp:10,delta:-20},
-    {player:'Bench',player_id:'2',date:'2026-10-21',fp:0,delta:-50},
-    {player:'Wrong night',player_id:'1',date:'2026-10-22',fp:1,delta:-30},
-  ]};
-  assert.equal(filmSpotlight(film,19).flips[0].player,'Banked');
-  assert.equal(filmSpotlight(film,20).flips.length,0);
-  assert.equal(filmSpotlight(film).flips.length,0);
-  assert.equal(filmSpotlight({...film,locked:[{player_id:1,date:'2026-10-21',fp:15}]},1).player,undefined);
-});
 test('season contributors preserve detail indexes and empty roster placeholders', () => {
   const t = {results:[{player_id:'1',player:'One'}, {player_id:'2',player:'Two'}, {player_id:null,player:'Unknown'}],season_review:{players:[{player_id:'2',player:'Two',games:1,total_fp:40,average_fp:40}]}};
   const rows = seasonContributors(t);

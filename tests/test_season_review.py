@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from season_review import season_review
 
@@ -155,7 +156,7 @@ def _film_games():
     )
 
 
-def _film_lock(fp=20, slot="PG", slot_index=0):
+def _film_lock(fp=20, slot="PG", slot_index=0, date="2026-10-21"):
     return {
         "101": {
             "player_id": "101",
@@ -164,7 +165,7 @@ def _film_lock(fp=20, slot="PG", slot_index=0):
             "roster_slot": slot,
             "slot_index": slot_index,
             "locked_fp": fp,
-            "game_date": "2026-10-21",
+            "game_date": date,
         }
     }
 
@@ -218,7 +219,7 @@ def test_weekly_film_clean_lock_and_empty_states():
         _film_games(),
         _film_rows(),
         ["PG", "UTIL"],
-        _film_lock(fp=30),
+        _film_lock(fp=30, date="2026-10-24"),
         ["2026-10-20", "2026-10-26"],
         {"PTS": 1},
     )
@@ -233,7 +234,8 @@ def test_weekly_film_clean_lock_and_empty_states():
         {"PTS": 1},
     )
     assert unlocked["status"] == "ready" and unlocked["locked_count"] == 0
-    assert unlocked["retained_fp"] == unlocked["oracle_fp"] == 80
+    assert unlocked["retained_fp"] is None and unlocked["oracle_fp"] == 80
+    assert unlocked["regret_fp"] is None and unlocked["audit_status"] == "no_locks"
     assert unlocked["mistakes"] == []
     empty = weekly_film(
         _film_games(),
@@ -261,6 +263,197 @@ def test_weekly_film_clean_lock_and_empty_states():
         )["status"]
         == "unavailable"
     )
+
+
+def test_film_distinguishes_bridges_wells_slot_reshuffle_and_reconciles_totals():
+    from season_review import weekly_film
+    from pages import public_report
+    from test_pages import report
+
+    frame = pd.DataFrame(
+        [
+            _film_game("1", "Miles Bridges", "2026-10-28", 50.24, "b"),
+            _film_game("2", "Jaylen Wells", "2026-10-28", 29.77, "w"),
+            _film_game("3", "Domantas Sabonis", "2026-10-28", 25.26, "s"),
+        ]
+    )
+    rows = [
+        dict(
+            player_id="1",
+            player="Miles Bridges",
+            positions=["SF", "PF"],
+            roster_slot="PF",
+        ),
+        dict(player_id="2", player="Jaylen Wells", positions=["SF"], roster_slot="BN"),
+        dict(
+            player_id="3", player="Domantas Sabonis", positions=["PF"], roster_slot="PF"
+        ),
+    ]
+    locks = {
+        "1": dict(
+            player_id="1",
+            player_name="Miles Bridges",
+            roster_slot="SF",
+            slot_index=0,
+            locked_fp=50.24,
+            game_date="2026-10-28",
+        )
+    }
+    film = weekly_film(
+        frame, rows, ["SF", "PF"], locks, ["2026-10-27", "2026-11-01"], {"PTS": 1}
+    )
+    assert film["locked"][0]["slot"] == "SF"  # Archived slot beats today's PF.
+    assert film["retained_fp"] == 75.5 and film["oracle_fp"] == 80.01
+    mistake = film["mistakes"][0]
+    assert mistake["kind"] == "lineup" and mistake["better_player"] is None
+    assert mistake["cost_fp"] == 4.51
+    assert [(p["slot"], p["player"]) for p in mistake["after_lineup"]] == [
+        ("SF", "Jaylen Wells"),
+        ("PF", "Miles Bridges"),
+    ]
+    assert {p["player"] for p in mistake["before_lineup"]} == {
+        "Miles Bridges",
+        "Domantas Sabonis",
+    }
+    assert sum(p["fp"] for p in mistake["before_lineup"]) == pytest.approx(
+        mistake["retained_fp"]
+    )
+    assert sum(p["fp"] for p in mistake["after_lineup"]) == pytest.approx(
+        mistake["alternative_fp"]
+    )
+    assert mistake["alternative_fp"] - mistake["retained_fp"] == pytest.approx(
+        mistake["cost_fp"]
+    )
+    raw = report()
+    raw["teams"][0]["film_review"] = film
+    mistake["before_lineup"][0]["secret"] = "PRIVATE"
+    exported = public_report(raw)["teams"][0]["film_review"]
+    assert exported["audit_version"] == 2
+    assert exported["mistakes"][0]["after_lineup"][1]["player"] == "Miles Bridges"
+    assert "PRIVATE" not in str(exported)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        dict(locked_fp=200),
+        dict(game_date=None),
+        dict(game_date="2026-11-02"),
+        dict(roster_slot="C"),
+        dict(
+            player_id="missing",
+            player_name="Not on roster",
+            canonical_name="not on roster",
+        ),
+    ],
+)
+def test_unverified_locks_withhold_audit_without_inventing_a_game(change):
+    from season_review import weekly_film
+
+    locks = _film_lock()
+    locks["101"].update(change)
+    film = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG"],
+        locks,
+        ["2026-10-20", "2026-10-26"],
+        {"PTS": 1},
+    )
+    assert film["audit_status"] == "incomplete"
+    assert film["retained_fp"] is None and film["regret_fp"] is None
+    assert film["mistakes"] == [] and len(film["unverified_locks"]) == 1
+    assert len(film["performances"]) == 3
+
+
+def test_film_always_selects_previous_completed_week_even_with_current_locks():
+    import datetime as dt
+    from types import SimpleNamespace
+    from engine import _film_review
+
+    calendar = SimpleNamespace(
+        start=dt.date(2026, 10, 20),
+        display_week=lambda _: ["2026-11-02", "2026-11-08"],
+        games=[
+            dict(date=d, week=w)
+            for w, days in [
+                (1, ["2026-10-20", "2026-10-26"]),
+                (2, ["2026-10-27", "2026-11-01"]),
+                (3, ["2026-11-02", "2026-11-08"]),
+            ]
+            for d in days
+        ],
+    )
+    provider = SimpleNamespace(calendar=calendar)
+    frame = _film_games()
+    frame["GAME_DATE"] += pd.Timedelta(days=7)
+    frame = pd.concat(
+        [frame, pd.DataFrame([_film_game("1", "Locker", "2026-11-02", 999, "new")])]
+    )
+    team = dict(source="sleeper", league_id="test", roster_positions=["PG"])
+    doc = {
+        "leagues": {
+            "test": {
+                "schedule_week": 3,
+                "locks": _film_lock(fp=999, date="2026-11-02"),
+                "history": {
+                    "2": {"schedule_week": 2, "locks": _film_lock(date="2026-10-28")}
+                },
+            }
+        }
+    }
+    args = (
+        provider,
+        dt.date(2026, 11, 4),
+        3,
+        team,
+        doc,
+        _film_rows(),
+        {"PTS": 1},
+        frame,
+    )
+    film = _film_review(*args)
+    assert film["week"] == dict(key=2, start="2026-10-27", end="2026-11-01")
+    assert film["retained_fp"] == 20 and film["oracle_fp"] == 50
+    assert all("2026-10-27" <= g["date"] <= "2026-11-01" for g in film["performances"])
+    assert all(l["date"] == "2026-10-28" for l in film["locked"])
+    # Missing last-week locks never select either the current week or an older archive.
+    doc["leagues"]["test"]["history"] = {
+        "1": {"schedule_week": 1, "locks": _film_lock()}
+    }
+    missing = _film_review(*args)
+    assert missing["week"] == film["week"] and missing["audit_status"] == "no_locks"
+    assert missing["mistakes"] == [] and len(missing["performances"]) == 3
+    # Before the first completed matchup week, there is no review to fabricate.
+    first = _film_review(
+        provider, dt.date(2026, 10, 22), 1, team, doc, _film_rows(), {"PTS": 1}, frame
+    )
+    assert first["status"] == "unavailable"
+
+
+def test_duplicate_archived_slot_is_not_silently_moved_to_another_slot():
+    from season_review import weekly_film
+
+    locks = _film_lock()
+    locks["2"] = dict(
+        player_id="2",
+        player_name="Star",
+        roster_slot="PG",
+        slot_index=0,
+        locked_fp=50,
+        game_date="2026-10-22",
+    )
+    film = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG", "PG"],
+        locks,
+        ["2026-10-20", "2026-10-26"],
+        {"PTS": 1},
+    )
+    assert film["audit_status"] == "incomplete"
+    assert film["locked_count"] == 1 and film["mistakes"] == []
+    assert "slot index" in film["unverified_locks"][0]["reason"]
 
 
 def test_completed_roster_dashboard_reads_saved_season(monkeypatch):
