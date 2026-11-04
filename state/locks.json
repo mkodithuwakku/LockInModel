@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-04T14:34:42.242Z",
+  "updated_at": "2026-11-04T14:35:49.618Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -636,8 +636,19 @@
       }
     },
     "1417213338928078848": {
-      "schedule_week": 2,
-      "locks": {},
+      "schedule_week": 3,
+      "locks": {
+        "2255": {
+          "player_id": "2255",
+          "player_name": "Ayo Dosunmu",
+          "canonical_name": "ayo dosunmu",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 33,
+          "game_date": "2026-11-02",
+          "locked_at": "2026-11-04T14:35:49.618Z"
+        }
+      },
       "history": {
         "1": {
           "schedule_week": 1,
