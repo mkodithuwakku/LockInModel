@@ -27,7 +27,7 @@ The interface uses a compact fantasy lineup layout: charcoal surfaces with a sub
 
 *Test Week reveals one night's results at a time. Scores can be banked for starters and retained as the week advances. Expand “Tonight’s box scores” for the nightly breakdown. This older capture includes the retired decorative court; the current roster-first layout appears above.*
 
-![Player detail showing the latest fantasy score, baseline, remaining games, explanation, and recent performance chart](docs/screenshots/player-detail.png)
+![Player detail separating the historical baseline from opponent-adjusted remaining-game decision inputs](docs/screenshots/decision-model-desktop.png)
 
 *Player details connect a recommendation to the observed performance and remaining opportunities.*
 
@@ -51,7 +51,7 @@ includes every stored current-season appearance for the current roster, with
 search, performance filters, pagination and CSV export. It is independent of the
 25-game history shown in an individual player card.
 
-**Compare teams** now separates roster quality from accumulated volume, with player portraits, team production profiles, and a filterable player leaderboard. **Shaqtin' a fool** adds visual lock mistakes, daily performance bars, and a banked-game “Choke artist” what-if. Waiver recommendations use compact cards with add/drop identities and expandable sample notes. See the [comparison](docs/screenshots/team-comparison-desktop.png), [weekly film](docs/screenshots/weekly-film-desktop.png), and [waiver cards](docs/screenshots/compact-waivers-desktop.png), plus [phone comparison](docs/screenshots/team-comparison-mobile.png), [phone film](docs/screenshots/weekly-film-mobile.png), and [phone waivers](docs/screenshots/compact-waivers-mobile.png). These six previews use explicitly illustrative statistics and generic teams to demonstrate populated states; they are not observed NBA results or live recommendations.
+**Compare teams** now separates roster quality from accumulated volume, with player portraits, team production profiles, and a filterable player leaderboard. **Shaqtin' a fool** adds visual lock mistakes, daily performance bars, and a banked-game “Choke artist” what-if. Waiver recommendations use compact cards with add/drop identities and expandable sample notes. See the [comparison](docs/screenshots/team-comparison-desktop.png), [weekly film](docs/screenshots/weekly-film-desktop.png), and [waiver cards](docs/screenshots/compact-waivers-desktop.png), plus [phone comparison](docs/screenshots/team-comparison-mobile.png), [phone film](docs/screenshots/weekly-film-mobile.png), and [phone waivers](docs/screenshots/compact-waivers-mobile.png). The comparison and waiver previews use explicitly illustrative statistics; the refreshed film captures use observed NBA results. All use generic team labels and are not live recommendations.
 
 ## Problem and scope
 
@@ -74,6 +74,19 @@ The app does not submit locks, waivers, or lineup changes to Sleeper. Its lock a
 - **Compact team insights:** ranked five-game form, per-player sparklines tinted in NBA team colours, change versus the previous five games, and expandable full-team coverage on desktop and phones.
 - **Daily player badges:** tiny previous-night NBA-wide indicators, including league-scored projection surprises and FP/min, plus 📈 combined defense, 🧠 low-turnover creation, ☕ double-doubles, and 🎩 triple-doubles. [Rules and forecast archive](docs/DAILY_BADGES.md).
 - **Lock/wait explanations:** a two-stage model. Stage 1 compares the latest eligible score with a weighted baseline and verified remaining opportunities; when opponent-aware projections exist for those games, the probability that any future game beats the score uses per-game opponent-adjusted means (`decision_model: "opponent_ridge"`), with the uniform baseline as fallback. Stage 2 (`apply_roster_lock_context`) re-weights each solo lock probability against the team's unpinned lineup slots: a Hungarian assignment over teammates' expected weekly ceilings finds the marginal displaced contender, and the lock score is scaled by the chance the candidate's score beats that contender's remaining games. Contention reasoning appears only in the player modal (`row["reason"]`); quick-view cards are unchanged. Missing inputs produce explicit review states.
+
+Player details explicitly label **Opponent-adjusted model**, **Historical baseline
+fallback**, or a mixture, and list each remaining game's date, opponent, FP
+estimate, and source from the exported `decision_games` inputs. The historical
+baseline is shown separately. A report-day matchup projection is not a weekly
+average. Older reports without these inputs request a refresh rather than
+inferring provenance from a displayed projection.
+
+Weekly film now fills early-season benchmark windows with saved prior-season
+observations, labeled with current/prior game counts. Benchmarks still require
+three strictly earlier games and never include the performance being judged.
+When an entire week lacks benchmarks, the rollercoaster shows explicitly labeled
+observed FP averages; the ledger explains insufficient history.
 - **On the Rise:** compare up to five recent games with an earlier baseline, discount fragile improvement signals, and estimate fit against compatible roster players. Early in the season, when few players reach the full baseline minimum, verified prior-season games seed the baseline so risers surface after two current-season appearances — labeled as a small early-season sample. A schedule-aware add/drop card in the roster sheet weighs this week plus roughly next week's games before suggesting a swap, and advises holding when the long-run math is negative or no qualifying riser exists yet.
 - **Games to watch:** today's matchups ranked by how many of your rostered players are involved, across every loaded team. A player rostered on multiple teams counts once and shows each team that owns them. Rows carry a muted NBA team-colour accent. Derived entirely from the published schedule data; tip-off times are unavailable.
 - **Badge race tab:** season-long badge leaderboards in their own view, defaulting to the NBA-wide pool with a My roster toggle.
@@ -223,7 +236,7 @@ For a selected player, `per_player_week_decision()` in [decide.py](decide.py) fo
    p_future_beats = 1 - Φ((current_fp - mean) / standard_deviation)^remaining_games
    ```
 
-   This assumes independent future scores from the same Normal distribution. For sparse current-season histories, saved previous-season games supply real observations for the baseline and rarity comparison. After that bootstrap, replay uses a prior-season game average and the live provider uses season observations older than 14 days as its shrinkage prior. No additional career requests are made.
+   This baseline formula assumes independent future scores from the same Normal distribution. When per-game opponent projections are available, the engine instead uses `1 - product(Φ((current_fp - game_mean) / standard_deviation))`, retaining the historical mean only for missing projections. For sparse current-season histories, saved previous-season games supply real observations for the baseline and rarity comparison. After that bootstrap, replay uses a prior-season game average and the live provider uses season observations older than 14 days as its shrinkage prior. No additional career requests are made.
 
 5. Start the lock score at `1 - p_future_beats`, then apply rarity, small-sample, remaining-opportunity, and optional conservative-mode adjustments. Clamp to `[0, 1]`; scores at least `0.5` become `LOCK`. Those adjustments make the final value a heuristic preference, not a calibrated probability.
 6. Return the score, baseline, opportunities, history, and explanation. The engine withholds actionable output when league scoring is incomplete. The user acts in Sleeper, or banks the score locally in Test Week.

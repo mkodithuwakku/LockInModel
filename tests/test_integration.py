@@ -51,6 +51,58 @@ def test_incomplete_scoring_never_recommends_lock():
     assert report["alerts"]
 
 
+@pytest.mark.parametrize("adjusted", [False, True])
+def test_decision_inputs_export_actual_means_and_label_partial_fallback(
+    monkeypatch, adjusted
+):
+    import engine
+
+    provider = FixtureProvider()
+    supplied = {}
+    original_profiles = {}
+
+    def tiles(rows, profiles, *args, **kwargs):
+        # Supply only one adjusted game; all other opportunities must retain
+        # the Lock/Wait baseline, even if the profile forecast differs.
+        for pid, profile in profiles.items():
+            original_profiles[pid] = profile["projected_fp"]
+            if adjusted:
+                profile["projected_fp"] = 999
+                profile["projection_source"] = "opponent_ridge"
+        for row in rows:
+            upcoming = [
+                g
+                for g in row.get("week_games", [])
+                if g["status"] in ("scheduled", "pre_game")
+            ]
+            if upcoming and adjusted:
+                supplied[(str(row["player_id"]), upcoming[0]["date"])] = 77.25
+        return supplied
+
+    monkeypatch.setattr(engine, "apply_opponent_model", tiles)
+    report = build_dashboard(
+        provider=provider, cfg=sample_cfg(), reference=provider.manifest["default_date"]
+    )
+    row = report["teams"][0]["results"][0]
+    assert row["decision"] in ("LOCK", "WAIT")
+    assert len(row["decision_games"]) == row["remaining_games_est"] > 0
+    for game in row["decision_games"]:
+        value = supplied.get((str(row["player_id"]), game["date"]))
+        assert game["source"] == (
+            "opponent_ridge" if value is not None else "historical_baseline"
+        )
+        assert game["projected_fp"] == (
+            value if value is not None else row["fp_mean_recent"]
+        )
+    assert row["decision_model"] == (
+        "opponent_ridge" if adjusted else "historical_baseline"
+    )
+    assert any(g["source"] == "historical_baseline" for g in row["decision_games"])
+    for game in row["week_games"]:
+        if game.get("projection_source") == "historical_baseline":
+            assert game["proj_fp"] == round(original_profiles[str(row["player_id"])], 1)
+
+
 def test_replay_cannot_send_email():
     with pytest.raises(ValueError):
         main.run(live=False, send=True)

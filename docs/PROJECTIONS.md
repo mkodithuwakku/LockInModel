@@ -36,6 +36,19 @@ For external forecasts, ordinary components are linear weighted expectations. Su
 
 ## Display and availability
 
+The player modal labels the model actually used by Lock/Wait and separates its
+historical baseline from the remaining-game inputs. `decision_games` exports each
+opportunity's date, opponent, mean FP and source. Partial opponent coverage is
+labeled as mixed; missing means use the decision's historical baseline, which
+can differ from the profile projection. No remaining games gets its own label.
+Older saved reports without this list ask for a refresh instead of guessing.
+The separate headline projection is labeled as a report-day matchup projection
+when its source is `opponent_ridge`, not as a weekly average.
+
+Weekly tiles also export their projection source. A missing opponent tile retains
+the original profile baseline even when today's profile was upgraded by the
+opponent model; it must not inherit today's matchup adjustment.
+
 Roster rows show projected FP and PTS/REB/AST; player details add minutes, steals, blocks, turnovers, threes, and shooting makes/attempts. Sources and dates remain visible. Each upcoming or in-progress game tile in the seven-day strip displays its matchup-specific opponent-aware projection as **Proj** (`proj_fp` from `ComponentRidge`), so distinct matchups across the week show different values. If opponent context is unconfirmed or player history is sparse, the tile cleanly falls back to the player's saved baseline average. Completed games show observed **Final** FP when available, including zero or negative scores. Missing forecasts or final scores stay as dashes; postponed/canceled games carry their status without a forecast. Current forecasts are never backfilled into games before their as-of date. Current-season history-based values supersede forecast fallback once usable observations exist. During a game-log failure only independently valid external forecasts can support the daily plan; weekly lock/pickup decisions still need observed data.
 
 Historical charts remain observed-only. Verified older observations are shown with a prior-season label when current history is absent. A rookie may have a complete forecast and no NBA history chart. This is an honest absence of observations, not a broken forecast.

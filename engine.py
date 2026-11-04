@@ -73,7 +73,16 @@ def _week_bounds_for_key(key, calendar):
 
 
 def _film_review(
-    provider, reference, week_key, team, locks_doc, team_locks, rows, weights, observed
+    provider,
+    reference,
+    week_key,
+    team,
+    locks_doc,
+    team_locks,
+    rows,
+    weights,
+    observed,
+    previous_games=None,
 ):
     """Pick the most recent matchup week with recorded locks (current first)
     and audit it; falls back to the current week when nothing is locked yet."""
@@ -103,7 +112,15 @@ def _film_review(
                 (record.get("schedule_week"), hb, record.get("locks") or {})
             )
     key, week, locks = next((c for c in candidates if c[2]), candidates[0])
-    film = weekly_film(observed, rows, active_slots(team), locks, week, weights)
+    film = weekly_film(
+        observed,
+        rows,
+        active_slots(team),
+        locks,
+        week,
+        weights,
+        previous_games=previous_games,
+    )
     film["week"] = {"key": key, "start": week[0], "end": week[1]}
     return film
 
@@ -217,6 +234,7 @@ def build_dashboard(
     results = []
     alerts = list(getattr(provider, "alerts", []))
     decision_cache = {}
+    baseline_projection_cache = {}
     fallback = getattr(provider, "priors", None)
     if mode == "live" and hasattr(provider, "lineup_history"):
         fallback = provider.lineup_history()
@@ -542,6 +560,10 @@ def build_dashboard(
                 cfg,
                 reference,
             )
+            baseline_projection_cache[projection_key] = {
+                pid: profile.get("projected_fp")
+                for pid, profile in projection_cache[projection_key].items()
+            }
             if not getattr(provider, "stats_error", None):
                 tile_cache[projection_key] = apply_opponent_model(
                     rows,
@@ -557,13 +579,18 @@ def build_dashboard(
         tile_map = tile_cache.get(projection_key) or {}
         for row in rows:
             pid = str(row.get("player_id") or "")
-            baseline = (profiles.get(pid) or {}).get("projected_fp")
+            baseline = baseline_projection_cache[projection_key].get(pid)
             for game in row.get("week_games") or []:
                 if game.get("status") not in ("pre_game", "scheduled"):
                     continue
                 value = tile_map.get((pid, str(game["date"])), baseline)
                 if isinstance(value, (int, float)) and math.isfinite(value):
                     game["proj_fp"] = round(float(value), 1)
+                    game["projection_source"] = (
+                        "opponent_ridge"
+                        if (pid, str(game["date"])) in tile_map
+                        else "historical_baseline"
+                    )
         # Upgrade decided rows to opponent-aware per-game probabilities; the B0
         # result stands whenever no ridge tile exists for the remaining games.
         for row in rows:
@@ -616,6 +643,41 @@ def build_dashboard(
                     reason=redone.get("reason", row.get("reason")),
                     decision_model="opponent_ridge",
                 )
+        # Export the means actually used by Lock/Wait, not the separate profile
+        # projection (which can have a different historical window).
+        for row in rows:
+            if row.get("decision") not in ("LOCK", "WAIT"):
+                continue
+            row.setdefault("decision_model", "historical_baseline")
+            remaining = row.get("remaining_games_est") or 0
+            future = sorted(
+                (
+                    g
+                    for g in row.get("week_games") or []
+                    if g.get("status") in ("pre_game", "scheduled")
+                    and str(g["date"]) > str(row.get("last_game_date") or "")
+                ),
+                key=lambda g: g["date"],
+            )[:remaining]
+            inputs = []
+            for i in range(remaining):
+                game = future[i] if i < len(future) else {}
+                value = (
+                    tile_map.get((str(row.get("player_id")), str(game.get("date"))))
+                    if row.get("decision_model") == "opponent_ridge"
+                    else None
+                )
+                adjusted = isinstance(value, (int, float)) and math.isfinite(value)
+                inputs.append(
+                    dict(
+                        date=game.get("date"),
+                        opponent=game.get("opponent"),
+                        home=game.get("home"),
+                        projected_fp=value if adjusted else row.get("fp_mean_recent"),
+                        source="opponent_ridge" if adjusted else "historical_baseline",
+                    )
+                )
+            row["decision_games"] = inputs
         from projections import forecast_profile
 
         for row in rows:
@@ -736,6 +798,7 @@ def build_dashboard(
                 rows,
                 weights,
                 observed,
+                previous_games=fallback,
             )
             if mode == "live"
             else None

@@ -241,6 +241,16 @@ records are deduplicated. The game being judged and later results never enter
 its baseline. This descriptive benchmark is distinct from the recency-weighted
 model forecast.
 
+When fewer than ten current-season games precede a performance, verified saved
+prior-season history fills the window. The ledger labels the current/prior game
+counts; older games provide benchmark context only and never enter the week's
+scores. Duplicate historical records are resolved before blending. The same
+three-game minimum applies to the combined history. Missing benchmarks show
+their insufficient sample explicitly. If the whole week has no benchmarks,
+the daily chart switches to clearly labeled observed FP averages rather than
+empty deviation bars. It never substitutes future results or a current forecast
+for a historical benchmark.
+
 **Choke artist** selects the largest negative deviation among games whose date,
 player, and observed score match a recorded lock. Bench performances cannot
 create a banked-score shortfall. The optional **Final loss margin** input is

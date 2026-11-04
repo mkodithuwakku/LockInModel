@@ -374,6 +374,52 @@ def test_new_comparison_and_film_fields_survive_public_export_without_private_da
     assert "PRIVATE" not in str(out)
 
 
+def test_opening_week_film_uses_deduplicated_prior_history_without_future_leakage():
+    from season_review import weekly_film
+
+    previous = pd.DataFrame(
+        [
+            _film_game("1", "Locker", "2026-04-10", 20, "old1"),
+            _film_game("1", "Locker", "2026-04-11", 30, "old2"),
+            _film_game("1", "Locker", "2026-04-12", 40, "old3"),
+            _film_game("1", "Locker", "2026-04-12", 50, "old3"),
+            # A contaminated history source cannot contribute current/future games.
+            _film_game("1", "Locker", "2026-10-25", 900, "future"),
+        ]
+    )
+    film = weekly_film(
+        _film_games(),
+        _film_rows(),
+        ["PG"],
+        _film_lock(),
+        ["2026-10-20", "2026-10-26"],
+        {"PTS": 2},
+        previous_games=previous,
+    )
+    first = next(
+        p
+        for p in film["performances"]
+        if p["player_id"] == "1" and p["date"] == "2026-10-21"
+    )
+    assert first["baseline_fp"] == 66.67
+    assert first["baseline_current_season_games"] == 0
+    assert first["baseline_prior_season_games"] == first["baseline_games"] == 3
+    assert first["delta"] == round(first["fp"] - 200 / 3, 2)
+    later = next(
+        p
+        for p in film["performances"]
+        if p["player_id"] == "1" and p["date"] != "2026-10-21"
+    )
+    assert later["baseline_current_season_games"] == 1
+    assert later["baseline_prior_season_games"] == 3
+    rookie = next(p for p in film["performances"] if p["player_id"] == "2")
+    assert rookie["baseline_fp"] is None and rookie["delta"] is None
+    assert rookie["baseline_prior_season_games"] == 0
+    assert (
+        len(film["performances"]) == 3
+    )  # Old games supply context, not weekly scores.
+
+
 def test_season_tape_components_context_and_prior_only_baselines():
     frame = games(12).assign(MATCHUP="BOS vs. NYK", WL="W")
     frame.loc[1, "MATCHUP"] = "BOS @ LAL"

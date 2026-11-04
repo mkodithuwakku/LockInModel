@@ -62,8 +62,19 @@ def test_export_allowlist_and_subpath(tmp_path):
             "opponent": "BOS",
             "home": True,
             "fp": 30,
+            "projection_source": "opponent_ridge",
             "private": "PRIVATE_GAME",
         }
+    ]
+    raw["teams"][0]["results"][0]["decision_games"] = [
+        dict(
+            date="2026-10-15",
+            opponent="BOS",
+            home=True,
+            projected_fp=35,
+            source="opponent_ridge",
+            secret="PRIVATE_INPUT",
+        )
     ]
     out = tmp_path / "site"
     pages.export_site(raw, out)
@@ -76,6 +87,11 @@ def test_export_allowlist_and_subpath(tmp_path):
     assert "ARCHIVED_SECRET" not in json.dumps(exported)
     assert exported["teams"][0]["results"][0]["history"][0]["fp"] == 30
     assert exported["teams"][0]["results"][0]["week_games"][0]["opponent"] == "BOS"
+    assert (
+        exported["teams"][0]["results"][0]["week_games"][0]["projection_source"]
+        == "opponent_ridge"
+    )
+    assert exported["teams"][0]["results"][0]["decision_games"][0]["projected_fp"] == 35
     html = (out / "index.html").read_text()
     assert 'data-hosting="pages"' in html
     assert "/assets/" not in html

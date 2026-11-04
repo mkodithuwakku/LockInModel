@@ -283,7 +283,7 @@ def season_review(
     )
 
 
-def weekly_film(games, rows, slots, locks, week, weights):
+def weekly_film(games, rows, slots, locks, week, weights, previous_games=None):
     """Hindsight audit of one matchup week's recorded lock calls.
 
     Retained total = recorded locked scores + the best legal end-of-week fill
@@ -295,6 +295,7 @@ def weekly_film(games, rows, slots, locks, week, weights):
     predictive claims.
     """
     from lineup import lock_match, optimal_assignment, _pin_index
+    from season_history import blend_seasons
 
     base = dict(
         status="empty",
@@ -339,11 +340,28 @@ def weekly_film(games, rows, slots, locks, week, weights):
     # Only preceding observations enter a game's benchmark, never its result.
     performances = []
     identities = {str(r.get("player_id")): r for r in rows}
+    if previous_games is not None and not previous_games.empty:
+        previous_games = previous_games.copy()
+        previous_games["PLAYER_ID"] = previous_games.PLAYER_ID.astype(str)
+        previous_games = previous_games.drop_duplicates(
+            ["PLAYER_ID"]
+            + (["GAME_ID"] if "GAME_ID" in previous_games else ["GAME_DATE"]),
+            keep="last",
+        )
     for game in scored.itertuples():
         pid = str(game.PLAYER_ID)
         prior = games[
             (games.PLAYER_ID == pid) & (games.GAME_DATE < game.GAME_DATE)
         ].tail(10)
+        current_count, prior_count = len(prior), 0
+        older = (
+            previous_games[previous_games.PLAYER_ID == pid]
+            if previous_games is not None and not previous_games.empty
+            else None
+        )
+        blended = blend_seasons(prior, older, weights, 10, game.GAME_DATE)
+        if blended is not None:
+            prior, current_count, prior_count = blended
         baseline = None
         if len(prior) >= 3:
             try:
@@ -362,6 +380,8 @@ def weekly_film(games, rows, slots, locks, week, weights):
                 fp=round(float(game.FP), 2),
                 baseline_fp=round(baseline, 2) if baseline is not None else None,
                 baseline_games=len(prior),
+                baseline_current_season_games=current_count,
+                baseline_prior_season_games=prior_count,
                 delta=(
                     round(float(game.FP) - baseline, 2)
                     if baseline is not None

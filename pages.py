@@ -147,7 +147,7 @@ def public_report(report):
             item["film_review"]["performances"] = [
                 select(
                     p,
-                    "player_id player date fp baseline_fp baseline_games delta pts reb ast tov".split(),
+                    "player_id player date fp baseline_fp baseline_games baseline_current_season_games baseline_prior_season_games delta pts reb ast tov".split(),
                 )
                 for p in film.get("performances", [])
             ]
@@ -195,9 +195,25 @@ def public_report(report):
                 for badge in player.get("daily_badges", [])
             ]
             row["week_games"] = [
-                select(g, ["date", "opponent", "home", "status", "fp", "proj_fp"])
+                select(
+                    g,
+                    [
+                        "date",
+                        "opponent",
+                        "home",
+                        "status",
+                        "fp",
+                        "proj_fp",
+                        "projection_source",
+                    ],
+                )
                 for g in player.get("week_games", [])
             ]
+            if "decision_games" in player:
+                row["decision_games"] = [
+                    select(g, "date opponent home projected_fp source".split())
+                    for g in player["decision_games"]
+                ]
             if player.get("projection"):
                 row["projection"] = public_projection(player["projection"])
             elif player.get("projection_note"):

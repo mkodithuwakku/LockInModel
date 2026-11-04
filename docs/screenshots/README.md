@@ -1,18 +1,32 @@
 # README screenshots
 
+## Explicit decision inputs and historical film benchmarks
+
+- `decision-model-desktop.png` / `decision-model-mobile.png`: Devin Booker's
+  November 4, 2026 saved report separates his 50.4 FP historical baseline from
+  the 47.7 / 48.5 / 47.8 FP opponent-adjusted remaining-game inputs. The headline
+  is labeled as the report-day matchup projection.
+- `weekly-film-desktop.png` / `weekly-film-mobile.png`: observed November 2
+  performances, with populated deviations and labeled current/prior-season
+  benchmark counts. Later nights have no observed games yet.
+
+These four captures use observed NBA data with generic team/league names and no
+account photos. They are saved report examples, not current advice. Missing
+cached headshots use initials. Desktop width is 1440px; phone width is 390px.
+Browser checks also cover 320px and 1024px, mixed/baseline decision inputs,
+older reports, zero remaining games, and the no-benchmark chart fallback.
+Earlier player-detail captures below predate the explicit decision-input panel.
+
 ## Expanded team comparison, weekly film, and compact waivers
 
 - `team-comparison-desktop.png` / `team-comparison-mobile.png`: roster-size-aware
   rankings, quality/depth/volume summaries, portrait leaders, pooled box-score
   rates, and the full filterable player leaderboard.
-- `weekly-film-desktop.png` / `weekly-film-mobile.png`: a banked-game shortfall,
-  an entered 8.5 FP loss-margin what-if, visual lock regret, daily deviation bars,
-  and the player performance ledger.
 - `compact-waivers-desktop.png` / `compact-waivers-mobile.png`: compact add
   candidates with roster-player portraits, positive/negative fit values,
   add/drop symbols, and expandable sample/scoring notes.
 
-These six captures use **illustrative statistics and generic teams**, explicitly
+These four comparison/waiver captures use **illustrative statistics and generic teams**, explicitly
 labeled in the UI. Names/headshots identify real NBA players, but fixture
 performances, roster membership, and lock decisions are invented for layout and
 interaction checks. They are not observed NBA results, actual matchup losses,
