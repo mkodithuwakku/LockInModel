@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-05T16:44:19.081Z",
+  "updated_at": "2026-11-05T16:44:25.941Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -9,6 +9,16 @@
     "1415115155703926784": {
       "schedule_week": 3,
       "locks": {
+        "2029": {
+          "player_id": "2029",
+          "player_name": "P.J. Washington",
+          "canonical_name": "p.j. washington",
+          "roster_slot": "SF",
+          "slot_index": 2,
+          "locked_fp": 27,
+          "game_date": "2026-11-04",
+          "locked_at": "2026-11-05T16:44:25.941Z"
+        },
         "2449": {
           "player_id": "2449",
           "player_name": "Dyson Daniels",
