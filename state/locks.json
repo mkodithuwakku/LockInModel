@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-05T16:50:29.523Z",
+  "updated_at": "2026-11-05T16:50:31.285Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -897,6 +897,16 @@
     "1419800258463969280": {
       "schedule_week": 3,
       "locks": {
+        "1054": {
+          "player_id": "1054",
+          "player_name": "Kyrie Irving",
+          "canonical_name": "kyrie irving",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 30,
+          "game_date": "2026-11-04",
+          "locked_at": "2026-11-05T16:50:31.285Z"
+        },
         "1752": {
           "player_id": "1752",
           "player_name": "Lauri Markkanen",
