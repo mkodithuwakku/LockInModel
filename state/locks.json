@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-05T16:44:25.941Z",
+  "updated_at": "2026-11-05T16:45:04.030Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -148,6 +148,16 @@
     "1415801499308580864": {
       "schedule_week": 3,
       "locks": {
+        "1713": {
+          "player_id": "1713",
+          "player_name": "Dejounte Murray",
+          "canonical_name": "dejounte murray",
+          "roster_slot": "G",
+          "slot_index": 2,
+          "locked_fp": 36,
+          "game_date": "2026-11-04",
+          "locked_at": "2026-11-05T16:45:04.030Z"
+        },
         "1913": {
           "player_id": "1913",
           "player_name": "Miles Bridges",
