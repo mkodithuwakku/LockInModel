@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-04T14:36:04.267Z",
+  "updated_at": "2026-11-05T16:44:19.081Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -9,6 +9,16 @@
     "1415115155703926784": {
       "schedule_week": 3,
       "locks": {
+        "2449": {
+          "player_id": "2449",
+          "player_name": "Dyson Daniels",
+          "canonical_name": "dyson daniels",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 26,
+          "game_date": "2026-11-04",
+          "locked_at": "2026-11-05T16:44:19.081Z"
+        },
         "2490": {
           "player_id": "2490",
           "player_name": "Karlo Matković",
