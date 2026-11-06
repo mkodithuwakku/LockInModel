@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-06T17:05:02.585Z",
+  "updated_at": "2026-11-06T17:06:02.091Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -167,6 +167,16 @@
           "locked_fp": 36,
           "game_date": "2026-11-04",
           "locked_at": "2026-11-05T16:45:04.030Z"
+        },
+        "1846": {
+          "player_id": "1846",
+          "player_name": "Bam Adebayo",
+          "canonical_name": "bam adebayo",
+          "roster_slot": "F",
+          "slot_index": 5,
+          "locked_fp": 31,
+          "game_date": "2026-11-05",
+          "locked_at": "2026-11-06T17:06:02.091Z"
         },
         "1913": {
           "player_id": "1913",
