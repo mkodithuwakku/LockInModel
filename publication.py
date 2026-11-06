@@ -3,6 +3,7 @@
 import argparse
 import datetime as dt
 import fcntl
+import json
 import os
 from pathlib import Path
 import plistlib
@@ -19,7 +20,7 @@ from zoneinfo import ZoneInfo
 import requests
 
 from pages import export_site, refresh_report
-from storage import ROOT, load_cfg, read_json, write_json
+from storage import ROOT, load_cfg, read_json, save_locks, write_json
 
 LABEL = "com.lockin.publish"
 LEDGER = ROOT / "state/publication.json"
@@ -221,11 +222,26 @@ def sync_remote_locks(config):
             return
         merged = git("merge", "--ff-only", "FETCH_HEAD", check=False)
         if merged.returncode:
-            print(
-                dt.datetime.now(UTC).isoformat(),
-                "Main could not fast-forward; publishing local lock state.",
-                file=sys.stderr,
-            )
+            # A dirty or diverged local file would otherwise freeze the sync
+            # forever; the phone bridge copy on main is authoritative.
+            shown = git("show", "FETCH_HEAD:state/locks.json", check=False)
+            try:
+                doc = json.loads(shown.stdout) if shown.returncode == 0 else None
+            except ValueError:
+                doc = None
+            if isinstance(doc, dict):
+                save_locks(doc)
+                print(
+                    dt.datetime.now(UTC).isoformat(),
+                    "Main could not fast-forward; remote locks applied without merge.",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    dt.datetime.now(UTC).isoformat(),
+                    "Main could not fast-forward; publishing local lock state.",
+                    file=sys.stderr,
+                )
     except Exception as exc:
         print(
             dt.datetime.now(UTC).isoformat(),

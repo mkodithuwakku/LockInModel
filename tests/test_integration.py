@@ -51,6 +51,10 @@ def test_incomplete_scoring_never_recommends_lock():
     assert report["alerts"]
 
 
+@pytest.mark.skipif(
+    not (ROOT / "data/fixtures/2025-26/manifest.json").exists(),
+    reason="Capture the historical dataset first",
+)
 @pytest.mark.parametrize("adjusted", [False, True])
 def test_decision_inputs_export_actual_means_and_label_partial_fallback(
     monkeypatch, adjusted

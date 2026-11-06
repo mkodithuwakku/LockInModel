@@ -2,6 +2,9 @@ name: Offline tests
 on:
   push:
     branches: [main]
+    # Phone lock sync commits only update this file; a full test run per
+    # toggle is noise and cannot validate lock payloads anyway.
+    paths-ignore: ["state/locks.json"]
   pull_request:
 jobs:
   test:
