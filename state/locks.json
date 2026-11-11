@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-11T18:11:33.947Z",
+  "updated_at": "2026-11-11T18:12:02.301Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -511,6 +511,16 @@
     "1417002266736513024": {
       "schedule_week": 4,
       "locks": {
+        "1648": {
+          "player_id": "1648",
+          "player_name": "Devin Booker",
+          "canonical_name": "devin booker",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 30.93,
+          "game_date": "2026-11-10",
+          "locked_at": "2026-11-11T18:12:02.301Z"
+        },
         "1959": {
           "player_id": "1959",
           "player_name": "Grayson Allen",
