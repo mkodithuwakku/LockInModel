@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-11T18:06:11.639Z",
+  "updated_at": "2026-11-11T18:11:22.583Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -509,8 +509,19 @@
       }
     },
     "1417002266736513024": {
-      "schedule_week": 3,
-      "locks": {},
+      "schedule_week": 4,
+      "locks": {
+        "1959": {
+          "player_id": "1959",
+          "player_name": "Grayson Allen",
+          "canonical_name": "grayson allen",
+          "roster_slot": "SG",
+          "slot_index": 2,
+          "locked_fp": 52.55,
+          "game_date": "2026-11-09",
+          "locked_at": "2026-11-11T18:11:22.583Z"
+        }
+      },
       "history": {
         "1": {
           "schedule_week": 1,
