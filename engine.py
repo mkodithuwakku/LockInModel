@@ -16,7 +16,7 @@ from providers import FixtureProvider, LiveProvider
 from fetch_data import canonical_name, parse_dates, get_week_bounds, player_directory
 from decide import per_player_week_decision, apply_roster_lock_context
 from pickups import find_pickups, available_players, suggest_swap
-from scoring import apply_scoring_policy, effective_weights
+from scoring import apply_scoring_policy
 from transport import DataUnavailable
 from lineup import (
     active_slots,
@@ -297,14 +297,15 @@ def build_dashboard(
         if mode == "live" and team.get("league_status", "in_season") != "in_season":
             results.extend(roster_dashboard(dict(cfg, teams=[team]))["teams"])
             continue
-        weights = team.get("weights") or cfg["weights"]
+        # Keep the league's true weights; add_fantasy_points approximates
+        # unobserved splits/fouls per row rather than mutating them globally.
+        weights = dict(team.get("weights") or cfg["weights"])
         rows = []
         team_locks = (
             locks_for_league(locks_doc, team.get("league_id"), week_key)
             if mode == "live" and team.get("source") == "sleeper"
             else {}
         )
-        weights, _ = effective_weights(observed, weights)
         if team.get("unsupported_scoring"):
             alerts.append(
                 {

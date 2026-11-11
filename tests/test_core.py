@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from fetch_data import normalize_stats_for_scoring, estimate_remaining_games_this_week
-from scoring import add_fantasy_points
+from scoring import add_fantasy_points, effective_weights
 from decide import per_player_week_decision
 from storage import load_cfg
 from transport import DataUnavailable
@@ -249,10 +249,29 @@ def test_rebound_split_and_missing_foul_policy():
     assert add_fantasy_points(raw.drop(columns="DREB"), weights).FP.iloc[
         0
     ] == pytest.approx(13.15)
+    # Unobserved split cells (Sleeper-sourced rows) use the same even split,
+    # and an unreported foul column drops its penalty instead of zero-filling.
+    unobserved = raw.assign(OREB=np.nan, DREB=np.nan, PF=np.nan)
+    assert add_fantasy_points(unobserved, weights).FP.iloc[0] == pytest.approx(13.75)
     assert (
         add_fantasy_points(raw.drop(columns=["OREB", "DREB"]), {"OREB": 1}).FP.iloc[0]
         == 5
     )
+
+
+def test_mixed_source_rows_score_exact_or_approximated_per_row():
+    frame = pd.DataFrame(
+        [
+            dict(REB=10, OREB=4, DREB=6, PF=3),
+            dict(REB=10, OREB=np.nan, DREB=np.nan, PF=np.nan),
+        ]
+    )
+    weights = {"REB": 1.0, "OREB": 0.5, "DREB": 0.25, "PF": -0.2}
+    assert add_fantasy_points(frame, weights).FP.tolist() == pytest.approx(
+        [12.9, 13.75]
+    )
+    _, notes = effective_weights(frame, weights)
+    assert len(notes) == 2
 
 
 def test_milestone_requires_its_actual_stat():

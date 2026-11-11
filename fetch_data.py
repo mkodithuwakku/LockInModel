@@ -7,7 +7,6 @@ import unicodedata
 import numpy as np
 import pandas as pd
 from nba_api.stats.endpoints import (
-    playergamelog,
     playercareerstats,
     playernextngames,
     playergamelogs,
@@ -107,18 +106,8 @@ def parse_dates(df):
     out["GAME_DATE"] = pd.to_datetime(out["GAME_DATE"], errors="coerce", format="mixed")
     if out["GAME_DATE"].isna().any():
         raise DataUnavailable("Game data contains invalid dates.")
+    out.attrs = dict(df.attrs)
     return out.sort_values("GAME_DATE")
-
-
-def get_player_logs(player_id, season=None, last_n_days=60, reference=None):
-    ep = playergamelog.PlayerGameLog(
-        player_id=player_id,
-        season=season or _season_for_today(reference),
-        season_type_all_star="Regular Season",
-        get_request=False,
-    )
-    frame = endpoint_frame(ep)
-    return last_days(parse_dates(frame), last_n_days, reference)
 
 
 def get_week_bounds(reference=None):
@@ -161,7 +150,8 @@ def normalize_stats_for_scoring(df):
             "Box scores missing required stats: " + ", ".join(sorted(missing))
         )
     out.attrs["imputed_stats"] = list(
-        set(out.attrs.get("imputed_stats", [])) | (set(STAT_MAP) - set(out.columns))
+        set(out.attrs.get("imputed_stats", []))
+        | ((set(STAT_MAP) | {"OREB", "DREB", "PF", "PLUS_MINUS"}) - set(out.columns))
     )
     for field in STAT_MAP:
         if field not in out:

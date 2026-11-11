@@ -220,3 +220,113 @@ def test_daily_lineup_is_pregame_even_in_night_replay():
         ]["status"]
         == "unavailable"
     )
+
+
+def test_live_provider_degrades_to_sleeper_on_stats_failure(monkeypatch, tmp_path):
+    from providers import LiveProvider
+    from test_schedule import calendar
+    from test_game_store import games
+
+    monkeypatch.setattr("game_store.ROOT", tmp_path)
+    monkeypatch.setattr("schedule.SeasonSchedule", lambda *_: calendar())
+
+    calls = []
+
+    def fail(*_):
+        calls.append(1)
+        raise DataUnavailable("stats.nba.com request failed (ReadTimeout).")
+
+    monkeypatch.setattr("providers.bulk_player_logs", fail)
+    frame = games().assign(
+        PLAYER_ID="1630178",
+        PLAYER_NAME="Tyrese Maxey",
+        TEAM_ABBREVIATION="PHI",
+        MIN=30,
+        SOURCE="Sleeper / Sportradar",
+    )
+    monkeypatch.setattr("sleeper_stats.completed_logs", lambda *_: frame)
+    provider = LiveProvider(dt.date(2026, 10, 22))
+    assert provider.stats_error is None and not provider.alerts
+    assert provider.games.SOURCE.tolist() == ["Sleeper / Sportradar"]
+    assert provider.manifest["source"].startswith("Sleeper")
+    # One failed request, one fallback; no retry loop against a tarpitted host.
+    assert len(calls) == 1
+
+
+def test_live_provider_degrades_to_sleeper_on_timeout(monkeypatch, tmp_path):
+    from providers import LiveProvider
+    from test_schedule import calendar
+    from test_game_store import games
+
+    monkeypatch.setattr("game_store.ROOT", tmp_path)
+    monkeypatch.setattr("schedule.SeasonSchedule", lambda *_: calendar())
+
+    def hang(*_):
+        raise TimeoutError("read timed out")
+
+    monkeypatch.setattr("providers.bulk_player_logs", hang)
+    frame = games().assign(
+        PLAYER_ID="1630178",
+        PLAYER_NAME="Tyrese Maxey",
+        TEAM_ABBREVIATION="PHI",
+        MIN=30,
+        SOURCE="Sleeper / Sportradar",
+    )
+    monkeypatch.setattr("sleeper_stats.completed_logs", lambda *_: frame)
+    provider = LiveProvider(dt.date(2026, 10, 22))
+    assert provider.stats_error is None
+    assert provider.games.SOURCE.tolist() == ["Sleeper / Sportradar"]
+
+
+def test_live_provider_records_stats_error_when_everything_fails(monkeypatch, tmp_path):
+    from providers import LiveProvider
+    from test_schedule import calendar
+
+    monkeypatch.setattr("game_store.ROOT", tmp_path)
+    monkeypatch.setattr("schedule.SeasonSchedule", lambda *_: calendar())
+
+    def fail(*_):
+        raise DataUnavailable("NBA offline")
+
+    def fallback_fail(*_):
+        raise DataUnavailable("Sleeper offline")
+
+    monkeypatch.setattr("providers.bulk_player_logs", fail)
+    monkeypatch.setattr("sleeper_stats.completed_logs", fallback_fail)
+    provider = LiveProvider(dt.date(2026, 10, 22))
+    assert provider.stats_error and "NBA offline" in provider.stats_error
+    assert provider.alerts
+
+
+def test_live_provider_never_fetches_sleeper_when_stats_succeed(monkeypatch, tmp_path):
+    from providers import LiveProvider
+    from test_schedule import calendar
+    from test_game_store import games
+
+    monkeypatch.setattr("game_store.ROOT", tmp_path)
+    monkeypatch.setattr("schedule.SeasonSchedule", lambda *_: calendar())
+    monkeypatch.setattr("providers.bulk_player_logs", lambda *_: games())
+    monkeypatch.setattr(
+        "sleeper_stats.completed_logs",
+        lambda *_: pytest.fail("Stats succeeded; no Sleeper fetch allowed"),
+    )
+    provider = LiveProvider(dt.date(2026, 10, 22))
+    assert provider.stats_error is None and not provider.games.empty
+
+
+def test_daily_refresh_uses_one_bulk_stats_request(monkeypatch, tmp_path):
+    from providers import LiveProvider
+    from test_schedule import calendar
+    from test_game_store import games
+
+    monkeypatch.setattr("game_store.ROOT", tmp_path)
+    monkeypatch.setattr("schedule.SeasonSchedule", lambda *_: calendar())
+    calls = []
+
+    def spy(endpoint, name=None, ttl=3600):
+        calls.append(endpoint.endpoint)
+        return games()
+
+    monkeypatch.setattr("fetch_data.endpoint_frame", spy)
+    LiveProvider(dt.date(2026, 10, 22))
+    assert calls == ["playergamelogs"]

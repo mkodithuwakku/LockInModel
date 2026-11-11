@@ -44,10 +44,32 @@ def test_sparse_final_stats_are_observations_not_totals_or_forecasts():
     frame = parse_games(rows, games, "2026", {})
     assert len(frame) == 2 and frame.PTS.tolist() == [10, 12]
     assert frame.WL.tolist() == ["L", "W"]
-    assert frame.FG3M.tolist() == [0, 0]
-    assert frame.FG3A.tolist() == [0, 0]
+    # Counters the feed never sent stay missing; they must not read as zeros.
+    assert "FG3M" not in frame and "OREB" not in frame and "DREB" not in frame
+    imputed = set(frame.attrs["imputed_stats"])
+    assert {"OREB", "DREB", "PF", "PLUS_MINUS", "FG3M"} <= imputed
+    assert "PTS" not in imputed and "MIN" not in frame.attrs["imputed_stats"]
     assert frame.SOURCE.unique().tolist() == ["Sleeper / Sportradar"]
     assert frame.PLAYER_ID.tolist() == ["sleeper:0", "sleeper:1"]
+
+
+def test_counters_reported_anywhere_are_observed_and_zero_elsewhere():
+    rows, games = fixture()
+    rows[0]["stats"].update(reb=9, oreb=3)
+    frame = parse_games(rows, games, "2026", {})
+    # `oreb` appears once, so the feed reports it; a sparse omission means zero.
+    assert frame.REB.tolist() == [9, 0] and frame.OREB.tolist() == [3, 0]
+    assert "OREB" not in frame.attrs["imputed_stats"]
+    assert {"DREB", "PF", "PLUS_MINUS"} <= set(frame.attrs["imputed_stats"])
+
+
+def test_final_stats_without_points_cannot_reconcile():
+    rows, games = fixture()
+    for row in rows:
+        row["stats"].pop("pts")
+        row["stats"]["reb"] = 5
+    with pytest.raises(DataUnavailable):
+        parse_games(rows, games, "2026", {})
 
 
 @pytest.mark.parametrize(

@@ -207,23 +207,34 @@ def project_players(games, fallback, weights, cfg, reference):
                     "DREB",
                     "PF",
                 ):
-                    if (
-                        stat not in window
-                        or stat in window.attrs.get("imputed_stats", [])
-                        or window[stat].isna().any()
+                    if stat not in window or stat in window.attrs.get(
+                        "imputed_stats", []
                     ):
                         continue
+                    # Mixed-source windows keep the games that report a stat;
+                    # only a fully unobserved stat drops from the projection.
+                    valid = window[stat].notna()
+                    if not valid.any():
+                        continue
+                    weight_factors = [f for f, keep in zip(factors, valid) if keep]
                     value_stat = sum(
-                        float(v) * f for v, f in zip(window[stat], factors)
-                    ) / sum(factors)
+                        float(v) * f
+                        for v, f in zip(window.loc[valid, stat], weight_factors)
+                    ) / sum(weight_factors)
                     prior_weight = (
                         dcfg.get("prior_weight_games", 12) if prior is not None else 0
                     )
                     if prior_weight:
-                        value_stat = (
-                            len(window) * value_stat
-                            + prior_weight * float(older[stat].mean())
-                        ) / (len(window) + prior_weight)
+                        older_observed = (
+                            older[stat].dropna()
+                            if stat in older
+                            else pd.Series(dtype=float)
+                        )
+                        if not older_observed.empty:
+                            value_stat = (
+                                valid.sum() * value_stat
+                                + prior_weight * float(older_observed.mean())
+                            ) / (valid.sum() + prior_weight)
                     if math.isfinite(value_stat):
                         stats[stat] = round(value_stat, 2)
                 profiles[pid] = {
@@ -359,6 +370,13 @@ def apply_opponent_model(
                         )
                     ]
                 )
+                # Stats absent from the projection (e.g. splits/fouls the source
+                # never reported) read as unobserved, not as missing columns.
+                scored.attrs["imputed_stats"] = [
+                    stat
+                    for stat in ("OREB", "DREB", "PF", "PLUS_MINUS")
+                    if stat not in scored
+                ]
                 value = float(add_fantasy_points(scored, weights).FP.iloc[0])
                 if not math.isfinite(value):
                     continue

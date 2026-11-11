@@ -56,6 +56,7 @@ def migrate(src, dest):
             "dim_players",
             "fact_game_logs",
             "dim_refreshes",
+            "dim_source_stats",
         }
         # Auxiliary stores sharing the file (forecast_snapshots, badge_* and any
         # future tables) are not normalized; carry them over verbatim instead

@@ -383,3 +383,30 @@ def test_refresh_drains_legacy_rows_into_fact_table(tmp_path):
         force=True,
     )
     assert result.GAME_ID.tolist() == ["0022600001", "0022600002"]
+
+
+def test_sleeper_rows_keep_unreported_counters_missing_not_zero(tmp_path):
+    store = GameStore(tmp_path / "games.sqlite3")
+    sleeper = games().assign(SOURCE="Sleeper / Sportradar")
+    store.refresh("2026-27", lambda _: sleeper, "2026-10-21")
+    frame = store.read("2026-27")
+    imputed = set(frame.attrs["imputed_stats"])
+    assert {"OREB", "DREB", "PF", "PLUS_MINUS"} <= imputed
+    assert frame.OREB.isna().all() and frame.DREB.isna().all() and frame.PF.isna().all()
+    assert frame.PTS.tolist() == [20]
+
+
+def test_mixed_source_season_keeps_real_values_and_blanks_unobserved(tmp_path):
+    store = GameStore(tmp_path / "games.sqlite3")
+    store.refresh(
+        "2026-27", lambda _: games().assign(OREB=1, DREB=4, PF=2), "2026-10-21"
+    )
+    sleeper = games("2026-10-21", "0022600002").assign(SOURCE="Sleeper / Sportradar")
+    store.refresh("2026-27", lambda _: sleeper, "2026-10-22")
+    frame = store.read("2026-27")
+    assert frame.OREB.tolist()[0] == 1
+    assert pd.isna(frame.iloc[1].OREB) and pd.isna(frame.iloc[1].DREB)
+    # A partially observed column keeps its real values; only fully absent
+    # counters register as imputed.
+    assert "OREB" not in frame.attrs["imputed_stats"]
+    assert "PLUS_MINUS" in frame.attrs["imputed_stats"]

@@ -3,6 +3,7 @@ import datetime as dt
 import itertools
 import random
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -31,7 +32,7 @@ def row(name="A", positions=None, **kwargs):
         week_games=[
             {"date": DATE, "status": "pre_game", "opponent": "BOS", "home": True}
         ],
-        **kwargs
+        **kwargs,
     )
 
 
@@ -399,3 +400,86 @@ def test_blended_components_omit_unavailable_provider_splits():
         and "OREB" not in result["projected_stats"]
     )
     assert result["scoring_notes"]
+
+
+def mixed_history(dates):
+    """NBA rows carry real splits; Sleeper-sourced rows leave them unobserved."""
+    return logs([20, 30, 25, 28, 26, 24], dates).assign(
+        OREB=[2, 4, 3, np.nan, np.nan, np.nan],
+        DREB=[10, 12, 9, np.nan, np.nan, np.nan],
+        PF=[3, 2, 4, np.nan, np.nan, np.nan],
+        MIN=30,
+    )
+
+
+SPLIT_WEIGHTS = {"PTS": 1.0, "REB": 1.0, "OREB": 0.5, "DREB": 0.25, "PF": -0.2}
+
+
+def test_projected_stats_average_only_observed_split_rows():
+    history = mixed_history(
+        [
+            "2026-10-10",
+            "2026-10-12",
+            "2026-10-14",
+            "2026-10-16",
+            "2026-10-18",
+            "2026-10-20",
+        ]
+    )
+    profile = project_players(history, None, SPLIT_WEIGHTS, projection_cfg(), DATE)["A"]
+    stats = profile["projected_stats"]
+    assert stats["OREB"] == 3.0 and stats["DREB"] == pytest.approx(10.33)
+    assert stats["PF"] == 3.0 and np.isfinite(profile["projected_fp"])
+    assert any("Rebound splits" in note for note in profile["scoring_notes"])
+
+
+def test_projected_stats_drop_only_fully_unobserved_splits():
+    history = logs([20, 30]).assign(OREB=np.nan, DREB=np.nan, PF=np.nan, MIN=30)
+    profile = project_players(history, None, SPLIT_WEIGHTS, projection_cfg(), DATE)["A"]
+    stats = profile["projected_stats"]
+    assert "OREB" not in stats and "DREB" not in stats and "PF" not in stats
+    assert np.isfinite(profile["projected_fp"])
+    assert any("Rebound splits" in note for note in profile["scoring_notes"])
+
+
+def league_games(days=12):
+    from test_features import player_row
+
+    rows = []
+    for i in range(days):
+        date = f"2026-10-{1 + i:02d}"
+        rows += [
+            player_row(f"g{i}", "A", date, "AAA", "AAA @ BBB", pts=15 + i, min_=32.0),
+            player_row(f"g{i}", "B", date, "AAA", "AAA @ BBB", pts=8, min_=20.0),
+            player_row(f"g{i}", "C", date, "BBB", "BBB vs. AAA", pts=12, min_=30.0),
+            player_row(f"g{i}", "D", date, "BBB", "BBB vs. AAA", pts=10, min_=24.0),
+        ]
+    return pd.DataFrame(rows)
+
+
+def test_opponent_model_rescores_mixed_and_sleeper_only_histories():
+    from lineup import apply_opponent_model
+
+    model_cfg = {"model": {"min_train_rows": 10, "min_player_games": 3}}
+    roster = [row("A", nba_team="AAA")]
+    league = league_games()
+    dates = league[league.PLAYER_ID == "A"].GAME_DATE.astype(str).tolist()[:6]
+
+    for splits in ("mixed", "sleeper_only"):
+        history = mixed_history(dates)
+        if splits == "sleeper_only":
+            history = history.assign(OREB=np.nan, DREB=np.nan, PF=np.nan)
+        profiles = project_players(history, None, SPLIT_WEIGHTS, projection_cfg(), DATE)
+        tiles = apply_opponent_model(
+            roster,
+            profiles,
+            league,
+            {},
+            SPLIT_WEIGHTS,
+            model_cfg,
+            DATE,
+            min_games=3,
+        )
+        assert tiles and all(np.isfinite(v) for v in tiles.values())
+        assert profiles["A"]["projection_source"] == "opponent_ridge"
+        assert np.isfinite(profiles["A"]["projected_fp"])

@@ -116,7 +116,9 @@ class LiveProvider:
                         raise DataUnavailable(
                             "NBA Stats has not supplied all recent final games yet."
                         )
-            except DataUnavailable as exc:
+            except (DataUnavailable, TimeoutError) as exc:
+                # Any stats.nba.com outage degrades to reconciled Sleeper finals;
+                # a Sleeper-sourced refresh is successful, not a partial report.
                 if self.calendar:
                     try:
                         from sleeper_stats import completed_logs
@@ -128,7 +130,7 @@ class LiveProvider:
                             "Sleeper / Sportradar final box scores; Sleeper schedule"
                         )
                         return
-                    except DataUnavailable as fallback_error:
+                    except (DataUnavailable, TimeoutError) as fallback_error:
                         exc = DataUnavailable(str(exc) + " " + str(fallback_error))
                 self.stats_error = str(exc)
                 from game_store import GameStore

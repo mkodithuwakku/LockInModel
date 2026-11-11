@@ -41,14 +41,14 @@ def team_game_table(games):
     single-game approximation. Pace is possessions scaled to 48 minutes of team
     playing time: 48 * poss / (team_minutes / 5).
     """
-    stats = ["PTS", *COMPONENTS[1:], *POSS_TERMS, "MIN"]
-    missing = [s for s in stats if s not in games]
-    if missing:
-        # Approximation: unavailable counting stats contribute zero so minimal
-        # frames still produce consistent (if underestimated) possessions.
-        games = games.copy()
-        for s in missing:
+    stats = list(dict.fromkeys(["PTS", *COMPONENTS[1:], *POSS_TERMS, "MIN"]))
+    # Approximation: counting stats a source never observed contribute zero so
+    # minimal frames still produce consistent (if underestimated) possessions.
+    games = games.copy()
+    for s in stats:
+        if s not in games:
             games[s] = 0.0
+    games[stats] = games[stats].fillna(0.0)
     tg = (
         games.groupby(["GAME_ID", "TEAM_ABBREVIATION"], sort=False)
         .agg(GAME_DATE=("GAME_DATE", "first"), **{s: (s, "sum") for s in stats})

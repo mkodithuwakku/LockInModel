@@ -15,11 +15,16 @@ from storage import ROOT, read_json
 from transport import HTTP, DataUnavailable
 
 
+# Sportradar counters Sleeper may send, plus three-point attempts under `tpa`.
+STAT_KEYS = dict(STATS, tpa="FG3A")
+
+
 def parse_games(payload, games, season, directory):
     if not isinstance(payload, list):
         raise DataUnavailable("Sleeper game stats returned an invalid response.")
     identities = player_directory()
-    rows = {}
+    accepted = []
+    reported = set()
     for record in payload:
         if not isinstance(record, dict):
             continue
@@ -41,11 +46,8 @@ def parse_games(payload, games, season, directory):
             minutes = float(raw["sp"]) / 60
             if not math.isfinite(minutes) or minutes <= 0:
                 continue  # DNPs are not zero-point performances.
-            stats = {
-                name: float(raw.get(key, 0))
-                for key, name in dict(STATS, tpa="FG3A").items()
-            }
-            if not all(math.isfinite(v) and v >= 0 for v in stats.values()):
+            observed = {key: float(raw[key]) for key in set(raw) & set(STAT_KEYS)}
+            if not all(math.isfinite(v) and v >= 0 for v in observed.values()):
                 raise ValueError("Invalid counters")
             metadata = directory.get(sid) or record.get("player") or {}
             name = (
@@ -57,23 +59,32 @@ def parse_games(payload, games, season, directory):
             team = record.get("team")
             if not name or team not in (game["home"], game["away"]):
                 raise ValueError("Invalid player/team identity")
-            opponent = game["away"] if team == game["home"] else game["home"]
-            pid = str(identities.get(canonical_name(name), "sleeper:" + sid))
-            rows[(game["game_id"], pid)] = dict(
-                GAME_ID=game["game_id"],
-                PLAYER_ID=pid,
-                PLAYER_NAME=name,
-                GAME_DATE=game["date"],
-                TEAM_ABBREVIATION=team,
-                MATCHUP=team + (" vs. " if team == game["home"] else " @ ") + opponent,
-                MIN=minutes,
-                SOURCE="Sleeper / Sportradar",
-                **stats,
-            )
+            reported |= set(observed)
+            accepted.append((game, sid, raw, minutes, name, team))
         except (KeyError, TypeError, ValueError) as exc:
             raise DataUnavailable(
                 "Sleeper final box score contains invalid values."
             ) from exc
+    if accepted and "pts" not in reported:
+        raise DataUnavailable("Sleeper box scores do not report points.")
+    # Counters absent from every record are unreported by this feed, not zeros.
+    mapping = {key: name for key, name in STAT_KEYS.items() if key in reported}
+    rows = {}
+    for game, sid, raw, minutes, name, team in accepted:
+        stats = {name: float(raw.get(key, 0)) for key, name in mapping.items()}
+        opponent = game["away"] if team == game["home"] else game["home"]
+        pid = str(identities.get(canonical_name(name), "sleeper:" + sid))
+        rows[(game["game_id"], pid)] = dict(
+            GAME_ID=game["game_id"],
+            PLAYER_ID=pid,
+            PLAYER_NAME=name,
+            GAME_DATE=game["date"],
+            TEAM_ABBREVIATION=team,
+            MATCHUP=team + (" vs. " if team == game["home"] else " @ ") + opponent,
+            MIN=minutes,
+            SOURCE="Sleeper / Sportradar",
+            **stats,
+        )
     for gid, game in games.items():
         for side in ("home", "away"):
             players = [
@@ -98,10 +109,15 @@ def parse_games(payload, games, season, directory):
             row["WL"] = (
                 "W" if (game["home_points"] > game["away_points"]) == home else "L"
             )
-    return pd.DataFrame(
+    frame = pd.DataFrame(
         rows.values(),
         columns=None if rows else ["GAME_DATE", "GAME_ID", "PLAYER_ID", "PLAYER_NAME"],
     )
+    # This feed has no plus/minus; anything else unreported stays missing too.
+    frame.attrs["imputed_stats"] = sorted(
+        (set(STAT_KEYS.values()) - set(mapping.values())) | {"PLUS_MINUS"}
+    )
+    return frame
 
 
 def completed_logs(calendar, reference):

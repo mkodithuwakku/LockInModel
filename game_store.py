@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import sqlite3
 
+import numpy as np
 import pandas as pd
 from storage import ROOT
 from transport import DataUnavailable
@@ -93,7 +94,20 @@ CREATE TABLE IF NOT EXISTS dim_refreshes (
     full_on TEXT NOT NULL,
     fetched_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS dim_source_stats (
+    season TEXT NOT NULL,
+    source TEXT NOT NULL,
+    imputed_stats TEXT NOT NULL DEFAULT '[]',
+    PRIMARY KEY (season, source)
+);
 """
+
+# Rows written before per-source coverage was recorded use the documented feed
+# gaps: Sleeper/Sportradar box scores do not report rebound splits, fouls, or
+# plus/minus, so their stored zeros were never real observations.
+SOURCE_IMPUTED_DEFAULT = {
+    "Sleeper / Sportradar": frozenset({"OREB", "DREB", "PF", "PLUS_MINUS"})
+}
 
 READ_SQL = """
 SELECT
@@ -402,6 +416,13 @@ class GameStore:
         from fetch_data import parse_dates
 
         with self.connect() as db:
+            coverage = {
+                source: set(json.loads(columns))
+                for source, columns in db.execute(
+                    "SELECT source, imputed_stats FROM dim_source_stats WHERE season=?",
+                    (season,),
+                )
+            }
             has_facts = db.execute(
                 "SELECT 1 FROM fact_game_logs WHERE season=? LIMIT 1", (season,)
             ).fetchone()
@@ -414,13 +435,48 @@ class GameStore:
                     return pd.DataFrame(
                         columns=["GAME_ID", "PLAYER_ID", "PLAYER_NAME", "GAME_DATE"]
                     )
-                return parse_dates(pd.DataFrame([json.loads(row[0]) for row in rows]))
+                return self._apply_coverage(
+                    parse_dates(pd.DataFrame([json.loads(row[0]) for row in rows])),
+                    coverage,
+                )
             frame = pd.read_sql_query(READ_SQL, db, params=(season,))
         if frame.empty:
             return pd.DataFrame(
                 columns=["GAME_ID", "PLAYER_ID", "PLAYER_NAME", "GAME_DATE"]
             )
-        return parse_dates(frame)
+        return self._apply_coverage(parse_dates(frame), coverage)
+
+    @staticmethod
+    def _apply_coverage(frame, coverage):
+        """Blank counters a source never reported; stored zeros are placeholders."""
+        from fetch_data import STAT_MAP
+
+        if "SOURCE" not in frame:
+            return frame
+        unobserved = set()
+        sources = frame.SOURCE.fillna("").astype(str)
+        for source in sources.unique():
+            missing = coverage.get(source)
+            if missing is None:
+                missing = SOURCE_IMPUTED_DEFAULT.get(source, ())
+            mask = sources == source
+            for column in missing:
+                # Counting stats keep the store's zero-fill scoring contract;
+                # optional splits/fouls stay missing rather than fake zeros.
+                if column in frame and column not in STAT_MAP:
+                    frame.loc[mask, column] = np.nan
+                unobserved.add(column)
+        # A column registers as imputed only when no observed value survives;
+        # mixed-source frames keep the real values they do have.
+        frame.attrs["imputed_stats"] = sorted(
+            set(frame.attrs.get("imputed_stats", []))
+            | {
+                column
+                for column in unobserved
+                if column not in frame or frame[column].isna().all()
+            }
+        )
+        return frame
 
     def refresh(self, season, fetch, reference, force=False):
         from fetch_data import parse_dates, normalize_stats_for_scoring
@@ -446,14 +502,16 @@ class GameStore:
             )
             frame = parse_dates(fetch(since))
             records = []
+            coverage = []
             if not frame.empty:
                 if not {"GAME_ID", "PLAYER_ID", "PLAYER_NAME"}.issubset(frame):
                     raise DataUnavailable(
                         "Game history is missing stable game/player identities."
                     )
-                normalize_stats_for_scoring(
+                normalized = normalize_stats_for_scoring(
                     frame
                 )  # Validate before committing anything.
+                coverage = sorted(normalized.attrs.get("imputed_stats", []))
                 if frame[["GAME_ID", "PLAYER_ID", "PLAYER_NAME"]].isna().any().any():
                     raise DataUnavailable("Game history contains missing identities.")
                 frame = frame.copy()
@@ -474,6 +532,17 @@ class GameStore:
             with self.connect() as db:
                 self._drain_legacy(db, season)
                 self._ingest(db, records)
+                if records:
+                    sources = (
+                        frame.SOURCE.fillna("").astype(str).unique()
+                        if "SOURCE" in frame
+                        else [""]
+                    )
+                    for source in sources:
+                        db.execute(
+                            "INSERT OR REPLACE INTO dim_source_stats VALUES (?, ?, ?)",
+                            (season, source, json.dumps(coverage)),
+                        )
                 db.execute(
                     "INSERT OR REPLACE INTO dim_refreshes VALUES (?, ?, ?, ?)",
                     (

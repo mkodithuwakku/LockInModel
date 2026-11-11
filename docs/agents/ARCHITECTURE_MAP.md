@@ -17,7 +17,7 @@ This document is a high-density reference for agents navigating the backend, dat
 | `season_history.py` | Blends prior-season games into sparse current-season projections and lock baselines (default 10-game window) | `blend_seasons()` |
 | `lineup.py` | Daily pregame forecasts and Hungarian algorithm optimizer for maximum-weight positional lineup assignment; locked players pin to their synced slot before the solver sees the pool; leftover slots fill with idle roster players as zero-projection off-day placeholders; `apply_opponent_model()` scores every unplayed `week_games` tile with `ComponentRidge` opponent-aware projections (`proj_fp` per tile, `opponent_ridge` profile for today; graceful baseline fallback) | `recommend_lineup()`, `project_players()`, `apply_opponent_model()`, `active_slots()`, `lock_match()`, `locked_score()` |
 | `projections.py` | Validates and parses Sleeper/RotoWire per-game external forecasts; derives Poisson-approximated milestone expectations | `fetch_forecasts()`, `parse_forecasts()`, `forecast_profile()` |
-| `game_store.py` | Local SQLite player-game store; daily overlap upserts (7-day window) and weekly full-season reconciliation; normalized v2 schema with legacy `games` payload fallback | `GameStore`, `fact_game_logs`, `dim_players`, `dim_teams`, `dim_refreshes` tables |
+| `game_store.py` | Local SQLite player-game store; daily overlap upserts (7-day window) and weekly full-season reconciliation; normalized v2 schema with legacy `games` payload fallback | `GameStore`, `fact_game_logs`, `dim_players`, `dim_teams`, `dim_refreshes`, `dim_source_stats` tables |
 | `forecast_store.py` | SQLite pregame forecast snapshots by formula fingerprint, date, and player ID | `ForecastStore`, `formula_key()`, `forecast_snapshots` table |
 | `daily_badges.py` | Computes 15 NBA-wide stat leader badges and 4 league-scored fantasy leader badges for yesterday's games | `previous_night_badges()`, `fantasy_night_badges()` |
 | `badge_awards.py` | Computes 15 single-game stat milestones, 10 contextual awards (streaks, age, outcome, assist-to-turnover margin) | `raw_awards()`, `fantasy_awards()`, `MILESTONES`, `EXTRA_KEYS` |
@@ -25,7 +25,7 @@ This document is a high-density reference for agents navigating the backend, dat
 | `season_review.py` | Aggregates current-roster observed season production, box-score sums, weekly FP/appearance, and key player highlights | `season_review()` |
 | `pickups.py` | Screens unrostered waiver players using 5 recent vs 8–20 baseline games; consistency, sustainability, and roster compatibility; schedule-aware add/drop swap suggestion weighs this week plus a next-week horizon | `find_pickups()`, `analyze_player()`, `available_player_directory()`, `suggest_swap()` |
 | `sleeper.py` | Read-only import of Sleeper leagues, teams, rosters, scoring settings, and ownership metadata | `import_sleeper()`, `fetch_user_leagues()` |
-| `sleeper_stats.py` | Validated Sleeper/Sportradar fallback box scores when NBA Stats fails or misses recent finals | `parse_games()`, `fetch_sleeper_games()` |
+| `sleeper_stats.py` | Validated Sleeper/Sportradar fallback box scores when NBA Stats fails or misses recent finals; unreported counters stay missing via `imputed_stats` | `parse_games()`, `completed_logs()` |
 | `schedule.py` | Full-season regular schedule cache; determines remaining weekly game opportunities | `season_schedule()`, `remaining_games()` |
 | `storage.py` | Loads canonical `config.local.yaml` (falling back to `config.yaml`); atomic JSON and YAML writes; weekly lock-flag document for `state/locks.json` | `load_cfg()`, `save_cfg()`, `write_json()`, `load_locks()`, `save_locks()`, `locks_for_league()`, `apply_lock()` |
 | `simulation.py` | Manages offline Test Week simulator state, phase transitions (morning/night), banked scores, and revisions | `load_test_week()`, `advance_night()`, `bank_score()` |
@@ -60,7 +60,10 @@ SQLite database location: `data/lockin.sqlite3` (managed by `GameStore`, `Foreca
 4. **`dim_refreshes`** (`game_store.py`):
    - Key: `season`
    - Stores: Last successful refresh dates (`refreshed_on`, `full_on`, `fetched_at`).
-5. **`games` / `refreshes`** (legacy v1, `game_store.py`):
+5. **`dim_source_stats`** (`game_store.py`):
+   - Key: `(season, source)`
+   - Stores: JSON list of stat columns the source never reported for that season (`imputed_stats`). `read()` blanks those cells for the source's rows (they read as missing, not zero) and registers fully unobserved columns in `df.attrs["imputed_stats"]`.
+6. **`games` / `refreshes`** (legacy v1, `game_store.py`):
    - JSON `payload` box scores keyed `(season, game_id, player_id)`. Still read when a season has no fact rows; a refresh drains that season into `fact_game_logs`. `scripts/migrate_v2_db.py` bulk-migrates a legacy file.
 6. **`forecast_snapshots`** (`forecast_store.py`):
    - Key: `(formula_key, game_date, player_id)`
