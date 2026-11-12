@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-12T14:53:30.800Z",
+  "updated_at": "2026-11-12T14:53:51.248Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -213,6 +213,16 @@
           "locked_fp": 32,
           "game_date": "2026-11-09",
           "locked_at": "2026-11-11T18:05:58.719Z"
+        },
+        "2275": {
+          "player_id": "2275",
+          "player_name": "Day'Ron Sharpe",
+          "canonical_name": "day'ron sharpe",
+          "roster_slot": "UTIL",
+          "slot_index": 8,
+          "locked_fp": 29,
+          "game_date": "2026-11-11",
+          "locked_at": "2026-11-12T14:53:51.248Z"
         }
       },
       "history": {
