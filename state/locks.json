@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-12T14:57:23.150Z",
+  "updated_at": "2026-11-12T14:58:11.012Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1099,8 +1099,19 @@
       }
     },
     "1419800258463969280": {
-      "schedule_week": 3,
-      "locks": {},
+      "schedule_week": 4,
+      "locks": {
+        "1787": {
+          "player_id": "1787",
+          "player_name": "Jarrett Allen",
+          "canonical_name": "jarrett allen",
+          "roster_slot": "UTIL",
+          "slot_index": 8,
+          "locked_fp": 27.5,
+          "game_date": "2026-11-11",
+          "locked_at": "2026-11-12T14:58:11.012Z"
+        }
+      },
       "history": {
         "2": {
           "schedule_week": 2,
