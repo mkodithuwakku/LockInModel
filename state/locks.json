@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-12T14:53:51.248Z",
+  "updated_at": "2026-11-12T14:55:10.306Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -541,6 +541,16 @@
     "1417002266736513024": {
       "schedule_week": 4,
       "locks": {
+        "1265": {
+          "player_id": "1265",
+          "player_name": "Jrue Holiday",
+          "canonical_name": "jrue holiday",
+          "roster_slot": "UTIL",
+          "slot_index": 10,
+          "locked_fp": 38.41,
+          "game_date": "2026-11-11",
+          "locked_at": "2026-11-12T14:55:10.306Z"
+        },
         "1648": {
           "player_id": "1648",
           "player_name": "Devin Booker",
