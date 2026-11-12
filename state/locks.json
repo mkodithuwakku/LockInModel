@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-11T18:15:06.792Z",
+  "updated_at": "2026-11-12T14:50:46.510Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -18,6 +18,16 @@
           "locked_fp": 26.5,
           "game_date": "2026-11-09",
           "locked_at": "2026-11-11T18:04:55.442Z"
+        },
+        "4738": {
+          "player_id": "4738",
+          "player_name": "Tre Johnson",
+          "canonical_name": "tre johnson",
+          "roster_slot": "UTIL",
+          "slot_index": 5,
+          "locked_fp": 17.5,
+          "game_date": "2026-11-11",
+          "locked_at": "2026-11-12T14:50:46.510Z"
         }
       },
       "history": {
