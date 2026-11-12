@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-12T14:58:21.969Z",
+  "updated_at": "2026-11-12T14:58:37.775Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1101,6 +1101,16 @@
     "1419800258463969280": {
       "schedule_week": 4,
       "locks": {
+        "1717": {
+          "player_id": "1717",
+          "player_name": "Fred VanVleet",
+          "canonical_name": "fred vanvleet",
+          "roster_slot": "UTIL",
+          "slot_index": 7,
+          "locked_fp": 25,
+          "game_date": "2026-11-11",
+          "locked_at": "2026-11-12T14:58:37.775Z"
+        },
         "1787": {
           "player_id": "1787",
           "player_name": "Jarrett Allen",
