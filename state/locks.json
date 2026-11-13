@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-13T14:56:14.508Z",
+  "updated_at": "2026-11-13T14:57:35.230Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1150,6 +1150,16 @@
           "locked_fp": 27.5,
           "game_date": "2026-11-11",
           "locked_at": "2026-11-12T14:58:21.969Z"
+        },
+        "1945": {
+          "player_id": "1945",
+          "player_name": "Trae Young",
+          "canonical_name": "trae young",
+          "roster_slot": "UTIL",
+          "slot_index": 7,
+          "locked_fp": 33.5,
+          "game_date": "2026-11-12",
+          "locked_at": "2026-11-13T14:57:35.230Z"
         },
         "2275": {
           "player_id": "2275",
