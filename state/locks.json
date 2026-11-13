@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-13T14:40:36.507Z",
+  "updated_at": "2026-11-13T14:56:14.508Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -866,6 +866,16 @@
     "1417213338928078848": {
       "schedule_week": 4,
       "locks": {
+        "1265": {
+          "player_id": "1265",
+          "player_name": "Jrue Holiday",
+          "canonical_name": "jrue holiday",
+          "roster_slot": "UTIL",
+          "slot_index": 7,
+          "locked_fp": 21,
+          "game_date": "2026-11-11",
+          "locked_at": "2026-11-13T14:56:14.508Z"
+        },
         "1717": {
           "player_id": "1717",
           "player_name": "Fred VanVleet",
