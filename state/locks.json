@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-14T15:44:18.676Z",
+  "updated_at": "2026-11-14T15:49:12.696Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -243,6 +243,16 @@
           "locked_fp": 29,
           "game_date": "2026-11-11",
           "locked_at": "2026-11-12T14:53:51.248Z"
+        },
+        "2711": {
+          "player_id": "2711",
+          "player_name": "Tristan da Silva",
+          "canonical_name": "tristan da silva",
+          "roster_slot": "PF",
+          "slot_index": 4,
+          "locked_fp": 18,
+          "game_date": "2026-11-13",
+          "locked_at": "2026-11-14T15:49:12.696Z"
         }
       },
       "history": {
