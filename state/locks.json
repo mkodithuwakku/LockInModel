@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-13T14:57:35.230Z",
+  "updated_at": "2026-11-14T15:44:16.978Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -9,6 +9,16 @@
     "1415115155703926784": {
       "schedule_week": 4,
       "locks": {
+        "2095": {
+          "player_id": "2095",
+          "player_name": "Luguentz Dort",
+          "canonical_name": "luguentz dort",
+          "roster_slot": "SF",
+          "slot_index": 2,
+          "locked_fp": 15.5,
+          "game_date": "2026-11-13",
+          "locked_at": "2026-11-14T15:44:16.978Z"
+        },
         "2449": {
           "player_id": "2449",
           "player_name": "Dyson Daniels",
