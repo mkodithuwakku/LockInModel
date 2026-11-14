@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-14T15:53:58.491Z",
+  "updated_at": "2026-11-14T15:54:05.702Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -630,6 +630,16 @@
           "locked_fp": 52.55,
           "game_date": "2026-11-09",
           "locked_at": "2026-11-11T18:11:22.583Z"
+        },
+        "2136": {
+          "player_id": "2136",
+          "player_name": "Onyeka Okongwu",
+          "canonical_name": "onyeka okongwu",
+          "roster_slot": "PF",
+          "slot_index": 7,
+          "locked_fp": 38.25,
+          "game_date": "2026-11-13",
+          "locked_at": "2026-11-14T15:54:05.702Z"
         },
         "2441": {
           "player_id": "2441",
