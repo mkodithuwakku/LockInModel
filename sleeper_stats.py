@@ -59,8 +59,11 @@ def parse_games(payload, games, season, directory):
             team = record.get("team")
             if not name or team not in (game["home"], game["away"]):
                 raise ValueError("Invalid player/team identity")
+            player_team = (record.get("player") or {}).get("team") or (
+                directory.get(sid) or {}
+            ).get("team")
             reported |= set(observed)
-            accepted.append((game, sid, raw, minutes, name, team))
+            accepted.append((game, sid, raw, minutes, name, team, player_team))
         except (KeyError, TypeError, ValueError) as exc:
             raise DataUnavailable(
                 "Sleeper final box score contains invalid values."
@@ -70,11 +73,14 @@ def parse_games(payload, games, season, directory):
     # Counters absent from every record are unreported by this feed, not zeros.
     mapping = {key: name for key, name in STAT_KEYS.items() if key in reported}
     rows = {}
-    for game, sid, raw, minutes, name, team in accepted:
+    player_teams = {}
+    for game, sid, raw, minutes, name, team, player_team in accepted:
         stats = {name: float(raw.get(key, 0)) for key, name in mapping.items()}
         opponent = game["away"] if team == game["home"] else game["home"]
         pid = str(identities.get(canonical_name(name), "sleeper:" + sid))
-        rows[(game["game_id"], pid)] = dict(
+        key = (game["game_id"], pid)
+        player_teams[key] = player_team
+        rows[key] = dict(
             GAME_ID=game["game_id"],
             PLAYER_ID=pid,
             PLAYER_NAME=name,
@@ -93,6 +99,28 @@ def parse_games(payload, games, season, directory):
                 if r["GAME_ID"] == gid and r["TEAM_ABBREVIATION"] == game[side]
             ]
             expected = game.get(side + "_points")
+            if (
+                expected is not None
+                and players
+                and sum(r["PTS"] for r in players) > expected
+            ):
+                # Sportradar occasionally attaches a player from another team's
+                # game on the same night; drop cross-team phantoms only when
+                # the remaining roster reconciles the official team score/minutes.
+                kept = [
+                    r
+                    for r in players
+                    if player_teams.get((gid, r["PLAYER_ID"])) in (None, game[side])
+                ]
+                if (
+                    kept
+                    and sum(r["PTS"] for r in kept) == expected
+                    and sum(r["MIN"] for r in kept) >= 239
+                ):
+                    for r in players:
+                        if r not in kept:
+                            rows.pop((gid, r["PLAYER_ID"]), None)
+                    players = kept
             if (
                 expected is None
                 or not players

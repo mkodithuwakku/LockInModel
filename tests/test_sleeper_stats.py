@@ -128,3 +128,24 @@ def test_three_point_attempts_survive_fallback_ingestion():
     rows[0]["stats"].update(tpa=7, tpm=2)
     frame = parse_games(rows, games, "2026", {})
     assert frame.iloc[0].FG3A == 7 and frame.iloc[0].FG3M == 2
+
+
+def test_cross_team_phantom_record_dropped_when_roster_reconciles():
+    rows, games = fixture()
+    rows.append(
+        dict(
+            game_id="game",
+            date="2026-10-20",
+            category="stat",
+            company="sportradar",
+            season="2026",
+            season_type="regular",
+            player_id="99",
+            player={"first_name": "Phantom", "last_name": "Player", "team": "NOP"},
+            team="BOS",
+            stats={"pts": 6, "sp": 1200},
+        )
+    )
+    frame = parse_games(rows, games, "2026", {})
+    assert len(frame) == 2
+    assert "sleeper:99" not in frame.PLAYER_ID.tolist()
