@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-15T15:22:08.535Z",
+  "updated_at": "2026-11-15T15:25:59.232Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1241,6 +1241,16 @@
     "1419800258463969280": {
       "schedule_week": 4,
       "locks": {
+        "1054": {
+          "player_id": "1054",
+          "player_name": "Kyrie Irving",
+          "canonical_name": "kyrie irving",
+          "roster_slot": "UTIL",
+          "slot_index": 9,
+          "locked_fp": 38.5,
+          "game_date": "2026-11-14",
+          "locked_at": "2026-11-15T15:25:59.232Z"
+        },
         "1717": {
           "player_id": "1717",
           "player_name": "Fred VanVleet",
