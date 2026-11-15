@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-15T15:22:02.187Z",
+  "updated_at": "2026-11-15T15:22:08.535Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -243,6 +243,16 @@
           "locked_fp": 32,
           "game_date": "2026-11-09",
           "locked_at": "2026-11-11T18:05:58.719Z"
+        },
+        "2118": {
+          "player_id": "2118",
+          "player_name": "Patrick Williams",
+          "canonical_name": "patrick williams",
+          "roster_slot": "F",
+          "slot_index": 5,
+          "locked_fp": 22.5,
+          "game_date": "2026-11-14",
+          "locked_at": "2026-11-15T15:22:08.535Z"
         },
         "2275": {
           "player_id": "2275",
