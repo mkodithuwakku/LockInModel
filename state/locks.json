@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-17T11:24:54.518Z",
+  "updated_at": "2026-11-17T11:26:29.589Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1291,8 +1291,19 @@
       }
     },
     "1419800258463969280": {
-      "schedule_week": 4,
-      "locks": {},
+      "schedule_week": 5,
+      "locks": {
+        "1845": {
+          "player_id": "1845",
+          "player_name": "Donovan Mitchell",
+          "canonical_name": "donovan mitchell",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 31.5,
+          "game_date": "2026-11-16",
+          "locked_at": "2026-11-17T11:26:29.589Z"
+        }
+      },
       "history": {
         "2": {
           "schedule_week": 2,
