@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-18T16:53:41.207Z",
+  "updated_at": "2026-11-18T16:56:46.474Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1001,8 +1001,19 @@
       }
     },
     "1417213338928078848": {
-      "schedule_week": 4,
-      "locks": {},
+      "schedule_week": 5,
+      "locks": {
+        "2580": {
+          "player_id": "2580",
+          "player_name": "Keyonte George",
+          "canonical_name": "keyonte george",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 33,
+          "game_date": "2026-11-17",
+          "locked_at": "2026-11-18T16:56:46.474Z"
+        }
+      },
       "history": {
         "1": {
           "schedule_week": 1,
