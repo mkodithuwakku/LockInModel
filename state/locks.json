@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-18T16:56:46.474Z",
+  "updated_at": "2026-11-18T16:56:57.082Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1003,6 +1003,16 @@
     "1417213338928078848": {
       "schedule_week": 5,
       "locks": {
+        "1265": {
+          "player_id": "1265",
+          "player_name": "Jrue Holiday",
+          "canonical_name": "jrue holiday",
+          "roster_slot": "G",
+          "slot_index": 2,
+          "locked_fp": 29,
+          "game_date": "2026-11-17",
+          "locked_at": "2026-11-18T16:56:57.082Z"
+        },
         "2580": {
           "player_id": "2580",
           "player_name": "Keyonte George",
