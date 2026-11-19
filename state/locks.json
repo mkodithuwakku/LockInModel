@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-19T16:14:06.178Z",
+  "updated_at": "2026-11-19T16:15:44.144Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -662,6 +662,16 @@
           "locked_fp": 57.34,
           "game_date": "2026-11-16",
           "locked_at": "2026-11-17T11:23:19.066Z"
+        },
+        "1648": {
+          "player_id": "1648",
+          "player_name": "Devin Booker",
+          "canonical_name": "devin booker",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 52.25,
+          "game_date": "2026-11-18",
+          "locked_at": "2026-11-19T16:15:44.144Z"
         },
         "2156": {
           "player_id": "2156",
