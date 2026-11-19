@@ -1,14 +1,25 @@
 {
   "version": 1,
-  "updated_at": "2026-11-18T16:58:31.852Z",
+  "updated_at": "2026-11-19T16:14:04.152Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
       "locks": {}
     },
     "1415115155703926784": {
-      "schedule_week": 4,
-      "locks": {},
+      "schedule_week": 5,
+      "locks": {
+        "2029": {
+          "player_id": "2029",
+          "player_name": "P.J. Washington",
+          "canonical_name": "p.j. washington",
+          "roster_slot": "C",
+          "slot_index": 4,
+          "locked_fp": 28,
+          "game_date": "2026-11-18",
+          "locked_at": "2026-11-19T16:14:04.152Z"
+        }
+      },
       "history": {
         "1": {
           "schedule_week": 1,
