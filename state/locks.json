@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-21T18:08:26.065Z",
+  "updated_at": "2026-11-21T18:08:47.367Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -299,6 +299,16 @@
           "locked_fp": 25,
           "game_date": "2026-11-16",
           "locked_at": "2026-11-17T11:24:54.518Z"
+        },
+        "4895": {
+          "player_id": "4895",
+          "player_name": "Meleek Thomas",
+          "canonical_name": "meleek thomas",
+          "roster_slot": "G",
+          "slot_index": 2,
+          "locked_fp": 13.5,
+          "game_date": "2026-11-20",
+          "locked_at": "2026-11-21T18:08:47.367Z"
         }
       },
       "history": {
