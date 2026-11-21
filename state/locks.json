@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-21T18:05:51.539Z",
+  "updated_at": "2026-11-21T18:08:05.123Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -250,6 +250,16 @@
     "1415801499308580864": {
       "schedule_week": 5,
       "locks": {
+        "1717": {
+          "player_id": "1717",
+          "player_name": "Fred VanVleet",
+          "canonical_name": "fred vanvleet",
+          "roster_slot": "PG",
+          "slot_index": 0,
+          "locked_fp": 25.5,
+          "game_date": "2026-11-20",
+          "locked_at": "2026-11-21T18:08:05.123Z"
+        },
         "1913": {
           "player_id": "1913",
           "player_name": "Miles Bridges",
