@@ -1,10 +1,10 @@
 {
   "mode": "live",
   "date": "2026-11-21",
-  "generated_at": "2026-11-21T15:32:39.087383+00:00",
+  "generated_at": "2026-11-21T17:34:45.737034+00:00",
   "notice": "Daily snapshot from your Mac, with catch-up after wake. Reload checks the published report; manage locks in Sleeper.",
   "refresh_status": "failed",
-  "publication_id": "31e8b673ab2f4f5a938a8a13146c9bc0",
+  "publication_id": "792b3b46c6314f0a87a55a6b228f9203",
   "schema_version": 1,
   "sleeper": {},
   "dataset": {},
@@ -89310,7 +89310,7 @@
       "message": "Scheduled refresh failed. Saved rosters may be out of date; lock and pickup recommendations are withheld. The next scheduled run will try again."
     }
   ],
-  "published_at": "2026-11-21T14:06:00.244736+00:00",
+  "published_at": "2026-11-21T16:49:05.850893+00:00",
   "portraits": [
     "1627749",
     "1628378",
