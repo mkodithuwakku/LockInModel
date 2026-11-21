@@ -122,6 +122,19 @@ def parse_games(payload, games, season, directory):
                             rows.pop((gid, r["PLAYER_ID"]), None)
                     players = kept
             if (
+                expected is not None
+                and players
+                and sum(r["PTS"] for r in players) != expected
+                and {"FGM", "FG3M", "FTM"} <= set(mapping.values())
+            ):
+                # If a stat correction updated made shots before the summary
+                # points field, use 2*FGM + FG3M + FTM when it reconciles the
+                # official team score.
+                derived = [2 * r["FGM"] + r["FG3M"] + r["FTM"] for r in players]
+                if sum(derived) == expected and sum(r["MIN"] for r in players) >= 239:
+                    for r, pts in zip(players, derived):
+                        r["PTS"] = float(pts)
+            if (
                 expected is None
                 or not players
                 or sum(r["PTS"] for r in players) != expected

@@ -149,3 +149,11 @@ def test_cross_team_phantom_record_dropped_when_roster_reconciles():
     frame = parse_games(rows, games, "2026", {})
     assert len(frame) == 2
     assert "sleeper:99" not in frame.PLAYER_ID.tolist()
+
+
+def test_shot_derived_points_reconcile_stale_summary_points():
+    rows, games = fixture()
+    rows[0]["stats"].update(pts=12, fgm=4, tpm=1, ftm=1)
+    rows[1]["stats"].update(pts=12, fgm=5, tpm=1, ftm=1)
+    frame = parse_games(rows, games, "2026", {})
+    assert frame.PTS.tolist() == [10, 12]
