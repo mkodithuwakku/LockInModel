@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-24T17:14:31.853Z",
+  "updated_at": "2026-11-24T17:14:42.912Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -264,6 +264,16 @@
           "locked_fp": 34.5,
           "game_date": "2026-11-23",
           "locked_at": "2026-11-24T17:14:31.853Z"
+        },
+        "1946": {
+          "player_id": "1946",
+          "player_name": "Kenrich Williams",
+          "canonical_name": "kenrich williams",
+          "roster_slot": "PF",
+          "slot_index": 4,
+          "locked_fp": 31.5,
+          "game_date": "2026-11-23",
+          "locked_at": "2026-11-24T17:14:42.912Z"
         },
         "2289": {
           "player_id": "2289",
