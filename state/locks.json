@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-24T17:04:35.595Z",
+  "updated_at": "2026-11-24T17:04:47.111Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -733,6 +733,16 @@
     "1417002266736513024": {
       "schedule_week": 6,
       "locks": {
+        "1648": {
+          "player_id": "1648",
+          "player_name": "Devin Booker",
+          "canonical_name": "devin booker",
+          "roster_slot": "SG",
+          "slot_index": 2,
+          "locked_fp": 51.8,
+          "game_date": "2026-11-23",
+          "locked_at": "2026-11-24T17:04:47.111Z"
+        },
         "2145": {
           "player_id": "2145",
           "player_name": "Tre Jones",
