@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-24T17:16:20.399Z",
+  "updated_at": "2026-11-24T17:16:22.375Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1627,6 +1627,16 @@
     "1419800258463969280": {
       "schedule_week": 6,
       "locks": {
+        "1913": {
+          "player_id": "1913",
+          "player_name": "Miles Bridges",
+          "canonical_name": "miles bridges",
+          "roster_slot": "PF",
+          "slot_index": 4,
+          "locked_fp": 27,
+          "game_date": "2026-11-23",
+          "locked_at": "2026-11-24T17:16:22.375Z"
+        },
         "2289": {
           "player_id": "2289",
           "player_name": "Scottie Barnes",
