@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-25T17:16:28.713Z",
+  "updated_at": "2026-11-25T17:18:25.838Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -276,6 +276,16 @@
     "1415801499308580864": {
       "schedule_week": 6,
       "locks": {
+        "1883": {
+          "player_id": "1883",
+          "player_name": "Wendell Carter Jr.",
+          "canonical_name": "wendell carter",
+          "roster_slot": "UTIL",
+          "slot_index": 9,
+          "locked_fp": 32.5,
+          "game_date": "2026-11-24",
+          "locked_at": "2026-11-25T17:18:25.838Z"
+        },
         "1913": {
           "player_id": "1913",
           "player_name": "Miles Bridges",
