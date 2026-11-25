@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-25T17:18:25.838Z",
+  "updated_at": "2026-11-25T17:18:37.132Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -305,6 +305,16 @@
           "locked_fp": 31.5,
           "game_date": "2026-11-23",
           "locked_at": "2026-11-24T17:14:42.912Z"
+        },
+        "1997": {
+          "player_id": "1997",
+          "player_name": "Daniel Gafford",
+          "canonical_name": "daniel gafford",
+          "roster_slot": "UTIL",
+          "slot_index": 7,
+          "locked_fp": 23,
+          "game_date": "2026-11-24",
+          "locked_at": "2026-11-25T17:18:37.132Z"
         },
         "2289": {
           "player_id": "2289",
