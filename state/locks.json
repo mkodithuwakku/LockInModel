@@ -1,14 +1,25 @@
 {
   "version": 1,
-  "updated_at": "2026-11-24T17:16:22.375Z",
+  "updated_at": "2026-11-25T17:15:00.741Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
       "locks": {}
     },
     "1415115155703926784": {
-      "schedule_week": 5,
-      "locks": {},
+      "schedule_week": 6,
+      "locks": {
+        "2028": {
+          "player_id": "2028",
+          "player_name": "Caleb Martin",
+          "canonical_name": "caleb martin",
+          "roster_slot": "SF",
+          "slot_index": 2,
+          "locked_fp": 29,
+          "game_date": "2026-11-24",
+          "locked_at": "2026-11-25T17:15:00.741Z"
+        }
+      },
       "history": {
         "1": {
           "schedule_week": 1,
