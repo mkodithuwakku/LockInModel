@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-25T17:21:08.300Z",
+  "updated_at": "2026-11-25T17:22:50.293Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1689,6 +1689,16 @@
     "1419800258463969280": {
       "schedule_week": 6,
       "locks": {
+        "1845": {
+          "player_id": "1845",
+          "player_name": "Donovan Mitchell",
+          "canonical_name": "donovan mitchell",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 26.5,
+          "game_date": "2026-11-23",
+          "locked_at": "2026-11-25T17:22:50.293Z"
+        },
         "1913": {
           "player_id": "1913",
           "player_name": "Miles Bridges",
