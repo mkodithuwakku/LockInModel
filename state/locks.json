@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-25T17:23:40.226Z",
+  "updated_at": "2026-11-26T16:44:38.066Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -9,6 +9,16 @@
     "1415115155703926784": {
       "schedule_week": 6,
       "locks": {
+        "1432": {
+          "player_id": "1432",
+          "player_name": "Steven Adams",
+          "canonical_name": "steven adams",
+          "roster_slot": "C",
+          "slot_index": 4,
+          "locked_fp": 17,
+          "game_date": "2026-11-25",
+          "locked_at": "2026-11-26T16:44:38.066Z"
+        },
         "2028": {
           "player_id": "2028",
           "player_name": "Caleb Martin",
