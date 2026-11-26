@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-26T16:47:57.182Z",
+  "updated_at": "2026-11-26T16:48:26.128Z",
   "leagues": {
     "0": {
       "schedule_week": 99,
@@ -1361,6 +1361,16 @@
           "locked_fp": 28,
           "game_date": "2026-11-23",
           "locked_at": "2026-11-25T17:21:08.300Z"
+        },
+        "1972": {
+          "player_id": "1972",
+          "player_name": "De'Anthony Melton",
+          "canonical_name": "de'anthony melton",
+          "roster_slot": "SG",
+          "slot_index": 1,
+          "locked_fp": 27,
+          "game_date": "2026-11-25",
+          "locked_at": "2026-11-26T16:48:26.128Z"
         },
         "2577": {
           "player_id": "2577",
